@@ -8,6 +8,7 @@ const KNOWN = [
   { to: '/resources', label: 'คลังเรียน' },
   { to: '/timetable', label: 'ตารางติว' },
   { to: '/planner', label: 'Smart Planner' },
+  { to: '/assistant', label: 'ผู้ช่วยติว' },
   { to: '/plan', label: 'แผนการอ่าน' },
   { to: '/videos', label: 'วิดีโอ' },
   { to: '/quiz', label: 'แบบทดสอบ' },

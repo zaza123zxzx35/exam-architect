@@ -16,6 +16,7 @@ const Overview = lazy(() => import('./pages/Overview'))
 const History = lazy(() => import('./pages/History'))
 const Resources = lazy(() => import('./pages/Resources'))
 const SmartPlanner = lazy(() => import('./pages/SmartPlanner'))
+const Assistant = lazy(() => import('./pages/Assistant'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteFallback() {
@@ -45,6 +46,7 @@ export default function App() {
                 <Route path="/history" element={<History />} />
                 <Route path="/resources" element={<Resources />} />
                 <Route path="/planner" element={<SmartPlanner />} />
+                <Route path="/assistant" element={<Assistant />} />
                 <Route path="/timetable" element={<Timetable />} />
                 <Route path="/info" element={<Info />} />
                 <Route path="/plan" element={<Plan />} />

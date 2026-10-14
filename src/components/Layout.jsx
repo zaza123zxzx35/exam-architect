@@ -17,6 +17,7 @@ import {
   History,
   Library,
   Sparkles,
+  Bot,
 } from 'lucide-react'
 import { useThemeCtx } from '../hooks/useThemeCtx'
 import { useExamCountdown } from '../hooks/useExamCountdown'
@@ -29,6 +30,7 @@ const navItems = [
   { to: '/history', icon: History, label: 'ย้อนดูวัน' },
   { to: '/timetable', icon: CalendarDays, label: 'ตารางติว' },
   { to: '/planner', icon: Sparkles, label: 'Smart Planner' },
+  { to: '/assistant', icon: Bot, label: 'ผู้ช่วยติว' },
   { to: '/info', icon: BarChart3, label: 'ข้อมูลและสถิติ' },
   { to: '/plan', icon: CalendarCheck, label: 'แผนการอ่าน' },
   { to: '/resources', icon: Library, label: 'คลังเรียน' },

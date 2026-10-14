@@ -38,7 +38,7 @@ npm run build # production bundle
 | Resource review list | [RESOURCES_REVIEW.md](./RESOURCES_REVIEW.md) |
 | M3 Unified schedule engine | Done — [PHASE_F_M3_REPORT.md](./PHASE_F_M3_REPORT.md) |
 | M4 Smart Planner | Done — [PHASE_G_M4_REPORT.md](./PHASE_G_M4_REPORT.md) |
-| M5 AI assist | Not started |
+| M5 Study assistant | Done — [PHASE_H_M5_REPORT.md](./PHASE_H_M5_REPORT.md) |
 
 ## Data notes
 
