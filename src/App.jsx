@@ -11,6 +11,7 @@ const Quiz = lazy(() => import('./pages/Quiz'))
 const Notes = lazy(() => import('./pages/Notes'))
 const Videos = lazy(() => import('./pages/Videos'))
 const Timetable = lazy(() => import('./pages/Timetable'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteFallback() {
   return (
@@ -40,7 +41,7 @@ export default function App() {
                 <Route path="/quiz" element={<Quiz />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/videos" element={<Videos />} />
-                <Route path="*" element={<Dashboard />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </Layout>
