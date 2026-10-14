@@ -39,6 +39,7 @@ npm run build # production bundle
 | M3 Unified schedule engine | Done — [PHASE_F_M3_REPORT.md](./PHASE_F_M3_REPORT.md) |
 | M4 Smart Planner | Done — [PHASE_G_M4_REPORT.md](./PHASE_G_M4_REPORT.md) |
 | M5 Study assistant | Done — [PHASE_H_M5_REPORT.md](./PHASE_H_M5_REPORT.md) |
+| Phase I production readiness | [PHASE_I_PRODUCTION_READINESS_REPORT.md](./PHASE_I_PRODUCTION_READINESS_REPORT.md) — deploy only after approval |
 
 ## Data notes
 
