@@ -11,6 +11,7 @@ import { SUBJECT_IDS } from './taxonomy.js'
 import {
   buildStudyHubCatalog,
   countByExamPart,
+  describeHubFilterStatus,
   filterStudyHubItems,
   HUB_EXAM_PART_FILTERS,
 } from './hub.js'
@@ -72,6 +73,54 @@ describe('study resource hub (Phase 3)', () => {
     const counts = countByExamPart(seedCatalog())
     expect(counts.all).toBeGreaterThan(0)
     expect(Object.keys(counts)).toEqual(expect.arrayContaining(HUB_EXAM_PART_FILTERS))
+  })
+
+  it('describeHubFilterStatus reflects default, ภาค ก, and English subject selections', () => {
+    const catalog = seedCatalog()
+    const defaultStatus = describeHubFilterStatus({
+      catalogCount: catalog.length,
+      filteredCount: catalog.length,
+      examPart: 'all',
+      subjectId: 'all',
+      kind: 'all',
+    })
+    expect(defaultStatus).toContain('ตัวกรองเริ่มต้น')
+    expect(defaultStatus).toContain('ทุกภาค')
+    expect(defaultStatus).not.toContain('ค่าเริ่มต้น: ทุกภาค)')
+
+    const partA = filterStudyHubItems(catalog, { examPart: 'ก' })
+    const partAStatus = describeHubFilterStatus({
+      catalogCount: catalog.length,
+      filteredCount: partA.length,
+      examPart: 'ก',
+      subjectId: 'all',
+      kind: 'all',
+    })
+    expect(partAStatus).toContain('ภาค ก')
+    expect(partAStatus).toContain(`แสดง ${partA.length} รายการตามตัวกรอง`)
+    expect(partAStatus).not.toContain('ตัวกรองเริ่มต้น')
+
+    const skills = filterStudyHubItems(catalog, { subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A })
+    const major = filterStudyHubItems(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })
+    const skillsStatus = describeHubFilterStatus({
+      catalogCount: catalog.length,
+      filteredCount: skills.length,
+      examPart: 'all',
+      subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A,
+      kind: 'all',
+    })
+    const majorStatus = describeHubFilterStatus({
+      catalogCount: catalog.length,
+      filteredCount: major.length,
+      examPart: 'all',
+      subjectId: SUBJECT_IDS.ENGLISH_MAJOR,
+      kind: 'all',
+    })
+    expect(skillsStatus).toContain('อังกฤษ ภาค ก')
+    expect(majorStatus).toContain('วิชาเอกอังกฤษ')
+    expect(skillsStatus).not.toContain('วิชาเอกอังกฤษ')
+    expect(majorStatus).not.toContain('อังกฤษ ภาค ก')
+    expect(skills.length).not.toBe(major.length)
   })
 
   it('does not use task.examId / scheduleExamId to assign content filters', () => {

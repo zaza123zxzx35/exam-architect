@@ -24,6 +24,7 @@ import { PageHeader, EmptyState, FilterChips, StatusBanner } from '../components
 import {
   buildStudyHubCatalog,
   countByExamPart,
+  describeHubFilterStatus,
   filterStudyHubItems,
   HUB_EXAM_PART_FILTERS,
   HUB_EXAM_PART_LABELS,
@@ -134,8 +135,14 @@ export default function Resources() {
               <Library className="h-5 w-5 text-primary-700" /> ศูนย์ทรัพยากรติว
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              {catalog.length} รายการในคลัง · แสดง {filteredHub.length} รายการตามตัวกรอง
-              (ค่าเริ่มต้น: ทุกภาค)
+              {describeHubFilterStatus({
+                catalogCount: catalog.length,
+                filteredCount: filteredHub.length,
+                examPart,
+                subjectId,
+                kind,
+                query,
+              })}
             </p>
           </div>
         </div>

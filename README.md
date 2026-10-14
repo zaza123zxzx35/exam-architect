@@ -51,7 +51,7 @@ npm run build # production bundle
 - On first load, `StorageBootstrap` migrates legacy keys into `kru_unified_v1` and writes `kru_backup_*` snapshots.
 - Runtime schedule SSOT is `kru_schedule_v1` (tasks + sessions + notes). Legacy `kru_thp_69_v1` and `daily_timetable_v8` are dual-written and never deleted (dual-write failures do not wipe SSOT).
 - External links render through `safeResourceUrl` / `sanitizeUrl` (http/https only).
-- Sensitive query params such as `u_id` are stripped during unified import. Seed `u_id` scrub in HTML inventory remains deferred until manual i-test login OK.
+- Sensitive query params such as `u_id` are stripped at render (`safeResourceUrl`) and removed from HTML planner seed URLs (Phase 8). Authenticated i-test deep-link behavior without account params is not verified against a live login.
 - Study taxonomy (`src/lib/study/taxonomy.js`, version `2b.1`) classifies on read. Never use `scheduleExamId` as a content filter.
 - Exam datetimes come only from `src/data/examCalendar.js` (default: ภาค ก 14 พ.ย. 2569 09:00 +07:00, ภาค ข 15 พ.ย. 2569 09:00 +07:00).
 

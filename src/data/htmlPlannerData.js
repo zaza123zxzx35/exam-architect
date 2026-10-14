@@ -67,12 +67,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: รัฐธรรมนูญและกฎหมายที่เกี่ยวข้องกับการจัดการเรียนการสอน",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/21&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F21"
     },
     {
       "text": "🧪 i-test: พ.ร.บ.การศึกษาภาคบังคับ",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/22&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F22"
     }
   ],
   [
@@ -89,12 +89,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: Grammar and Structure",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5"
     },
     {
       "text": "🧪 i-test: Vocabulary",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/6&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F6"
     }
   ],
   [
@@ -116,12 +116,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: Conversation",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/4&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F4"
     },
     {
       "text": "🧪 i-test: Reading",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/7&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F7"
     }
   ],
   [
@@ -138,7 +138,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: Grammar and Structure",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5"
     }
   ],
   [
@@ -159,12 +159,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: Vocabulary",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/6&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F6"
     },
     {
       "text": "🧪 i-test: Reading",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/7&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F7"
     }
   ],
   [
@@ -180,7 +180,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2"
     }
   ],
   [
@@ -196,12 +196,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: Conversation",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/4&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F4"
     },
     {
       "text": "🧪 i-test: Grammar and Structure",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5"
     }
   ],
   [
@@ -222,12 +222,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: แนวคิดเศรษฐกิจพอเพียง",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/25&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F25"
     },
     {
       "text": "🧪 i-test: หลักสูตรการจัดการเรียนการสอน",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/15&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F15"
     }
   ],
   [
@@ -252,7 +252,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: จิตวิทยาการพัฒนาการการศึกษาและการให้คำปรึกษา",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/16&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F16"
     }
   ],
   [
@@ -277,7 +277,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: พัฒนาผู้เรียน",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/24&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F24"
     }
   ],
   [
@@ -302,7 +302,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: การใช้เทคโนโลยีดิจิทัลในการจัดการเรียนรู้",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/22&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F22"
     }
   ],
   [
@@ -328,12 +328,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: อนุกรม",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/7&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F7"
     },
     {
       "text": "🧪 i-test: การคิดวิเคราะห์เชิงนามธรรม (เหตุผล)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F2"
     }
   ],
   [
@@ -357,7 +357,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละ กำไร ขาดทุน",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/15&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F15"
     }
   ],
   [
@@ -376,7 +376,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2"
     }
   ],
   [
@@ -393,12 +393,12 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: อนุกรม",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/7&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F7"
     },
     {
       "text": "🧪 i-test: เงื่อนไขสัญลักษณ์",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/19&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F19"
     }
   ],
   [
@@ -420,7 +420,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: พ.ร.บ.การศึกษาแห่งชาติ",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/23&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F23"
     }
   ],
   [
@@ -441,7 +441,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: พ.ร.บ.ระเบียบบริหารราชการกระทรวงศึกษาธิการ",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/26&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F26"
     }
   ],
   [
@@ -458,7 +458,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: พ.ร.บ.สภาครูและบุคลากรทางการศึกษา",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/25&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F25"
     }
   ],
   [
@@ -480,7 +480,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: พ.ร.บ.ระเบียบข้าราชการครูและบุคลากรทางการศึกษา",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/24&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F24"
     }
   ],
   [
@@ -496,7 +496,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2"
     }
   ],
   [
@@ -512,7 +512,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2"
     }
   ],
   [
@@ -528,7 +528,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2"
     }
   ],
   [
@@ -544,7 +544,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2"
     }
   ],
   [
@@ -564,7 +564,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2"
     }
   ],
   [
@@ -580,7 +580,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2"
     }
   ],
   [
@@ -596,7 +596,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2"
     }
   ],
   [
@@ -615,7 +615,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2"
     }
   ],
   [
@@ -635,7 +635,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2"
     }
   ],
   [
@@ -650,7 +650,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2"
     }
   ],
   [
@@ -673,7 +673,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2"
     }
   ],
   [
@@ -696,7 +696,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2"
     }
   ],
   [
@@ -719,7 +719,7 @@ export const dailyPlan = [
     {
       "text": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
       "pri": "high",
-      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503"
+      "link": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2"
     }
   ],
   [
@@ -850,7 +850,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/21&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F21",
     "source": "dailyPlan",
     "title": "🧪 i-test: รัฐธรรมนูญและกฎหมายที่เกี่ยวข้องกับการจัดการเรียนการสอน",
     "status": "imported",
@@ -859,7 +859,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/22&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F22",
     "source": "dailyPlan",
     "title": "🧪 i-test: พ.ร.บ.การศึกษาภาคบังคับ",
     "status": "imported",
@@ -886,7 +886,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5",
     "source": "dailyPlan",
     "title": "🧪 i-test: Grammar and Structure",
     "status": "imported",
@@ -895,7 +895,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/6&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F6",
     "source": "dailyPlan",
     "title": "🧪 i-test: Vocabulary",
     "status": "imported",
@@ -931,7 +931,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/4&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F4",
     "source": "dailyPlan",
     "title": "🧪 i-test: Conversation",
     "status": "imported",
@@ -940,7 +940,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/7&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F7",
     "source": "dailyPlan",
     "title": "🧪 i-test: Reading",
     "status": "imported",
@@ -967,7 +967,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5",
     "source": "dailyPlan",
     "title": "🧪 i-test: Grammar and Structure",
     "status": "imported",
@@ -994,7 +994,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/6&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F6",
     "source": "dailyPlan",
     "title": "🧪 i-test: Vocabulary",
     "status": "imported",
@@ -1003,7 +1003,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/7&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F7",
     "source": "dailyPlan",
     "title": "🧪 i-test: Reading",
     "status": "imported",
@@ -1021,7 +1021,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
     "status": "imported",
@@ -1039,7 +1039,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/4&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F4",
     "source": "dailyPlan",
     "title": "🧪 i-test: Conversation",
     "status": "imported",
@@ -1048,7 +1048,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/5&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F5",
     "source": "dailyPlan",
     "title": "🧪 i-test: Grammar and Structure",
     "status": "imported",
@@ -1075,7 +1075,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/25&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F25",
     "source": "dailyPlan",
     "title": "🧪 i-test: แนวคิดเศรษฐกิจพอเพียง",
     "status": "imported",
@@ -1084,7 +1084,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/15&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F15",
     "source": "dailyPlan",
     "title": "🧪 i-test: หลักสูตรการจัดการเรียนการสอน",
     "status": "imported",
@@ -1111,7 +1111,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/16&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F16",
     "source": "dailyPlan",
     "title": "🧪 i-test: จิตวิทยาการพัฒนาการการศึกษาและการให้คำปรึกษา",
     "status": "imported",
@@ -1138,7 +1138,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/24&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F24",
     "source": "dailyPlan",
     "title": "🧪 i-test: พัฒนาผู้เรียน",
     "status": "imported",
@@ -1165,7 +1165,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/22&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F22",
     "source": "dailyPlan",
     "title": "🧪 i-test: การใช้เทคโนโลยีดิจิทัลในการจัดการเรียนรู้",
     "status": "imported",
@@ -1201,7 +1201,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/7&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F7",
     "source": "dailyPlan",
     "title": "🧪 i-test: อนุกรม",
     "status": "imported",
@@ -1210,7 +1210,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=2%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: การคิดวิเคราะห์เชิงนามธรรม (เหตุผล)",
     "status": "imported",
@@ -1228,7 +1228,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/15&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F15",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละ กำไร ขาดทุน",
     "status": "imported",
@@ -1237,7 +1237,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
     "status": "imported",
@@ -1264,7 +1264,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/7&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F7",
     "source": "dailyPlan",
     "title": "🧪 i-test: อนุกรม",
     "status": "imported",
@@ -1273,7 +1273,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/19&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F19",
     "source": "dailyPlan",
     "title": "🧪 i-test: เงื่อนไขสัญลักษณ์",
     "status": "imported",
@@ -1309,7 +1309,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/23&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F23",
     "source": "dailyPlan",
     "title": "🧪 i-test: พ.ร.บ.การศึกษาแห่งชาติ",
     "status": "imported",
@@ -1336,7 +1336,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/26&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F26",
     "source": "dailyPlan",
     "title": "🧪 i-test: พ.ร.บ.ระเบียบบริหารราชการกระทรวงศึกษาธิการ",
     "status": "imported",
@@ -1363,7 +1363,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/25&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F25",
     "source": "dailyPlan",
     "title": "🧪 i-test: พ.ร.บ.สภาครูและบุคลากรทางการศึกษา",
     "status": "imported",
@@ -1399,7 +1399,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3/24&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=3%2F24",
     "source": "dailyPlan",
     "title": "🧪 i-test: พ.ร.บ.ระเบียบข้าราชการครูและบุคลากรทางการศึกษา",
     "status": "imported",
@@ -1417,7 +1417,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
     "status": "imported",
@@ -1435,7 +1435,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
     "status": "imported",
@@ -1453,7 +1453,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
     "status": "imported",
@@ -1471,7 +1471,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
     "status": "imported",
@@ -1489,7 +1489,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
     "status": "imported",
@@ -1507,7 +1507,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
     "status": "imported",
@@ -1525,7 +1525,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
     "status": "imported",
@@ -1534,7 +1534,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
     "status": "imported",
@@ -1552,7 +1552,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/2/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F2%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ทักษะภาษาอังกฤษ)",
     "status": "imported",
@@ -1561,7 +1561,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/4/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F4%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้ทั่วไปในการจัดการเรียนการสอน)",
     "status": "imported",
@@ -1570,7 +1570,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/5/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F5%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (กฎหมายที่เกี่ยวข้องกับการปฏิบัติงาน)",
     "status": "imported",
@@ -1579,7 +1579,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/3/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F3%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความรู้และลักษณะการเป็นข้าราชการที่ดี)",
     "status": "imported",
@@ -1588,7 +1588,7 @@ export const htmlPlannerLinkInventory = [
     "pri": "high"
   },
   {
-    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1/1/2&u_id=0610395503",
+    "url": "https://i-test.kruphuchuay.com/pro/quiz.php?id=1%2F1%2F2",
     "source": "dailyPlan",
     "title": "🧪 i-test: ร้อยละคละทุกหัวข้อในวิชา แบบทดสอบชุดรวมเรื่อง (ความสามารถในการคิดวิเคราะห์)",
     "status": "imported",

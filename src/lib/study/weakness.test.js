@@ -11,6 +11,7 @@ import {
   analyzeQuizPerformance,
   parseQuizResultKey,
   recommendPracticeFromWeakness,
+  weaknessConfidence,
 } from './weakness.js'
 
 const catalog = buildStudyHubCatalog({
@@ -21,7 +22,7 @@ const catalog = buildStudyHubCatalog({
   links: importantLinks.map((link, i) => ({ id: `i${i}`, title: link.name, url: link.url })),
 })
 
-describe('Smart Tutor weakness analysis (Phase 4)', () => {
+describe('Smart Tutor weakness analysis (Phase 4/8)', () => {
   it('parses quiz_results keys without mutating them', () => {
     expect(parseQuizResultKey('q-g2__1700000000000')).toEqual({ quizId: 'q-g2', atMs: 1700000000000 })
   })
@@ -34,7 +35,7 @@ describe('Smart Tutor weakness analysis (Phase 4)', () => {
     expect(analysis.observedWeaknesses).toHaveLength(0)
   })
 
-  it('marks low-scoring english-skills-a attempts as observed weakness', () => {
+  it('labels a single low english-skills-a attempt as preliminary, not definitive', () => {
     const results = {
       'q-g2__1': {
         score: 1,
@@ -55,11 +56,20 @@ describe('Smart Tutor weakness analysis (Phase 4)', () => {
     }
     const analysis = analyzeQuizPerformance(results, initialQuizzes)
     expect(analysis.attemptCount).toBe(2)
-    expect(analysis.insufficientData).toBe(false)
     const weak = analysis.observedWeaknesses.find(w => w.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)
     expect(weak).toBeTruthy()
     expect(weak.avgPct).toBe(20)
+    expect(weak.attempts).toBe(1)
+    expect(weak.confidence).toBe('preliminary')
+    expect(weaknessConfidence(1)).toBe('preliminary')
     expect(analysis.observedWeaknesses.some(w => w.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(false)
+
+    const { reasons, recommendations, mode } = recommendPracticeFromWeakness(analysis, catalog, { limit: 8 })
+    expect(mode).toBe('target-weakness')
+    expect(reasons.some(r => r.kind === 'preliminary-weakness' && /เบื้องต้น|Preliminary/i.test(r.messageTh + r.messageEn))).toBe(true)
+    expect(reasons.some(r => r.kind === 'observed-weakness')).toBe(false)
+    expect(recommendations.every(r => r.taxonomy.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)).toBe(true)
+    expect(recommendations.some(r => r.taxonomy.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(false)
   })
 
   it('keeps english-skills-a recommendations distinct from english-major', () => {
@@ -67,9 +77,8 @@ describe('Smart Tutor weakness analysis (Phase 4)', () => {
       'q-g2__1': { score: 1, total: 5, pct: 20, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
     }
     const analysis = analyzeQuizPerformance(results, initialQuizzes)
-    const { recommendations, mode, reasons } = recommendPracticeFromWeakness(analysis, catalog, { limit: 8 })
+    const { recommendations, mode } = recommendPracticeFromWeakness(analysis, catalog, { limit: 8 })
     expect(mode).toBe('target-weakness')
-    expect(reasons.some(r => r.kind === 'observed-weakness')).toBe(true)
     expect(recommendations.length).toBeGreaterThan(0)
     expect(recommendations.every(r => r.taxonomy.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)).toBe(true)
     expect(recommendations.some(r => r.taxonomy.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(false)
@@ -92,7 +101,7 @@ describe('Smart Tutor weakness analysis (Phase 4)', () => {
     expect(analyzeQuizPerformance({ bad: { score: 'x' } }, initialQuizzes).attemptCount).toBe(0)
   })
 
-  it('aggregates repeated low scores for the same subject without inventing attempts', () => {
+  it('aggregates repeated low scores as evidence-based (non-preliminary) weakness', () => {
     const results = {
       'q-g2__1': { score: 1, total: 5, pct: 20, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
       'q-g2__2': { score: 2, total: 5, pct: 40, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
@@ -103,9 +112,11 @@ describe('Smart Tutor weakness analysis (Phase 4)', () => {
     expect(weak).toBeTruthy()
     expect(weak.attempts).toBe(2)
     expect(weak.avgPct).toBe(30)
+    expect(weak.confidence).toBe('observed')
     const { reasons, mode } = recommendPracticeFromWeakness(analysis, catalog)
     expect(mode).toBe('target-weakness')
     expect(reasons.some(r => r.kind === 'observed-weakness' && r.avgPct === 30 && r.attempts === 2)).toBe(true)
+    expect(reasons.some(r => /เบื้องต้น|Preliminary/i.test(r.messageTh + r.messageEn))).toBe(false)
   })
 
   it('recommendPracticeFromWeakness stays in insufficient-data mode with empty history', () => {

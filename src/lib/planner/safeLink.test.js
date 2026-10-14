@@ -15,21 +15,16 @@ describe('safeResourceUrl (P0 render sanitization)', () => {
     expect(safe).not.toContain('REDACTED_SAMPLE')
   })
 
-  it('sanitizes every inventory URL that carries u_id without dropping rows', () => {
+  it('seed inventory no longer carries u_id (privacy scrub) while rows remain', () => {
     const accounting = buildHtmlResourceAccounting()
     expect(accounting.summary.inventoryRows).toBe(htmlPlannerLinkInventory.length)
-    expect(accounting.summary.withUidFlag).toBeGreaterThan(0)
-
-    const uidRows = accounting.rows.filter(r => r.flags.includes('contains-u_id'))
-    expect(uidRows.length).toBe(accounting.summary.withUidFlag)
-
-    for (const row of uidRows) {
-      // Accounting still sees raw seed (flag semantics unchanged)
-      expect(row.url).toMatch(/u_id=/i)
+    expect(accounting.summary.withUidFlag).toBe(0)
+    expect(accounting.rows.length).toBe(htmlPlannerLinkInventory.length)
+    for (const row of accounting.rows) {
+      expect(row.url).not.toMatch(/[?&]u_id=/i)
       const safe = safeResourceUrl(row.url)
       expect(safe).toBeTruthy()
       expect(safe).not.toMatch(/u_id/i)
-      // quiz id query preserved when present on source
       if (/[?&]id=/.test(row.url)) {
         expect(safe).toMatch(/[?&]id=/)
       }

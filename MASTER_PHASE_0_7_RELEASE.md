@@ -153,10 +153,11 @@ Recorded at release-prep time (re-run before commit in the same session):
 ## 11. Remaining limitations / risks
 
 1. Second historical repo not inspected locally.
-2. Seed `u_id` scrub in HTML inventory still **deferred** (privacy vs login deep-links).
+2. Seed `u_id` values were **removed from HTML planner seeds** (Phase 8). Render-time sanitization remains as defense in depth. Live authenticated i-test behavior without account query params is **not** verified.
 3. No automated visual regression suite; manual/browser QA is supplemental.
-4. Weakness threshold defaults (`MIN_ATTEMPTS_FOR_WEAKNESS=1`, `WEAKNESS_PCT_THRESHOLD=70`) are product knobs — documented in code.
-5. Lint warning in journey audit script left untouched (out of Phase 4 scope).
+4. Weakness threshold defaults (`MIN_ATTEMPTS_FOR_WEAKNESS=1`, `WEAKNESS_PCT_THRESHOLD=70`) unchanged; single-attempt signals are labeled **เบื้องต้น** (engine `4.2`).
+5. Lint warning in journey audit script left untouched (pre-existing).
+6. Legacy browser storage may still hold older URLs that included `u_id`; `safeResourceUrl` strips them at render.
 
 ---
 

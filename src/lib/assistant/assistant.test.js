@@ -147,7 +147,8 @@ describe('assistant dialogue workflow', () => {
     expect(result.scheduleChanged).toBe(false)
     expect(result.nextSchedule).toEqual(before)
     expect(JSON.stringify(quizResults)).toContain('"pct":20')
-    expect(result.replies.join('\n')).toMatch(/20%|weakness|จุดอ่อน|english-skills-a|ทักษะ/i)
+    expect(result.replies.join('\n')).toMatch(/เบื้องต้น|Preliminary|20%/i)
+    expect(result.replies.join('\n')).toMatch(/english-skills-a|ทักษะ/i)
   })
 
   it('supports multi-turn create → revise → cancel without writing', () => {

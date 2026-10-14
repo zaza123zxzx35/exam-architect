@@ -199,3 +199,37 @@ export function countByExamPart(items) {
   }
   return counts
 }
+
+/**
+ * Human-readable hub filter status (Thai). Reflects the current selection — never a stale "default" label.
+ * @param {{
+ *   catalogCount: number,
+ *   filteredCount: number,
+ *   examPart?: HubExamPartFilter,
+ *   subjectId?: string,
+ *   kind?: HubKind,
+ *   query?: string,
+ * }} state
+ * @returns {string}
+ */
+export function describeHubFilterStatus(state) {
+  const catalogCount = Number(state?.catalogCount) || 0
+  const filteredCount = Number(state?.filteredCount) || 0
+  const examPart = state?.examPart || 'all'
+  const subjectId = state?.subjectId || 'all'
+  const kind = state?.kind || 'all'
+  const query = String(state?.query || '').trim()
+
+  const labels = [
+    HUB_EXAM_PART_LABELS[examPart] || String(examPart),
+    HUB_KIND_LABELS[kind] || String(kind),
+    subjectId === 'all' ? 'ทุกวิชา' : (HUB_SUBJECT_LABELS[subjectId] || String(subjectId)),
+  ]
+  if (query) labels.push(`ค้นหา “${query}”`)
+
+  const isDefault = examPart === 'all' && subjectId === 'all' && kind === 'all' && !query
+  if (isDefault) {
+    return `${catalogCount} รายการในคลัง · แสดง ${filteredCount} รายการ (ตัวกรองเริ่มต้น: ${labels.join(' · ')})`
+  }
+  return `${catalogCount} รายการในคลัง · แสดง ${filteredCount} รายการตามตัวกรอง (${labels.join(' · ')})`
+}

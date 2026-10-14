@@ -7,13 +7,29 @@
 import { classifyQuiz, SUBJECT_IDS } from './taxonomy.js'
 import { filterStudyHubItems } from './hub.js'
 
-export const WEAKNESS_ENGINE_VERSION = '4.1'
+export const WEAKNESS_ENGINE_VERSION = '4.2'
 
-/** Minimum attempts before a category average is treated as observed weakness. */
+/** Minimum attempts before a category average is treated as a weakness signal. */
 export const MIN_ATTEMPTS_FOR_WEAKNESS = 1
 
-/** pct below this → observed weakness (when attempt threshold met). */
+/**
+ * Attempts at or below this count are labeled preliminary (เบื้องต้น),
+ * not a definitive weakness. Algorithm threshold unchanged.
+ */
+export const PRELIMINARY_ATTEMPTS_MAX = 1
+
+/** pct below this → weakness signal (when attempt threshold met). */
 export const WEAKNESS_PCT_THRESHOLD = 70
+
+/**
+ * @param {number} attempts
+ * @returns {'preliminary' | 'observed'}
+ */
+export function weaknessConfidence(attempts) {
+  const n = Number(attempts)
+  if (!Number.isFinite(n) || n <= PRELIMINARY_ATTEMPTS_MAX) return 'preliminary'
+  return 'observed'
+}
 
 /**
  * @typedef {object} QuizAttempt
@@ -99,23 +115,29 @@ export function analyzeQuizPerformance(results, quizzes = []) {
     byQuiz.set(quizId, prev)
   }
 
-  const byQuizList = [...byQuiz.values()].map(row => ({
-    quizId: row.quizId,
-    title: row.title,
-    category: row.category,
-    examPart: row.taxonomy.examPart,
-    subjectId: row.taxonomy.subjectId,
-    attempts: row.attempts,
-    avgPct: Math.round(row.sumPct / row.attempts),
-    lastPct: row.lastPct,
-    lastAt: row.lastAt,
-    status:
+  const byQuizList = [...byQuiz.values()].map(row => {
+    const avgPct = Math.round(row.sumPct / row.attempts)
+    const below = row.sumPct / row.attempts < WEAKNESS_PCT_THRESHOLD
+    const status =
       row.attempts < MIN_ATTEMPTS_FOR_WEAKNESS
         ? 'insufficient-data'
-        : row.sumPct / row.attempts < WEAKNESS_PCT_THRESHOLD
+        : below
           ? 'observed-weakness'
-          : 'ok',
-  }))
+          : 'ok'
+    return {
+      quizId: row.quizId,
+      title: row.title,
+      category: row.category,
+      examPart: row.taxonomy.examPart,
+      subjectId: row.taxonomy.subjectId,
+      attempts: row.attempts,
+      avgPct,
+      lastPct: row.lastPct,
+      lastAt: row.lastAt,
+      status,
+      confidence: status === 'observed-weakness' ? weaknessConfidence(row.attempts) : null,
+    }
+  })
 
   /** @type {Map<string, { subjectId: string, examPart: string, attempts: number, sumPct: number, quizIds: Set<string> }>} */
   const bySubject = new Map()
@@ -136,18 +158,21 @@ export function analyzeQuizPerformance(results, quizzes = []) {
 
   const bySubjectList = [...bySubject.values()].map(row => {
     const avgPct = Math.round(row.sumPct / row.attempts)
+    const below = avgPct < WEAKNESS_PCT_THRESHOLD
+    const status =
+      row.attempts < MIN_ATTEMPTS_FOR_WEAKNESS
+        ? 'insufficient-data'
+        : below
+          ? 'observed-weakness'
+          : 'ok'
     return {
       subjectId: row.subjectId,
       examPart: row.examPart,
       attempts: row.attempts,
       avgPct,
       quizIds: [...row.quizIds],
-      status:
-        row.attempts < MIN_ATTEMPTS_FOR_WEAKNESS
-          ? 'insufficient-data'
-          : avgPct < WEAKNESS_PCT_THRESHOLD
-            ? 'observed-weakness'
-            : 'ok',
+      status,
+      confidence: status === 'observed-weakness' ? weaknessConfidence(row.attempts) : null,
     }
   })
 
@@ -208,14 +233,21 @@ export function recommendPracticeFromWeakness(analysis, catalog, options = {}) {
   const recommendations = []
   const seen = new Set()
   for (const weak of analysis.observedWeaknesses) {
+    const confidence = weak.confidence || weaknessConfidence(weak.attempts)
+    const preliminary = confidence === 'preliminary'
     reasons.push({
-      kind: 'observed-weakness',
+      kind: preliminary ? 'preliminary-weakness' : 'observed-weakness',
+      confidence,
       subjectId: weak.subjectId,
       examPart: weak.examPart,
       avgPct: weak.avgPct,
       attempts: weak.attempts,
-      messageTh: `คะแนนเฉลี่ย ${weak.avgPct}% ใน ${weak.subjectId} (จาก ${weak.attempts} ครั้ง) ต่ำกว่า ${WEAKNESS_PCT_THRESHOLD}%`,
-      messageEn: `Average ${weak.avgPct}% in ${weak.subjectId} (${weak.attempts} attempts) is below ${WEAKNESS_PCT_THRESHOLD}%`,
+      messageTh: preliminary
+        ? `สัญญาณเบื้องต้น: คะแนนเฉลี่ย ${weak.avgPct}% ใน ${weak.subjectId} (จาก ${weak.attempts} ครั้ง) ต่ำกว่า ${WEAKNESS_PCT_THRESHOLD}% — ยังไม่ใช่ข้อสรุปจุดอ่อน ควรทำเพิ่มอีก`
+        : `จุดอ่อนจากหลักฐาน: คะแนนเฉลี่ย ${weak.avgPct}% ใน ${weak.subjectId} (จาก ${weak.attempts} ครั้ง) ต่ำกว่า ${WEAKNESS_PCT_THRESHOLD}%`,
+      messageEn: preliminary
+        ? `Preliminary signal: average ${weak.avgPct}% in ${weak.subjectId} (${weak.attempts} attempt${weak.attempts === 1 ? '' : 's'}) is below ${WEAKNESS_PCT_THRESHOLD}% — not a definitive weakness yet; try more practice`
+        : `Evidence-based weakness: average ${weak.avgPct}% in ${weak.subjectId} (${weak.attempts} attempts) is below ${WEAKNESS_PCT_THRESHOLD}%`,
     })
     const hits = filterStudyHubItems(items, {
       subjectId: weak.subjectId,
@@ -226,7 +258,7 @@ export function recommendPracticeFromWeakness(analysis, catalog, options = {}) {
       seen.add(hit.id)
       recommendations.push({
         ...hit,
-        recommendReason: `weakness:${weak.subjectId}:${weak.avgPct}`,
+        recommendReason: `${preliminary ? 'preliminary' : 'weakness'}:${weak.subjectId}:${weak.avgPct}`,
       })
     }
   }
