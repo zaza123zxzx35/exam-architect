@@ -5,17 +5,17 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 
-describe('App routes for M2 pages', () => {
-  it('registers today/overview/history/resources routes', () => {
+describe('App routes for planner pages', () => {
+  it('registers today/overview/history/resources/planner routes', () => {
     const appSrc = fs.readFileSync(path.join(root, 'App.jsx'), 'utf8')
-    for (const route of ['/today', '/overview', '/history', '/resources']) {
+    for (const route of ['/today', '/overview', '/history', '/resources', '/planner']) {
       expect(appSrc).toContain(`path="${route}"`)
     }
   })
 
-  it('exposes the four pages in navigation', () => {
+  it('exposes planner pages in navigation', () => {
     const layoutSrc = fs.readFileSync(path.join(root, 'components/Layout.jsx'), 'utf8')
-    for (const route of ['/today', '/overview', '/history', '/resources']) {
+    for (const route of ['/today', '/overview', '/history', '/resources', '/planner']) {
       expect(layoutSrc).toContain(`to: '${route}'`)
     }
   })

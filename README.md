@@ -37,7 +37,8 @@ npm run build # production bundle
 | M2 HTML parity (Today / Overview / History / Resources) | Done — [PHASE_E_M2_REPORT.md](./PHASE_E_M2_REPORT.md) |
 | Resource review list | [RESOURCES_REVIEW.md](./RESOURCES_REVIEW.md) |
 | M3 Unified schedule engine | Done — [PHASE_F_M3_REPORT.md](./PHASE_F_M3_REPORT.md) |
-| M4 Smart Planner UI / M5 AI | Not started |
+| M4 Smart Planner | Done — [PHASE_G_M4_REPORT.md](./PHASE_G_M4_REPORT.md) |
+| M5 AI assist | Not started |
 
 ## Data notes
 

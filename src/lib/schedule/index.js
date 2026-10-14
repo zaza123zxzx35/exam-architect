@@ -39,6 +39,7 @@ export {
   splitTask,
   rescheduleUnfinished,
   markTaskCompletion,
+  proposeSessionsForTasks,
 } from './engine.js'
 
 export {

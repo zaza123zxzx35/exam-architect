@@ -7,6 +7,7 @@ const KNOWN = [
   { to: '/history', label: 'ย้อนดูวัน' },
   { to: '/resources', label: 'คลังเรียน' },
   { to: '/timetable', label: 'ตารางติว' },
+  { to: '/planner', label: 'Smart Planner' },
   { to: '/plan', label: 'แผนการอ่าน' },
   { to: '/videos', label: 'วิดีโอ' },
   { to: '/quiz', label: 'แบบทดสอบ' },

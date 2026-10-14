@@ -309,3 +309,142 @@ export function markTaskCompletion(schedule, taskId, done, at = new Date().toISO
   })
   return { ...schedule, tasks }
 }
+
+/**
+ * Propose new sessions for tasks without mutating the caller's schedule object.
+ * Respects existing sessions (preserved), availability windows, daily minute caps,
+ * exam hard-stop, and overlap rules. Deterministic — no LLM.
+ *
+ * @returns {{
+ *   proposedSessions: object[],
+ *   scheduled: Array<{ taskId: string, sessionId: string, date: string }>,
+ *   unscheduled: Array<{ taskId: string, reason: string, detail?: string }>,
+ *   conflicts: object[],
+ * }}
+ */
+export function proposeSessionsForTasks(schedule, tasks, options = {}) {
+  const todayIso = options.todayIso
+  if (!isValidIsoDate(todayIso)) {
+    return {
+      proposedSessions: [],
+      scheduled: [],
+      unscheduled: (tasks || []).map(t => ({ taskId: t.id, reason: 'invalid-today' })),
+      conflicts: [],
+    }
+  }
+
+  const hardStopDate = options.hardStopDate
+    || (schedule.exams?.[0]?.startsAt || '').slice(0, 10)
+  const breakMinutes = options.breakMinutes ?? 10
+  const maxDaysScan = options.maxDaysScan ?? 45
+  const maxSessionMinutes = options.maxSessionMinutes ?? 90
+  const dailyLimitMinutes = options.dailyLimitMinutes == null
+    ? null
+    : Number(options.dailyLimitMinutes)
+  const availability = Array.isArray(options.availability) && options.availability.length
+    ? options.availability
+    : schedule.availability
+  const idPrefix = options.idPrefix || 'smart'
+  const note = options.sessionNote || 'Smart Planner proposal'
+
+  const workingSessions = (schedule.sessions || []).map(s => ({ ...s }))
+  const existingIds = new Set(workingSessions.map(s => s.id))
+  const dailyUsed = Object.create(null)
+  const proposedSessions = []
+  const scheduled = []
+  const unscheduled = []
+
+  const sorted = sortTasksForScheduling(
+    (tasks || []).filter(t => t && t.status !== 'done' && t.status !== 'cancelled'),
+    schedule.exams,
+    todayIso
+  )
+
+  let guard = 0
+  for (const task of sorted) {
+    guard += 1
+    if (guard > 500) {
+      unscheduled.push({ taskId: task.id, reason: 'loop-guard' })
+      break
+    }
+
+    const chunks = splitTask(task, maxSessionMinutes)
+    let chunkIndex = 0
+    let taskFullyPlaced = true
+
+    for (const chunk of chunks) {
+      chunkIndex += 1
+      let placed = false
+
+      for (let offset = 0; offset <= maxDaysScan; offset += 1) {
+        const date = addDaysIso(todayIso, offset)
+        if (hardStopDate && isValidIsoDate(hardStopDate) && date > hardStopDate) break
+
+        const windows = availabilityWindowsForDate(availability, date)
+        if (!windows.length) continue
+
+        if (dailyLimitMinutes != null) {
+          const used = dailyUsed[date] || 0
+          if (used + chunk.durationMinutes > dailyLimitMinutes) continue
+        }
+
+        const occupied = occupiedForDate(workingSessions, date)
+        const slot = findOpenSlot(windows, occupied, chunk.durationMinutes, breakMinutes)
+        if (!slot) continue
+
+        const sessionId = `${idPrefix}_${task.id}_${date}_${chunkIndex}`
+        if (existingIds.has(sessionId)) {
+          unscheduled.push({ taskId: task.id, reason: 'duplicate-session-id', detail: sessionId })
+          placed = true
+          break
+        }
+
+        const candidate = {
+          id: sessionId,
+          date,
+          startTime: minutesToTime(slot.start),
+          endTime: minutesToTime(slot.end),
+          zone: slot.start < 12 * 60 ? 'เช้า' : slot.start < 17 * 60 ? 'บ่าย' : 'คืน',
+          title: chunk.title,
+          note,
+          taskIds: [task.id],
+          resourceUrl: task.resourceUrl,
+          resourceExternal: Boolean(task.resourceUrl),
+          status: 'planned',
+          origin: 'smart-planner',
+          locked: false,
+        }
+        const check = canAddSession(workingSessions, candidate)
+        if (!check.ok) continue
+
+        workingSessions.push(candidate)
+        existingIds.add(sessionId)
+        proposedSessions.push(candidate)
+        dailyUsed[date] = (dailyUsed[date] || 0) + chunk.durationMinutes
+        scheduled.push({ taskId: task.id, sessionId, date, minutes: chunk.durationMinutes })
+        placed = true
+        break
+      }
+
+      if (!placed) {
+        taskFullyPlaced = false
+        unscheduled.push({
+          taskId: task.id,
+          reason: 'no-available-slot',
+          detail: `chunk ${chunkIndex}/${chunks.length}`,
+        })
+      }
+    }
+
+    if (!taskFullyPlaced && !unscheduled.some(u => u.taskId === task.id)) {
+      unscheduled.push({ taskId: task.id, reason: 'partially-unscheduled' })
+    }
+  }
+
+  return {
+    proposedSessions,
+    scheduled,
+    unscheduled,
+    conflicts: detectConflicts([...workingSessions]),
+  }
+}
