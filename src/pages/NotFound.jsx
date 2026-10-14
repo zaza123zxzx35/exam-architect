@@ -2,6 +2,10 @@ import { Link } from 'react-router-dom'
 
 const KNOWN = [
   { to: '/', label: 'ภาพรวม' },
+  { to: '/today', label: 'วันนี้' },
+  { to: '/overview', label: 'แผนภาพรวม' },
+  { to: '/history', label: 'ย้อนดูวัน' },
+  { to: '/resources', label: 'คลังเรียน' },
   { to: '/timetable', label: 'ตารางติว' },
   { to: '/plan', label: 'แผนการอ่าน' },
   { to: '/videos', label: 'วิดีโอ' },
@@ -16,8 +20,7 @@ export default function NotFound() {
       <p className="text-sm font-semibold text-primary-700 dark:text-primary-300">404</p>
       <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">ไม่พบหน้านี้</h2>
       <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-        เส้นทางนี้อาจยังไม่ได้พอร์ตจากแผนติว HTML (เช่น /today, /overview) หรือพิมพ์ผิด
-        เลือกเมนูที่มีอยู่แล้วด้านล่าง
+        ไม่พบเส้นทางนี้ หรือพิมพ์ URL ผิด เลือกเมนูที่มีอยู่แล้วด้านล่าง
       </p>
       <ul className="mt-8 flex flex-wrap justify-center gap-2">
         {KNOWN.map(item => (

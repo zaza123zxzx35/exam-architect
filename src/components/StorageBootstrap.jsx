@@ -1,12 +1,23 @@
 import { useState } from 'react'
 import { migrateFromLegacy } from '../lib/storage/migrate.js'
+import { dailyPlan, getPlanDateByIndex } from '../data/htmlPlannerData.js'
+
+function buildDailyPlanByDate() {
+  const map = {}
+  dailyPlan.forEach((tasks, index) => {
+    map[getPlanDateByIndex(index)] = tasks
+  })
+  return map
+}
 
 function runMigration() {
   if (typeof window === 'undefined' || !window.localStorage) {
     return { migrated: false, skipped: true, reason: 'no-storage' }
   }
   try {
-    const result = migrateFromLegacy(window.localStorage)
+    const result = migrateFromLegacy(window.localStorage, {
+      dailyPlanByDate: buildDailyPlanByDate(),
+    })
     if (import.meta.env.DEV && result.migrated) {
       console.info('[storage] migrate', {
         reason: result.reason,

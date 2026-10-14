@@ -11,7 +11,11 @@ import {
   BarChart3,
   Sun,
   Moon,
-  Clock3
+  Clock3,
+  ListTodo,
+  Map,
+  History,
+  Library,
 } from 'lucide-react'
 import { useThemeCtx } from '../hooks/useThemeCtx'
 import { useExamCountdown } from '../hooks/useExamCountdown'
@@ -19,9 +23,13 @@ import { getPrimaryExam } from '../data/examCalendar'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'ภาพรวม' },
+  { to: '/today', icon: ListTodo, label: 'วันนี้' },
+  { to: '/overview', icon: Map, label: 'แผนภาพรวม' },
+  { to: '/history', icon: History, label: 'ย้อนดูวัน' },
   { to: '/timetable', icon: CalendarDays, label: 'ตารางติว' },
   { to: '/info', icon: BarChart3, label: 'ข้อมูลและสถิติ' },
   { to: '/plan', icon: CalendarCheck, label: 'แผนการอ่าน' },
+  { to: '/resources', icon: Library, label: 'คลังเรียน' },
   { to: '/quiz', icon: FileQuestion, label: 'แบบทดสอบ' },
   { to: '/notes', icon: NotebookPen, label: 'โน้ต' },
   { to: '/videos', icon: PlayCircle, label: 'วิดีโอ' },

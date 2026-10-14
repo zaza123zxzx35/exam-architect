@@ -11,6 +11,10 @@ const Quiz = lazy(() => import('./pages/Quiz'))
 const Notes = lazy(() => import('./pages/Notes'))
 const Videos = lazy(() => import('./pages/Videos'))
 const Timetable = lazy(() => import('./pages/Timetable'))
+const Today = lazy(() => import('./pages/Today'))
+const Overview = lazy(() => import('./pages/Overview'))
+const History = lazy(() => import('./pages/History'))
+const Resources = lazy(() => import('./pages/Resources'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteFallback() {
@@ -35,6 +39,10 @@ export default function App() {
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/today" element={<Today />} />
+                <Route path="/overview" element={<Overview />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/resources" element={<Resources />} />
                 <Route path="/timetable" element={<Timetable />} />
                 <Route path="/info" element={<Info />} />
                 <Route path="/plan" element={<Plan />} />
