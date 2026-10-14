@@ -1,10 +1,36 @@
 import { useMemo, useState } from 'react'
-import { ExternalLink, Library, Link2, AlertTriangle, Inbox } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  ExternalLink,
+  Library,
+  Link2,
+  AlertTriangle,
+  Inbox,
+  Search,
+  FileQuestion,
+  NotebookPen,
+  PlayCircle,
+  CalendarCheck,
+} from 'lucide-react'
 import { courses, importantLinks } from '../data/htmlPlannerData'
 import { buildHtmlResourceAccounting } from '../lib/planner/resourceAccounting'
 import { safeResourceUrl } from '../lib/planner/safeLink'
 import { initialVideos } from '../data/videoData'
+import { initialQuizzes } from '../data/quizData'
+import { initialNotes } from '../data/notesData'
+import { initialStudyPlan } from '../data/planData'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 import { PageHeader, EmptyState, FilterChips, StatusBanner } from '../components/ui'
+import {
+  buildStudyHubCatalog,
+  countByExamPart,
+  filterStudyHubItems,
+  HUB_EXAM_PART_FILTERS,
+  HUB_EXAM_PART_LABELS,
+  HUB_KIND_LABELS,
+  HUB_KINDS,
+  HUB_SUBJECT_LABELS,
+} from '../lib/study/hub'
 
 const RESOURCE_FILTERS = [
   { id: 'all', label: 'ทั้งหมด' },
@@ -21,20 +47,70 @@ const statusTone = {
   malformed: 'bg-rose-50 text-rose-800 border-rose-200',
 }
 
-export default function Resources() {
-  const accounting = useMemo(() => buildHtmlResourceAccounting(initialVideos), [])
-  const [filter, setFilter] = useState('all')
+const kindIcon = {
+  quiz: FileQuestion,
+  note: NotebookPen,
+  video: PlayCircle,
+  plan: CalendarCheck,
+  link: Link2,
+}
 
-  const filtered = accounting.rows.filter(row => {
-    if (filter === 'all') return true
-    if (filter === 'not-in-videos') return row.flags.includes('not-in-video-library')
-    if (filter === 'duplicate') return row.status === 'duplicate' || row.flags.includes('duplicate-in-videos')
-    if (filter === 'important') return row.source === 'importantLinks'
-    if (filter === 'uid') return row.flags.includes('contains-u_id')
+export default function Resources() {
+  const [quizzes] = useLocalStorage('study_quizzes', initialQuizzes)
+  const [notes] = useLocalStorage('study_notes', initialNotes)
+  const [videos] = useLocalStorage('study_videos', initialVideos)
+
+  const [examPart, setExamPart] = useState('all')
+  const [kind, setKind] = useState('all')
+  const [subjectId, setSubjectId] = useState('all')
+  const [query, setQuery] = useState('')
+  const [inventoryFilter, setInventoryFilter] = useState('all')
+
+  const accounting = useMemo(() => buildHtmlResourceAccounting(initialVideos), [])
+
+  const catalog = useMemo(() => buildStudyHubCatalog({
+    quizzes,
+    notes,
+    videos,
+    planItems: initialStudyPlan,
+    links: importantLinks.map((link, index) => ({
+      id: `important_${index}`,
+      title: link.name,
+      url: link.url,
+      source: 'importantLinks',
+    })),
+  }), [quizzes, notes, videos])
+
+  const partCounts = useMemo(() => countByExamPart(catalog), [catalog])
+
+  const filteredHub = useMemo(() => filterStudyHubItems(catalog, {
+    examPart,
+    kind,
+    subjectId,
+    query,
+  }), [catalog, examPart, kind, subjectId, query])
+
+  const subjectOptions = useMemo(() => {
+    const ids = new Set(catalog.map(item => item.taxonomy.subjectId))
+    return [
+      { id: 'all', label: 'ทุกวิชา' },
+      ...[...ids]
+        .filter(id => id && id !== 'unknown')
+        .sort()
+        .map(id => ({ id, label: HUB_SUBJECT_LABELS[id] || id })),
+      ...(ids.has('unknown') ? [{ id: 'unknown', label: HUB_SUBJECT_LABELS.unknown }] : []),
+    ]
+  }, [catalog])
+
+  const inventoryRows = accounting.rows.filter(row => {
+    if (inventoryFilter === 'all') return true
+    if (inventoryFilter === 'not-in-videos') return row.flags.includes('not-in-video-library')
+    if (inventoryFilter === 'duplicate') return row.status === 'duplicate' || row.flags.includes('duplicate-in-videos')
+    if (inventoryFilter === 'important') return row.source === 'importantLinks'
+    if (inventoryFilter === 'uid') return row.flags.includes('contains-u_id')
     return true
   })
 
-  // Unique URLs not in video library (the audit's "38" class)
   const uniqueMissing = useMemo(() => {
     const map = new Map()
     for (const row of accounting.rows) {
@@ -47,9 +123,144 @@ export default function Resources() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
-        title="ทรัพยากรติว"
-        description="คอร์ส ลิงก์สำคัญ และบัญชี URL จากแผน HTML — ไม่ตัดทอนและไม่สร้างลิงก์ใหม่"
+        title="คลังเรียน"
+        description="ศูนย์รวมแบบทดสอบ โน้ต วิดีโอ แผนอ่าน และลิงก์ — กรองตามภาค/วิชาจาก taxonomy แบบ classify-on-read"
       />
+
+      <section className="card space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+              <Library className="h-5 w-5 text-primary-700" /> ศูนย์ทรัพยากรติว
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              {catalog.length} รายการในคลัง · แสดง {filteredHub.length} รายการตามตัวกรอง
+              (ค่าเริ่มต้น: ทุกภาค)
+            </p>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="ค้นหาชื่อหรือหัวข้อ..."
+            className="input pl-9 text-sm"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">ภาคสอบ</p>
+          <FilterChips
+            ariaLabel="กรองตามภาคสอบ"
+            options={HUB_EXAM_PART_FILTERS.map(id => ({
+              id,
+              label: partCounts[id]
+                ? `${HUB_EXAM_PART_LABELS[id]} (${partCounts[id]})`
+                : HUB_EXAM_PART_LABELS[id],
+            }))}
+            value={examPart}
+            onChange={setExamPart}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">ประเภท</p>
+          <FilterChips
+            ariaLabel="กรองตามประเภททรัพยากร"
+            options={HUB_KINDS.map(id => ({ id, label: HUB_KIND_LABELS[id] }))}
+            value={kind}
+            onChange={setKind}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">วิชา</p>
+          <FilterChips
+            ariaLabel="กรองตามวิชา"
+            options={subjectOptions}
+            value={subjectId}
+            onChange={setSubjectId}
+          />
+        </div>
+
+        {filteredHub.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="ไม่พบทรัพยากรที่ตรงเงื่อนไข"
+            description="ลองเลือก «ทุกภาค» หรือล้างคำค้นหา — ระบบไม่สร้างรายการใหม่ให้อัตโนมัติ"
+          />
+        ) : (
+          <ul className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
+            {filteredHub.map(item => {
+              const Icon = kindIcon[item.kind] || Library
+              const safeHref = item.url ? safeResourceUrl(item.url) : null
+              const confidence = item.taxonomy.confidence
+              return (
+                <li
+                  key={item.id}
+                  className="rounded-xl border border-slate-100 p-3 dark:border-slate-800"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-slate-50 p-2 text-primary-700 dark:bg-slate-800 dark:text-primary-300">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="badge bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                          {HUB_KIND_LABELS[item.kind]}
+                        </span>
+                        <span className="badge bg-primary-50 text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
+                          {HUB_EXAM_PART_LABELS[item.taxonomy.examPart] || item.taxonomy.examPart}
+                        </span>
+                        <span className="badge bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
+                          {HUB_SUBJECT_LABELS[item.taxonomy.subjectId] || item.taxonomy.subjectId}
+                        </span>
+                        {confidence !== 'explicit' ? (
+                          <span className="text-[10px] text-amber-700 dark:text-amber-300">
+                            ความมั่นใจ: {confidence}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {item.title}
+                      </div>
+                      {item.subtitle ? (
+                        <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                          {item.subtitle}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                        {item.href ? (
+                          <Link to={item.href} className="font-medium text-primary-700 hover:underline dark:text-primary-300">
+                            เปิดหน้า{HUB_KIND_LABELS[item.kind]}
+                          </Link>
+                        ) : null}
+                        {safeHref ? (
+                          <a
+                            href={safeHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-sky-700 hover:underline dark:text-sky-300"
+                          >
+                            <ExternalLink className="h-3 w-3" /> เปิดลิงก์
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        <StatusBanner tone="info" title="จัดหมวดจากเนื้อหาเท่านั้น">
+          ตัวกรองใช้ examPart / subjectId จาก taxonomy แบบอ่านอย่างเดียว ไม่ใช้ scheduleExamId
+          เป็นตัวกรองเนื้อหา และไม่แยก `english-skills-a` กับ `english-major` ปนกัน
+        </StatusBanner>
+      </section>
 
       <section className="card">
         <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
@@ -128,11 +339,11 @@ export default function Resources() {
           className="mt-4"
           ariaLabel="กรองบัญชีทรัพยากร"
           options={RESOURCE_FILTERS}
-          value={filter}
-          onChange={setFilter}
+          value={inventoryFilter}
+          onChange={setInventoryFilter}
         />
 
-        {filtered.length === 0 ? (
+        {inventoryRows.length === 0 ? (
           <EmptyState
             className="mt-6"
             icon={Inbox}
@@ -141,7 +352,7 @@ export default function Resources() {
           />
         ) : (
           <ul className="mt-4 max-h-[480px] space-y-3 overflow-y-auto pr-1">
-            {filtered.map(row => {
+            {inventoryRows.map(row => {
               const safeHref = safeResourceUrl(row.url)
               return (
                 <li key={row.id} className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
