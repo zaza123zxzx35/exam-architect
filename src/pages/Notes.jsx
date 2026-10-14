@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  NotebookPen,
   Plus,
   Search,
   Edit3,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { initialNotes } from '../data/notesData'
+import { PageHeader, EmptyState, FilterChips } from '../components/ui'
 
 const categoryColors = {
   'ภาค ก': 'bg-blue-100 text-blue-700',
@@ -184,56 +184,49 @@ export default function Notes() {
   // List View
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
-            <NotebookPen className="w-6 h-6 text-primary-600" />
-            โน้ตสรุปส่วนตัว
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            จดสรุปเนื้อหาที่สำคัญไว้ตรงนี้ — เข้าได้ทุกที่ บันทึกไว้ในเครื่องชั่วคราว
-          </p>
-        </div>
-        <button onClick={startNew} className="btn-primary">
-          <Plus className="w-4 h-4" /> สร้างโน้ตใหม่
-        </button>
-      </div>
+      <PageHeader
+        title="โน้ตสรุปส่วนตัว"
+        description="จดสรุปเนื้อหาที่สำคัญไว้ตรงนี้ — เข้าได้ทุกที่ บันทึกไว้ในเครื่องชั่วคราว"
+        actions={(
+          <button onClick={startNew} className="btn-primary">
+            <Plus className="w-4 h-4" /> สร้างโน้ตใหม่
+          </button>
+        )}
+      />
 
-      {/* Search + Filter */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
+      <div className="flex flex-col gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="ค้นหาโน้ตจากหัวข้อหรือเนื้อหา..."
-            className="input text-sm pl-9"
+            className="input pl-9 text-sm"
           />
         </div>
-        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 border border-gray-200 dark:border-slate-700 rounded-lg">
-          {categories.map(c => (
-            <button
-              key={c}
-              onClick={() => setFilterCat(c)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                filterCat === c ? 'bg-primary-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <FilterChips
+          ariaLabel="กรองโน้ตตามหมวด"
+          options={categories.map(c => ({ id: c, label: c }))}
+          value={filterCat}
+          onChange={setFilterCat}
+        />
       </div>
 
-      {/* Notes Grid */}
       {filtered.length === 0 ? (
-        <div className="card text-center py-16">
-          <BookOpen className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-3" />
-          <div className="text-gray-500 dark:text-slate-400">ยังไม่มีโน้ตตรงที่ค้นหา</div>
-          <button onClick={startNew} className="btn-primary mt-4 text-sm mx-auto">
-            <Plus className="w-4 h-4" /> สร้างโน้ตแรกเลย!
-          </button>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title={notes.length === 0 ? 'ยังไม่มีโน้ต' : 'ไม่พบโน้ตที่ตรงเงื่อนไข'}
+          description={
+            notes.length === 0
+              ? 'เริ่มจดสรุปเนื้อหาสำคัญไว้ที่นี่ เพื่อกลับมาทบทวนได้เร็ว'
+              : 'ลองเปลี่ยนคำค้นหาหรือตัวกรองหมวด แล้วค้นหาอีกครั้ง'
+          }
+          action={(
+            <button onClick={startNew} className="btn-primary text-sm">
+              <Plus className="w-4 h-4" /> สร้างโน้ตใหม่
+            </button>
+          )}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(n => (

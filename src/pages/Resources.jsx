@@ -1,9 +1,18 @@
 import { useMemo, useState } from 'react'
-import { ExternalLink, Library, Link2, AlertTriangle } from 'lucide-react'
+import { ExternalLink, Library, Link2, AlertTriangle, Inbox } from 'lucide-react'
 import { courses, importantLinks } from '../data/htmlPlannerData'
 import { buildHtmlResourceAccounting } from '../lib/planner/resourceAccounting'
 import { safeResourceUrl } from '../lib/planner/safeLink'
 import { initialVideos } from '../data/videoData'
+import { PageHeader, EmptyState, FilterChips, StatusBanner } from '../components/ui'
+
+const RESOURCE_FILTERS = [
+  { id: 'all', label: 'ทั้งหมด' },
+  { id: 'not-in-videos', label: 'ไม่ใช่ใน Videos' },
+  { id: 'duplicate', label: 'ซ้ำ' },
+  { id: 'important', label: 'ลิงก์สำคัญ' },
+  { id: 'uid', label: 'มี u_id' },
+]
 
 const statusTone = {
   imported: 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -37,6 +46,11 @@ export default function Resources() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
+      <PageHeader
+        title="ทรัพยากรติว"
+        description="คอร์ส ลิงก์สำคัญ และบัญชี URL จากแผน HTML — ไม่ตัดทอนและไม่สร้างลิงก์ใหม่"
+      />
+
       <section className="card">
         <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
           <Library className="h-5 w-5 text-primary-700" /> คอร์สที่ติดตาม
@@ -110,27 +124,21 @@ export default function Resources() {
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[
-            ['all', 'ทั้งหมด'],
-            ['not-in-videos', 'ไม่ใช่ใน Videos'],
-            ['duplicate', 'ซ้ำ'],
-            ['important', 'ลิงก์สำคัญ'],
-            ['uid', 'มี u_id'],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setFilter(id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${filter === id ? 'bg-primary-700 text-white border-primary-700' : 'bg-white text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <FilterChips
+          className="mt-4"
+          ariaLabel="กรองบัญชีทรัพยากร"
+          options={RESOURCE_FILTERS}
+          value={filter}
+          onChange={setFilter}
+        />
 
         {filtered.length === 0 ? (
-          <p className="mt-6 text-sm text-slate-500">ไม่มีรายการในตัวกรองนี้</p>
+          <EmptyState
+            className="mt-6"
+            icon={Inbox}
+            title="ไม่มีรายการในตัวกรองนี้"
+            description="ลองเลือกตัวกรองอื่น หรือกลับไปที่ «ทั้งหมด» เพื่อดูบัญชีครบ"
+          />
         ) : (
           <ul className="mt-4 max-h-[480px] space-y-3 overflow-y-auto pr-1">
             {filtered.map(row => {
@@ -165,10 +173,10 @@ export default function Resources() {
           </ul>
         )}
 
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs leading-relaxed text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+        <StatusBanner tone="warning" className="mt-6" title="บัญชีครบ — ไม่ scrub อัตโนมัติ">
           Unique URLs จากแผน HTML ที่ยังไม่อยู่ใน `videoData.js`: <strong>{uniqueMissing.length}</strong>
           — เก็บครบในรายการด้านบน ไม่ลบและไม่สร้าง URL ใหม่ ลิงก์ซ้ำในคลังวิดีโอ English ยังคงแสดงในหน้า Videos ตามเดิม
-        </div>
+        </StatusBanner>
       </section>
     </div>
   )

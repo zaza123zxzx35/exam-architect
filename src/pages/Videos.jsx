@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  PlayCircle,
   CalendarDays,
   Clock,
   Plus,
@@ -10,11 +9,13 @@ import {
   Circle,
   ExternalLink,
   Radio,
-  Video as VideoIcon
+  Video as VideoIcon,
+  PlayCircle
 } from 'lucide-react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { initialVideos } from '../data/videoData'
 import { safeResourceUrl } from '../lib/planner/safeLink.js'
+import { PageHeader, EmptyState, FilterChips } from '../components/ui'
 
 const getEmbedUrl = (url) => {
   const safe = safeResourceUrl(url)
@@ -29,9 +30,12 @@ const isFacebookGroup = (url) => {
   return /facebook\.com|fb\.com/i.test(url) || /groups/i.test(url)
 }
 
-const formatSchedule = (isoStr) => {
-  if (!isoStr) return ''
-  const d = new Date(isoStr)
+const formatSchedule = (value) => {
+  if (!value) return ''
+  const raw = String(value).trim()
+  const d = new Date(raw)
+  // Seed schedules are often human-readable Thai ranges, not ISO timestamps.
+  if (Number.isNaN(d.getTime())) return raw
   return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })
     + ' · ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
 }
@@ -119,30 +123,25 @@ export default function Videos() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
-            <PlayCircle className="w-6 h-6 text-primary-600" />
-            วีดีโอติว + ไลฟ์สด
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            วิดีโอที่รองรับจะฝังในหน้าเว็บได้ ส่วนกลุ่ม Facebook ต้องเปิดจากลิงก์และตรวจเวลาไลฟ์กับผู้เผยแพร่
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="badge bg-green-50 text-green-700 inline-flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> ดูแล้ว {watchCount}/{videos.length}
-            </span>
-            <span className="badge bg-red-50 text-red-700 inline-flex items-center gap-1">
-              <Radio className="w-3.5 h-3.5 animate-pulse" /> ไลฟ์ {liveCount} รายการ
-            </span>
+      <PageHeader
+        title="วีดีโอติว + ไลฟ์สด"
+        description="วิดีโอที่รองรับจะฝังในหน้าเว็บได้ ส่วนกลุ่ม Facebook ต้องเปิดจากลิงก์และตรวจเวลาไลฟ์กับผู้เผยแพร่"
+        actions={(
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="badge inline-flex items-center gap-1 bg-green-50 text-green-700">
+                <CheckCircle2 className="h-3.5 w-3.5" /> ดูแล้ว {watchCount}/{videos.length}
+              </span>
+              <span className="badge inline-flex items-center gap-1 bg-red-50 text-red-700">
+                <Radio className="h-3.5 w-3.5 animate-pulse" /> ไลฟ์ {liveCount} รายการ
+              </span>
+            </div>
+            <button onClick={() => setAddMode(!addMode)} className="btn-primary">
+              <Plus className="w-4 h-4" /> {addMode ? 'ยกเลิก' : 'เพิ่มลิ้งค์วีดีโอ'}
+            </button>
           </div>
-          <button onClick={() => setAddMode(!addMode)} className="btn-primary">
-            <Plus className="w-4 h-4" /> {addMode ? 'ยกเลิก' : 'เพิ่มลิ้งค์วีดีโอ'}
-          </button>
-        </div>
-      </div>
+        )}
+      />
 
       {addMode && (
         <div className="card border-2 border-primary-200 bg-primary-50/50 space-y-4">
@@ -219,22 +218,12 @@ export default function Videos() {
         </div>
       )}
 
-      {/* Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {categories.map(c => (
-          <button
-            key={c}
-            onClick={() => setFilter(c)}
-            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-              filter === c
-                ? 'bg-primary-600 text-white border-primary-600'
-                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        ariaLabel="กรองวิดีโอตามหมวด"
+        options={categories.map(c => ({ id: c, label: c }))}
+        value={filter}
+        onChange={setFilter}
+      />
 
       {/* Grid: Player + List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -358,22 +347,18 @@ export default function Videos() {
               </div>
             </>
           ) : (
-            <div className="card bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-900 min-h-[400px] flex items-center justify-center">
-              <div className="text-center max-w-md">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center">
-                  <VideoIcon className="w-10 h-10" />
-                </div>
-                <h3 className="font-semibold text-gray-800 dark:text-slate-100 text-lg mb-2">เลือกวีดีโอจากรายการทางขวา</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
-                  วีดีโอจะเล่นตรงนี้เลย ไม่ต้องกระโดดออกไป Youtube
-                  สามารถจดโน้ตระหว่างดู หรือกด "ดูแล้ว" เพื่อติดตามความคืบหน้าได้
-                </p>
-                <div className="flex items-center gap-2 justify-center mt-4 text-xs text-gray-500 dark:text-slate-400">
-                  <Clock className="w-3.5 h-3.5" />
+            <EmptyState
+              className="flex min-h-[400px] flex-col justify-center"
+              icon={VideoIcon}
+              title="เลือกวีดีโอจากรายการทางขวา"
+              description="วีดีโอจะเล่นตรงนี้เลย ไม่ต้องกระโดดออกไป YouTube สามารถจดโน้ตระหว่างดู หรือกด «ดูแล้ว» เพื่อติดตามความคืบหน้าได้"
+              action={(
+                <span className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <Clock className="h-3.5 w-3.5" />
                   เหลืออีก {videos.length - watchCount} วีดีโอที่ยังไม่ได้ดู
-                </div>
-              </div>
-            </div>
+                </span>
+              )}
+            />
           )}
         </div>
 
@@ -383,9 +368,15 @@ export default function Videos() {
             <div className="font-semibold text-gray-800 dark:text-slate-100">รายการวีดีโอ</div>
             <div className="text-xs text-gray-500 dark:text-slate-400">{filtered.length} รายการ</div>
           </div>
-          <ul className="divide-y divide-gray-100 dark:divide-slate-800 max-h-[720px] overflow-y-auto">
+          <ul className="max-h-[720px] divide-y divide-gray-100 overflow-y-auto dark:divide-slate-800">
             {filtered.length === 0 ? (
-              <li className="p-8 text-center text-sm text-gray-500 dark:text-slate-400">ไม่มีวีดีโอในหมวดนี้</li>
+              <li className="p-4">
+                <EmptyState
+                  icon={VideoIcon}
+                  title="ไม่มีวีดีโอในหมวดนี้"
+                  description="ลองเลือกหมวดอื่น หรือเพิ่มลิงก์วิดีโอใหม่"
+                />
+              </li>
             ) : (
               filtered.map(v => {
                 const isFbItem = isFacebookGroup(v.url)

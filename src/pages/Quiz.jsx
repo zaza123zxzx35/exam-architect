@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import {
-  FileQuestion,
   Play,
   RotateCcw,
   CheckCircle2,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { initialQuizzes } from '../data/quizData'
+import { PageHeader } from '../components/ui'
 
 export default function Quiz() {
   const [quizzes, setQuizzes] = useLocalStorage('study_quizzes', initialQuizzes)
@@ -271,20 +271,15 @@ export default function Quiz() {
   // List View
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
-            <FileQuestion className="w-6 h-6 text-primary-600" />
-            ฐานข้อสอบ + ทำโจทย์ทบทวน
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            เลือกหมวดแล้วเริ่มทำเลย! ระบบจะบันทึกคะแนนเพื่อวิเคราะห์แนวโน้มในภาพรวม
-          </p>
-        </div>
-        <button onClick={() => setAddMode(!addMode)} className="btn-primary">
-          <Play className="w-4 h-4" /> {addMode ? 'ยกเลิก' : 'สร้างชุดข้อสอบใหม่'}
-        </button>
-      </div>
+      <PageHeader
+        title="ฐานข้อสอบ + ทำโจทย์ทบทวน"
+        description="เลือกหมวดแล้วเริ่มทำเลย! ระบบจะบันทึกคะแนนเพื่อวิเคราะห์แนวโน้มในภาพรวม"
+        actions={(
+          <button onClick={() => setAddMode(!addMode)} className="btn-primary">
+            <Play className="w-4 h-4" /> {addMode ? 'ยกเลิก' : 'สร้างชุดข้อสอบใหม่'}
+          </button>
+        )}
+      />
 
       {addMode && (
         <div className="card border-2 border-primary-200 bg-primary-50/50 space-y-4">
