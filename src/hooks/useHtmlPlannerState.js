@@ -1,33 +1,29 @@
 import { useMemo } from 'react'
-import { useLocalStorage } from './useLocalStorage'
-import {
-  HTML_PLANNER_LS_KEY,
-  normalizePlannerState,
-  toggleTaskInState,
-  setAllTasksInState,
-  setDailyNoteInState,
-} from '../lib/planner/htmlPlannerState.js'
+import { useScheduleStore } from './useScheduleStore'
+import { scheduleToHtmlPlannerState } from '../lib/schedule/progress.js'
+import { HTML_PLANNER_LS_KEY } from '../lib/planner/htmlPlannerState.js'
 
 /**
- * Shared progress for HTML-parity pages.
- * Uses the same localStorage key as the original HTML planner so existing
- * completions/notes continue to apply.
+ * Shared progress for HTML-parity pages (Today / Overview / History).
+ * Backed by `kru_schedule_v1` SSOT with dual-write to `kru_thp_69_v1`.
+ * Preserves the same public API as M2 so page components stay thin.
  */
 export function useHtmlPlannerState() {
-  const [raw, setRaw] = useLocalStorage(HTML_PLANNER_LS_KEY, { days: {}, notes: {} })
-  const state = useMemo(() => normalizePlannerState(raw), [raw])
+  const {
+    schedule,
+    toggleTask,
+    markAllTasks,
+    setDailyNote,
+  } = useScheduleStore()
 
-  const toggleTask = (dateIso, taskIndex) => {
-    setRaw(prev => toggleTaskInState(normalizePlannerState(prev), dateIso, taskIndex))
+  const state = useMemo(() => scheduleToHtmlPlannerState(schedule), [schedule])
+
+  return {
+    state,
+    schedule,
+    storageKey: HTML_PLANNER_LS_KEY,
+    toggleTask,
+    markAll: markAllTasks,
+    setNote: setDailyNote,
   }
-
-  const markAll = (dateIso, taskCount, done) => {
-    setRaw(prev => setAllTasksInState(normalizePlannerState(prev), dateIso, taskCount, done))
-  }
-
-  const setNote = (dateIso, note) => {
-    setRaw(prev => setDailyNoteInState(normalizePlannerState(prev), dateIso, note))
-  }
-
-  return { state, toggleTask, markAll, setNote }
 }

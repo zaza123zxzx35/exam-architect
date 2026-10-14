@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, CheckCheck, Clock3, RotateCcw } from 'lucide-react'
+import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock } from 'lucide-react'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { useHtmlPlannerState } from '../hooks/useHtmlPlannerState'
+import { useScheduleStore } from '../hooks/useScheduleStore'
 import {
   bangkokTodayIso,
   dailyPlan,
@@ -16,7 +18,9 @@ import { getPrimaryExam } from '../data/examCalendar'
 
 export default function Today() {
   const countdown = useExamCountdown()
-  const { state, toggleTask, markAll, setNote } = useHtmlPlannerState()
+  const { state, schedule, toggleTask, markAll, setNote } = useHtmlPlannerState()
+  const { runReschedule } = useScheduleStore()
+  const [rescheduleMsg, setRescheduleMsg] = useState('')
   const todayIso = bangkokTodayIso()
   const dayIndex = getDayIndexForDate(todayIso)
   const inRange = dayIndex >= 0 && dayIndex < dailyPlan.length
@@ -25,6 +29,21 @@ export default function Today() {
   const completion = dayCompletion(state, dateIso, tasks)
   const motivator = motivators[((dayIndex % motivators.length) + motivators.length) % motivators.length]
   const storedNote = state.notes[dateIso] || ''
+  const overdueCount = schedule.tasks.filter(
+    t => (t.status === 'pending' || t.status === 'deferred') && t.plannedDate && t.plannedDate < todayIso
+  ).length
+
+  const handleReschedule = () => {
+    const report = runReschedule({ todayIso })
+    if (!report) {
+      setRescheduleMsg('ไม่สามารถเลื่อนงานได้')
+      return
+    }
+    setRescheduleMsg(
+      `เลื่อนแล้ว ${report.moved.length} งาน` +
+      (report.skipped.length ? ` · ข้าม ${report.skipped.length}` : '')
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -103,7 +122,15 @@ export default function Today() {
             <button type="button" className="btn-secondary text-sm" onClick={() => markAll(dateIso, tasks.length, false)}>
               <RotateCcw className="h-4 w-4" /> รีเซ็ตวันนี้
             </button>
+            {overdueCount > 0 && (
+              <button type="button" className="btn-secondary text-sm" onClick={handleReschedule}>
+                <CalendarClock className="h-4 w-4" /> เลื่อนงานค้าง ({overdueCount})
+              </button>
+            )}
             <Link to="/overview" className="btn-secondary text-sm">ดูภาพรวมแผน</Link>
+            {rescheduleMsg && (
+              <p className="w-full text-xs text-slate-500">{rescheduleMsg}</p>
+            )}
           </div>
         )}
       </section>

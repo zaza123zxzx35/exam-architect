@@ -15,7 +15,8 @@ import {
   Moon,
   Coffee
 } from 'lucide-react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useScheduleStore } from '../hooks/useScheduleStore'
+import { timetableDaysFromSessions } from '../lib/schedule/model.js'
 
 const LADY_POST_PINNED_URL = 'https://www.facebook.com/groups/152029819565529/posts/1531391668295997/'
 const LADY_ANNOUNCEMENTS_URL = 'https://www.facebook.com/groups/152029819565529/announcements'
@@ -358,68 +359,85 @@ const zoneColors = {
 }
 
 export default function Timetable() {
-  const [tt, setTt] = useLocalStorage('daily_timetable_v8', seedTimetable)
+  const {
+    schedule,
+    setSchedule,
+    ensureSessionsFromSeed,
+    toggleSession,
+    updateSessionNote,
+    deleteSession,
+    addSession,
+  } = useScheduleStore()
   const [addMode, setAddMode] = useState(null)
+  const [addError, setAddError] = useState('')
   const [newSlot, setNewSlot] = useState({ time: '', zone: 'คืน', title: '', note: '', _link: '', _linkExternal: false })
 
   useEffect(() => {
-    setTt(previous => {
+    ensureSessionsFromSeed(seedTimetable)
+  }, [ensureSessionsFromSeed])
+
+  // One-time rewrite of outdated registration hard-rule copy (preserves slot ids).
+  useEffect(() => {
+    setSchedule((previous) => {
       let changed = false
-      const next = previous.map(day => {
-        if (day.date < '2026-10-19' || day.date > '2026-10-25') return day
-        const slots = day.slots.map(slot => {
-          const content = `${slot.title || ''} ${slot.note || ''}`
-          if (!/^s\d+(?:_reg)?$/.test(String(slot.id)) || !/HARD RULE|ห้ามกดยื่นสมัคร|ยื่นรอ 24 ต\.ค\.|รอ 24 ต\.ค\.|Server ปิด 18\.00|ถ้ายังไม่ได้ยื่น/.test(content)) return slot
-          changed = true
-          return { ...slot, title: 'ตรวจเอกสารและสถานะใบสมัคร', note: 'ยึดประกาศและเวลารับสมัครจากหน่วยงาน ตรวจข้อมูลให้ครบและยื่นภายในกำหนด ไม่ควรรอจนวันสุดท้าย' }
-        })
-        return slots === day.slots ? day : { ...day, slots }
+      const sessions = previous.sessions.map((session) => {
+        if (session.date < '2026-10-19' || session.date > '2026-10-25') return session
+        const content = `${session.title || ''} ${session.note || ''}`
+        if (!/^s\d+(?:_reg)?$/.test(String(session.id)) || !/HARD RULE|ห้ามกดยื่นสมัคร|ยื่นรอ 24 ต\.ค\.|รอ 24 ต\.ค\.|Server ปิด 18\.00|ถ้ายังไม่ได้ยื่น/.test(content)) {
+          return session
+        }
+        changed = true
+        return {
+          ...session,
+          title: 'ตรวจเอกสารและสถานะใบสมัคร',
+          note: 'ยึดประกาศและเวลารับสมัครจากหน่วยงาน ตรวจข้อมูลให้ครบและยื่นภายในกำหนด ไม่ควรรอจนวันสุดท้าย',
+        }
       })
-      return changed ? next : previous
+      return changed ? { ...previous, sessions } : previous
     })
-  }, [setTt])
+  }, [setSchedule])
 
-  const toggleSlot = (dayId, slotId) => {
-    setTt(prev => prev.map(d => d.id === dayId
-      ? { ...d, slots: d.slots.map(s => s.id === slotId ? { ...s, done: !s.done } : s) }
-      : d
-    ))
+  const tt = useMemo(
+    () => timetableDaysFromSessions(schedule.sessions, seedTimetable),
+    [schedule.sessions]
+  )
+
+  const toggleSlot = (_dayId, slotId) => {
+    toggleSession(slotId)
   }
 
-  const updateNote = (dayId, slotId, value) => {
-    setTt(prev => prev.map(d => d.id === dayId
-      ? { ...d, slots: d.slots.map(s => s.id === slotId ? { ...s, note: value } : s) }
-      : d
-    ))
+  const updateNote = (_dayId, slotId, value) => {
+    updateSessionNote(slotId, value)
   }
 
-  const deleteSlot = (dayId, slotId) => {
+  const deleteSlot = (_dayId, slotId) => {
     if (!confirm('ลบตารางนี้ใช่ไหม?')) return
-    setTt(prev => prev.map(d => d.id === dayId
-      ? { ...d, slots: d.slots.filter(s => s.id !== slotId) }
-      : d
-    ))
+    deleteSession(slotId)
   }
 
   const saveNewSlot = (dayId) => {
     if (!newSlot.time.trim() || !newSlot.title.trim()) return
+    const day = tt.find(d => d.id === dayId)
+    if (!day) return
     const linkRaw = (newSlot._link || '').trim()
     const link = linkRaw && /^https?:\/\//i.test(linkRaw) ? linkRaw : ''
-    setTt(prev => prev.map(d => d.id === dayId
-      ? {
-          ...d,
-          slots: [...d.slots, {
-            id: `s${Date.now()}`,
-            time: newSlot.time.trim(),
-            zone: newSlot.zone,
-            title: newSlot.title.trim(),
-            note: newSlot.note.trim(),
-            ...(link ? { _link: link, _linkExternal: newSlot._linkExternal } : {}),
-            done: false
-          }]
-        }
-      : d
-    ))
+    const result = addSession({
+      date: day.date,
+      time: newSlot.time.trim(),
+      zone: newSlot.zone,
+      title: newSlot.title.trim(),
+      note: newSlot.note.trim(),
+      ...(link ? { _link: link, _linkExternal: newSlot._linkExternal } : {}),
+      dayLabel: day.label,
+      dayTag: day.tag,
+      timetableDayId: day.id,
+      origin: 'user',
+    })
+    if (!result.ok) {
+      setAddError('ช่วงเวลานี้ทับกับตารางที่มีอยู่แล้ว หรือเวลาไม่ถูกต้อง')
+      return
+    }
+    setAddError('')
     setNewSlot({ time: '', zone: 'คืน', title: '', note: '', _link: '', _linkExternal: false })
     setAddMode(null)
   }
@@ -427,6 +445,14 @@ export default function Timetable() {
   const totalDone = useMemo(() => tt.reduce((sum, d) => sum + d.slots.filter(s => s.done).length, 0), [tt])
   const totalSlots = useMemo(() => tt.reduce((sum, d) => sum + d.slots.length, 0), [tt])
   const pct = totalSlots > 0 ? Math.round((totalDone / totalSlots) * 100) : 0
+  const htmlDone = useMemo(
+    () => schedule.tasks.filter(t => String(t.id).startsWith('html_') && t.status === 'done').length,
+    [schedule.tasks]
+  )
+  const htmlTotal = useMemo(
+    () => schedule.tasks.filter(t => String(t.id).startsWith('html_')).length,
+    [schedule.tasks]
+  )
 
   return (
     <div className="space-y-5">
@@ -440,10 +466,13 @@ export default function Timetable() {
             ตารางนี้เป็นแผนส่วนตัว ลิงก์และเวลาไลฟ์อาจเปลี่ยน โปรดตรวจประกาศจากผู้จัดก่อนรับชม
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="badge bg-primary-100 text-primary-700 inline-flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            ทำแล้ว {totalDone}/{totalSlots} ({pct}%)
+            ตาราง {totalDone}/{totalSlots} ({pct}%)
+          </span>
+          <span className="badge bg-slate-100 text-slate-700 inline-flex items-center gap-1 dark:bg-slate-800 dark:text-slate-200">
+            แผน 34 วัน {htmlDone}/{htmlTotal}
           </span>
         </div>
       </div>
@@ -494,6 +523,11 @@ export default function Timetable() {
 
               {addMode === day.id && (
                 <div className="p-4 rounded-xl bg-primary-50/70 border border-primary-100 mb-4 space-y-3 grid grid-cols-1 md:grid-cols-12 gap-3">
+                  {addError && (
+                    <div className="md:col-span-12 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                      {addError}
+                    </div>
+                  )}
                   <div className="md:col-span-3">
                     <label className="label text-xs">ช่วงเวลา</label>
                     <input

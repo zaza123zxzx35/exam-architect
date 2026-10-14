@@ -36,13 +36,14 @@ npm run build # production bundle
 | Phase D audit | [PHASE_D_FINAL_REPORT.md](./PHASE_D_FINAL_REPORT.md) |
 | M2 HTML parity (Today / Overview / History / Resources) | Done — [PHASE_E_M2_REPORT.md](./PHASE_E_M2_REPORT.md) |
 | Resource review list | [RESOURCES_REVIEW.md](./RESOURCES_REVIEW.md) |
-| M3+ unify schedule, Smart Planner, AI | Not started |
+| M3 Unified schedule engine | Done — [PHASE_F_M3_REPORT.md](./PHASE_F_M3_REPORT.md) |
+| M4 Smart Planner UI / M5 AI | Not started |
 
 ## Data notes
 
 - On first load, `StorageBootstrap` migrates legacy keys into `kru_unified_v1` and writes `kru_backup_*` snapshots.
-- Legacy keys are **not** deleted (rollback / coexistence with existing hooks).
-- Sensitive query params such as `u_id` are stripped during import.
+- Runtime schedule SSOT is `kru_schedule_v1` (tasks + sessions + notes). Legacy `kru_thp_69_v1` and `daily_timetable_v8` are dual-written and never deleted.
+- Sensitive query params such as `u_id` are stripped during unified import.
 - Exam datetimes come only from `src/data/examCalendar.js` (default: ภาค ก 14 พ.ย. 2569 09:00 +07:00, ภาค ข 15 พ.ย. 2569 09:00 +07:00).
 
 ## Deploy

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { migrateFromLegacy } from '../lib/storage/migrate.js'
+import { loadOrMigrateSchedule } from '../lib/schedule/migrate.js'
+import { getScheduleSnapshot, resetScheduleCache } from '../lib/schedule/store.js'
 import { dailyPlan, getPlanDateByIndex } from '../data/htmlPlannerData.js'
 
 function buildDailyPlanByDate() {
@@ -12,32 +14,54 @@ function buildDailyPlanByDate() {
 
 function runMigration() {
   if (typeof window === 'undefined' || !window.localStorage) {
-    return { migrated: false, skipped: true, reason: 'no-storage' }
+    return {
+      unified: { migrated: false, skipped: true, reason: 'no-storage' },
+      schedule: { migrated: false, skipped: true, reason: 'no-storage' },
+    }
   }
   try {
-    const result = migrateFromLegacy(window.localStorage, {
+    const unified = migrateFromLegacy(window.localStorage, {
       dailyPlanByDate: buildDailyPlanByDate(),
     })
-    if (import.meta.env.DEV && result.migrated) {
-      console.info('[storage] migrate', {
-        reason: result.reason,
-        sources: result.sources,
-        strippedSensitiveUrls: result.strippedSensitiveUrls,
-        tasks: result.taskCount,
-        sessions: result.sessionCount,
-        videos: result.videoCount,
-      })
+    // Reset module cache so first page read sees post-migrate schedule.
+    resetScheduleCache()
+    const { report: schedule } = loadOrMigrateSchedule(window.localStorage)
+    getScheduleSnapshot(window.localStorage)
+
+    if (import.meta.env.DEV) {
+      if (unified.migrated) {
+        console.info('[storage] migrate', {
+          reason: unified.reason,
+          sources: unified.sources,
+          strippedSensitiveUrls: unified.strippedSensitiveUrls,
+          tasks: unified.taskCount,
+          sessions: unified.sessionCount,
+          videos: unified.videoCount,
+        })
+      }
+      if (schedule.migrated || schedule.recovered) {
+        console.info('[schedule] migrate', {
+          reason: schedule.reason,
+          sources: schedule.sources,
+          recovered: schedule.recovered,
+          tasks: schedule.taskCount,
+          sessions: schedule.sessionCount,
+        })
+      }
     }
-    return result
+    return { unified, schedule }
   } catch (error) {
     console.error('[storage] migrate failed', error)
-    return { migrated: false, skipped: true, reason: 'error' }
+    return {
+      unified: { migrated: false, skipped: true, reason: 'error' },
+      schedule: { migrated: false, skipped: true, reason: 'error' },
+    }
   }
 }
 
 /**
- * Runs the reversible localStorage migration once on first client render.
- * Existing page hooks continue to read legacy keys (M1 coexistence).
+ * Runs reversible localStorage migrations once on first client render.
+ * M1: kru_unified_v1 snapshot. M3: kru_schedule_v1 runtime SSOT.
  */
 export default function StorageBootstrap({ children }) {
   const [report] = useState(runMigration)
@@ -45,9 +69,14 @@ export default function StorageBootstrap({ children }) {
   return (
     <>
       {children}
-      {report?.migrated && report.reason === 'migrated' && (
+      {report?.unified?.migrated && report.unified.reason === 'migrated' && (
         <div className="sr-only" data-testid="migration-report">
-          migrated from {(report.sources || []).join(', ') || 'empty'}
+          migrated from {(report.unified.sources || []).join(', ') || 'empty'}
+        </div>
+      )}
+      {report?.schedule?.migrated && (
+        <div className="sr-only" data-testid="schedule-migration-report">
+          schedule {report.schedule.reason}; tasks {report.schedule.taskCount}
         </div>
       )}
     </>
