@@ -27,7 +27,7 @@ Preserve both until a human decides merge vs intentional reuse.
 
 From `Deployment-kru-phuchuay-plan-2569/index.html`: **66** unique absolute links; **38** are **not** in `videoData.js`.
 
-These are expected until M2 ports `dailyPlan` / Resources. Do not drop them.
+**M2 update:** All HTML planner links are now imported into `src/data/htmlPlannerData.js` and listed on `/resources` with status flags. Unique URLs not in English `videoData` = **43** (Phase D’s 38 plus importantLinks / fuller inventory). Do not drop them.
 
 ### Categories of unmatched HTML links
 

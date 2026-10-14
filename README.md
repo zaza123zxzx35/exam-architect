@@ -33,9 +33,10 @@ npm run build # production bundle
 | Milestone | Status |
 |---|---|
 | M1 Foundations (calendar, storage migrate, Vitest) | Done |
-| Phase D audit | See [PHASE_D_FINAL_REPORT.md](./PHASE_D_FINAL_REPORT.md) — **not production-ready** for full planner/AI scope |
+| Phase D audit | [PHASE_D_FINAL_REPORT.md](./PHASE_D_FINAL_REPORT.md) |
+| M2 HTML parity (Today / Overview / History / Resources) | Done — [PHASE_E_M2_REPORT.md](./PHASE_E_M2_REPORT.md) |
 | Resource review list | [RESOURCES_REVIEW.md](./RESOURCES_REVIEW.md) |
-| M2+ Smart Planner, Video Library, Scheduler, AI | Not started |
+| M3+ unify schedule, Smart Planner, AI | Not started |
 
 ## Data notes
 
