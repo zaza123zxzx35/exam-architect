@@ -1,6 +1,9 @@
+import { Link } from 'react-router-dom'
 import { ArrowUpRight, BarChart3, CalendarDays, Info as InfoIcon, ShieldCheck } from 'lucide-react'
 import { subjectStats } from '../data/hrmsStats'
 import { safeResourceUrl } from '../lib/planner/safeLink.js'
+import { PageHeader, StatusBanner } from '../components/ui'
+import { districtEvidenceSummary } from '../lib/district/intelligence.js'
 
 const fmt = value => Number(value).toLocaleString('th-TH')
 
@@ -26,9 +29,21 @@ export default function Info() {
   const maxDemand = Math.max(...yearly.map(item => item.replacementDemand))
   const latestExamYear = yearly.find(item => item.year === 2569)
   const safeSourceUrl = safeResourceUrl(stats.sourceUrl)
+  const districtNote = districtEvidenceSummary([])
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="ข้อมูลและสถิติ"
+        description="สรุปกำลังครูจาก HRMS.OBEC (อ้างอิงได้) แยกจากบันทึกการแข่งขันรายเขตที่ผู้ใช้กรอกเองบนหน้าภาพรวม"
+      />
+
+      <StatusBanner tone="warning" title="HRMS ≠ ตำแหน่งเปิดสอบรายเขต">
+        {districtNote.nationalStatsNote}
+        {' '}บันทึกผู้สมัคร/อัตรารายเขตอยู่ที่หน้าภาพรวมเท่านั้น และเป็นข้อมูลในเบราว์เซอร์ของคุณ
+        {' '}<Link to="/" className="font-semibold underline underline-offset-2">ไปบันทึกข่าวกรองเขต</Link>
+      </StatusBanner>
+
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900 via-primary-900 to-primary-800 p-6 text-white shadow-xl shadow-primary-950/10 sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-20 h-64 w-64 rounded-full bg-white/5" />
         <div className="pointer-events-none absolute bottom-[-6rem] right-36 h-52 w-52 rounded-full border-[28px] border-white/5" />
