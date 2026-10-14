@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, ExternalLink } from 'lucide-react'
 import { isTaskDone } from '../../lib/planner/htmlPlannerState.js'
+import { safeResourceUrl } from '../../lib/planner/safeLink.js'
 
 const priClass = {
   high: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900',
@@ -23,6 +24,7 @@ export default function TaskList({ dateIso, tasks, state, onToggle }) {
       {tasks.map((task, index) => {
         const done = isTaskDone(state, dateIso, index)
         const pri = task.pri || 'low'
+        const safeLink = safeResourceUrl(task.link)
         return (
           <li key={`${dateIso}-${index}`}>
             <div
@@ -43,9 +45,9 @@ export default function TaskList({ dateIso, tasks, state, onToggle }) {
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className={`badge border ${priClass[pri] || priClass.low}`}>{priLabel[pri] || pri}</span>
-                  {task.link ? (
+                  {safeLink ? (
                     <a
-                      href={task.link}
+                      href={safeLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100"

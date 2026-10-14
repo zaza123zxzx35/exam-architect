@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ExternalLink, Library, Link2, AlertTriangle } from 'lucide-react'
 import { courses, importantLinks } from '../data/htmlPlannerData'
 import { buildHtmlResourceAccounting } from '../lib/planner/resourceAccounting'
+import { safeResourceUrl } from '../lib/planner/safeLink'
 import { initialVideos } from '../data/videoData'
 
 const statusTone = {
@@ -56,19 +57,28 @@ export default function Resources() {
           <Link2 className="h-5 w-5 text-primary-700" /> ลิงก์สำคัญ
         </h2>
         <ul className="mt-4 space-y-2">
-          {importantLinks.map(link => (
-            <li key={link.url}>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:underline dark:text-sky-300"
-              >
-                <ExternalLink className="h-3.5 w-3.5" /> {link.name}
-              </a>
-              <div className="mt-0.5 break-all pl-6 text-[11px] text-slate-400">{link.url}</div>
-            </li>
-          ))}
+          {importantLinks.map(link => {
+            const safeHref = safeResourceUrl(link.url)
+            return (
+              <li key={link.url}>
+                {safeHref ? (
+                  <>
+                    <a
+                      href={safeHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:underline dark:text-sky-300"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> {link.name}
+                    </a>
+                    <div className="mt-0.5 break-all pl-6 text-[11px] text-slate-400">{safeHref}</div>
+                  </>
+                ) : (
+                  <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{link.name}</div>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </section>
 
@@ -123,28 +133,35 @@ export default function Resources() {
           <p className="mt-6 text-sm text-slate-500">ไม่มีรายการในตัวกรองนี้</p>
         ) : (
           <ul className="mt-4 max-h-[480px] space-y-3 overflow-y-auto pr-1">
-            {filtered.map(row => (
-              <li key={row.id} className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`badge border ${statusTone[row.status] || statusTone.imported}`}>{row.status}</span>
-                  <span className="text-[11px] text-slate-400">{row.source}</span>
-                  {row.dayIndex != null && (
-                    <span className="text-[11px] text-slate-400">day {row.dayIndex + 1} · task {row.taskIndex + 1}</span>
-                  )}
-                </div>
-                <div className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-100">{row.title}</div>
-                <a href={row.url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">
-                  {row.url}
-                </a>
-                {row.flags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {row.flags.map(flag => (
-                      <span key={flag} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{flag}</span>
-                    ))}
+            {filtered.map(row => {
+              const safeHref = safeResourceUrl(row.url)
+              return (
+                <li key={row.id} className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`badge border ${statusTone[row.status] || statusTone.imported}`}>{row.status}</span>
+                    <span className="text-[11px] text-slate-400">{row.source}</span>
+                    {row.dayIndex != null && (
+                      <span className="text-[11px] text-slate-400">day {row.dayIndex + 1} · task {row.taskIndex + 1}</span>
+                    )}
                   </div>
-                )}
-              </li>
-            ))}
+                  <div className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-100">{row.title}</div>
+                  {safeHref ? (
+                    <a href={safeHref} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">
+                      {safeHref}
+                    </a>
+                  ) : (
+                    <div className="mt-1 text-[11px] text-slate-400">ลิงก์ไม่พร้อมแสดง (รูปแบบไม่รองรับ)</div>
+                  )}
+                  {row.flags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {row.flags.map(flag => (
+                        <span key={flag} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{flag}</span>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
 
