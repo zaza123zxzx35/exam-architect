@@ -9,11 +9,11 @@ import {
   defaultAvailabilityPreset,
   generatePlanPreview,
   interpretNaturalLanguage,
-  listResourceCatalog,
   subjectIdsFromText,
 } from '../smartPlanner/index.js'
 import { listSupportedCommands } from './intents.js'
 import { parseRelativeDate } from './relativeDates.js'
+import { findTutorResources, formatTutorResourceMessages } from './tutorResources.js'
 
 function reply(lang, th, en) {
   return lang === 'en' ? en : th
@@ -121,44 +121,9 @@ export function handleSummarizeProgress(schedule, lang) {
 }
 
 export function handleFindResources(text, lang) {
-  const subjects = subjectIdsFromText(text)
-  const catalog = listResourceCatalog().filter(r => r.url)
-  let hits = catalog
-  if (subjects.length) {
-    const keys = subjects.join(' ')
-    hits = catalog.filter(r => {
-      const hay = `${r.title} ${r.url}`.toLowerCase()
-      return subjects.some(id => hay.includes(id)) ||
-        /english|อังกฤษ|กฎหมาย|คณิต|education|hrms|drive/i.test(hay + keys)
-    })
-    // Prefer keyword overlap with message
-    const lower = text.toLowerCase()
-    hits = catalog.filter(r => {
-      const hay = `${r.title}`.toLowerCase()
-      if (/อังกฤษ|english|วิชาเอก/i.test(lower)) return /อังกฤษ|english|วิชาเอก|grammar|reading/i.test(hay)
-      if (/กฎหมาย|law/i.test(lower)) return /กฎหมาย|law|พ\.?ร\.?บ|drive/i.test(hay)
-      if (/สมัคร|hrms|เขต/i.test(lower)) return /hrms|สมัคร|ประกาศ|เขต/i.test(hay + r.url)
-      return subjects.length ? true : /./.test(hay)
-    })
-  }
-  hits = hits.slice(0, 8)
-  if (!hits.length) {
-    return {
-      messages: [
-        reply(
-          lang,
-          'ไม่พบลิงก์ในคลังที่มีอยู่สำหรับคำขอนี้ (จะไม่สร้าง URL ใหม่)',
-          'No matching links in the existing catalog (I will not invent URLs).'
-        ),
-      ],
-      readOnly: true,
-    }
-  }
-  const lines = hits.map(h => `- ${h.title}: ${h.url}`)
+  const result = findTutorResources(text)
   return {
-    messages: [
-      reply(lang, `ทรัพยากรที่พบ:\n${lines.join('\n')}`, `Resources found:\n${lines.join('\n')}`),
-    ],
+    messages: formatTutorResourceMessages(result, lang === 'en' ? 'en' : 'th'),
     readOnly: true,
   }
 }
