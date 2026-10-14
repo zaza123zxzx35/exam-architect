@@ -40,14 +40,19 @@ npm run build # production bundle
 | M4 Smart Planner | Done — [PHASE_G_M4_REPORT.md](./PHASE_G_M4_REPORT.md) |
 | M5 Study assistant | Done — [PHASE_H_M5_REPORT.md](./PHASE_H_M5_REPORT.md) |
 | Phase I production readiness | [PHASE_I_PRODUCTION_READINESS_REPORT.md](./PHASE_I_PRODUCTION_READINESS_REPORT.md) — deploy only after approval |
+| UI foundation + Study Resource Hub | Done — shared `PageHeader` / `FilterChips` / `EmptyState` / `StatusBanner`; `/resources` hub with taxonomy filters (default `all`) |
+| Smart Tutor hub lookup | Done — assistant `find_resources` uses classify-on-read hub; keeps `english-skills-a` ≠ `english-major` |
+| District intelligence | Done — user-local competition records on Dashboard; HRMS on `/info` stays cited national stats only |
 
 ## Data notes
 
 - On first load, `StorageBootstrap` migrates legacy keys into `kru_unified_v1` and writes `kru_backup_*` snapshots.
-- Runtime schedule SSOT is `kru_schedule_v1` (tasks + sessions + notes). Legacy `kru_thp_69_v1` and `daily_timetable_v8` are dual-written and never deleted.
-- Sensitive query params such as `u_id` are stripped during unified import.
+- Runtime schedule SSOT is `kru_schedule_v1` (tasks + sessions + notes). Legacy `kru_thp_69_v1` and `daily_timetable_v8` are dual-written and never deleted (dual-write failures do not wipe SSOT).
+- External links render through `safeResourceUrl` / `sanitizeUrl` (http/https only).
+- Sensitive query params such as `u_id` are stripped during unified import. Seed `u_id` scrub in HTML inventory remains deferred until manual i-test login OK.
+- Study taxonomy (`src/lib/study/taxonomy.js`, version `2b.1`) classifies on read. Never use `scheduleExamId` as a content filter.
 - Exam datetimes come only from `src/data/examCalendar.js` (default: ภาค ก 14 พ.ย. 2569 09:00 +07:00, ภาค ข 15 พ.ย. 2569 09:00 +07:00).
 
 ## Deploy
 
-Existing pattern: static Vite build on Vercel (`vercel.json` SPA rewrite). Do not commit API keys. AI provider credentials (future M6) must stay in server env only.
+Existing pattern: static Vite build on Vercel (`vercel.json` SPA rewrite). Do not commit API keys. No LLM / paid API credentials in this slice — assistant stays rule-based. Deploy only after explicit approval.
