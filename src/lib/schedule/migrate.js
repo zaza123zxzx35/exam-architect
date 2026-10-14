@@ -352,6 +352,8 @@ export function loadOrMigrateSchedule(storage = globalThis.localStorage, options
 
 /**
  * Persist schedule SSOT and dual-write legacy keys (never delete them).
+ * Writes SSOT first. Legacy dual-writes are best-effort: a quota/error on a legacy
+ * key must not roll back or clear the SSOT write, and must never delete existing keys.
  */
 export function saveSchedule(schedule, storage = globalThis.localStorage, options = {}) {
   if (!storage) throw new Error('No storage available')
@@ -359,25 +361,33 @@ export function saveSchedule(schedule, storage = globalThis.localStorage, option
   storage.setItem(SCHEDULE_KEY, JSON.stringify(clean))
 
   if (options.dualWrite !== false) {
-    const htmlState = scheduleToHtmlPlannerState(clean)
-    // Preserve unknown legacy fields if present
-    const prevHtml = readJson(storage, LEGACY_HTML_KEY)
-    const mergedHtml = {
-      days: htmlState.days,
-      notes: htmlState.notes,
-      ...(prevHtml.present && prevHtml.value && typeof prevHtml.value === 'object'
-        ? Object.fromEntries(
-          Object.entries(prevHtml.value).filter(([k]) => k !== 'days' && k !== 'notes')
-        )
-        : {}),
+    try {
+      const htmlState = scheduleToHtmlPlannerState(clean)
+      // Preserve unknown legacy fields if present
+      const prevHtml = readJson(storage, LEGACY_HTML_KEY)
+      const mergedHtml = {
+        days: htmlState.days,
+        notes: htmlState.notes,
+        ...(prevHtml.present && prevHtml.value && typeof prevHtml.value === 'object'
+          ? Object.fromEntries(
+            Object.entries(prevHtml.value).filter(([k]) => k !== 'days' && k !== 'notes')
+          )
+          : {}),
+      }
+      storage.setItem(LEGACY_HTML_KEY, JSON.stringify(mergedHtml))
+    } catch {
+      // Keep SSOT; leave previous legacy HTML key untouched on failure.
     }
-    storage.setItem(LEGACY_HTML_KEY, JSON.stringify(mergedHtml))
 
-    // Dual-write timetable tree from sessions (preserve day order/labels when possible)
-    const prevTt = readJson(storage, LEGACY_TIMETABLE_KEY)
-    const seedDays = prevTt.present && Array.isArray(prevTt.value) ? prevTt.value : []
-    const days = timetableDaysFromSessions(clean.sessions, seedDays)
-    storage.setItem(LEGACY_TIMETABLE_KEY, JSON.stringify(days))
+    try {
+      // Dual-write timetable tree from sessions (preserve day order/labels when possible)
+      const prevTt = readJson(storage, LEGACY_TIMETABLE_KEY)
+      const seedDays = prevTt.present && Array.isArray(prevTt.value) ? prevTt.value : []
+      const days = timetableDaysFromSessions(clean.sessions, seedDays)
+      storage.setItem(LEGACY_TIMETABLE_KEY, JSON.stringify(days))
+    } catch {
+      // Keep SSOT; leave previous legacy timetable key untouched on failure.
+    }
   }
 
   return clean

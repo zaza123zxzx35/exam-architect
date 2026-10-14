@@ -1,5 +1,6 @@
 import { ArrowUpRight, BarChart3, CalendarDays, Info as InfoIcon, ShieldCheck } from 'lucide-react'
 import { subjectStats } from '../data/hrmsStats'
+import { safeResourceUrl } from '../lib/planner/safeLink.js'
 
 const fmt = value => Number(value).toLocaleString('th-TH')
 
@@ -24,6 +25,7 @@ export default function Info() {
   const yearly = stats.yearlyDemand
   const maxDemand = Math.max(...yearly.map(item => item.replacementDemand))
   const latestExamYear = yearly.find(item => item.year === 2569)
+  const safeSourceUrl = safeResourceUrl(stats.sourceUrl)
 
   return (
     <div className="space-y-6">
@@ -39,9 +41,11 @@ export default function Info() {
             สรุปข้อมูลจากตาราง HRMS.OBEC โดยแยก “เกษียณ” ออกจาก “ความต้องการทดแทน” ตามคอลัมน์ต้นทาง
             ตัวเลขนี้เป็นภาพรวมกำลังครู ไม่ใช่จำนวนตำแหน่งเปิดสอบของแต่ละเขต
           </p>
-          <a href={stats.sourceUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-primary-900 transition hover:bg-primary-50">
+          {safeSourceUrl && (
+          <a href={safeSourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-primary-900 transition hover:bg-primary-50">
             เปิดตาราง HRMS.OBEC <ArrowUpRight className="h-4 w-4" />
           </a>
+          )}
         </div>
       </section>
 
@@ -102,9 +106,11 @@ export default function Info() {
         <div className="rounded-2xl border border-primary-200 bg-primary-50 p-5 dark:border-primary-900/60 dark:bg-primary-950/30">
           <div className="flex items-center gap-2 font-bold text-primary-900 dark:text-primary-100"><ShieldCheck className="h-5 w-5" /> ที่มาและความสดของข้อมูล</div>
           <p className="mt-3 text-sm leading-relaxed text-primary-900/80 dark:text-primary-100/80">ตรวจเทียบกับหน้า HRMS.OBEC เมื่อ {stats.checkedAt} แต่หน้านี้ยังไม่มีการเชื่อม API เพื่อดึงข้อมูลอัตโนมัติ ตัวเลขจึงเป็น snapshot ณ วันที่ตรวจ ไม่ใช่ real-time</p>
-          <a href={stats.sourceUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-primary-800 underline decoration-primary-400 underline-offset-4 hover:text-primary-950 dark:text-primary-200 dark:hover:text-white">
+          {safeSourceUrl && (
+          <a href={safeSourceUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-primary-800 underline decoration-primary-400 underline-offset-4 hover:text-primary-950 dark:text-primary-200 dark:hover:text-white">
             ตรวจข้อมูลล่าสุดจากต้นทาง <ArrowUpRight className="h-4 w-4" />
           </a>
+          )}
         </div>
       </section>
     </div>

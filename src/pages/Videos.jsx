@@ -14,12 +14,14 @@ import {
 } from 'lucide-react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { initialVideos } from '../data/videoData'
+import { safeResourceUrl } from '../lib/planner/safeLink.js'
 
 const getEmbedUrl = (url) => {
-  if (!url) return ''
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s?#]+)/)
+  const safe = safeResourceUrl(url)
+  if (!safe) return ''
+  const ytMatch = safe.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s?#]+)/)
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
-  return url
+  return safe
 }
 
 const isFacebookGroup = (url) => {
@@ -67,8 +69,9 @@ export default function Videos() {
   const filtered = filter === 'ทั้งหมด' ? videos : videos.filter(v => v.category === filter)
 
   const active = activeId ? videos.find(v => v.id === activeId) : null
+  const safeActiveUrl = active ? safeResourceUrl(active.url) : null
   const embed = getEmbedUrl(active?.url || '')
-  const isFb = isFacebookGroup(active?.url || '')
+  const isFb = isFacebookGroup(safeActiveUrl || active?.url || '')
 
   const toggleWatched = (id) => {
     setVideos(prev => prev.map(v => v.id === id ? { ...v, isWatched: !v.isWatched } : v))
@@ -255,15 +258,17 @@ export default function Videos() {
                           ไม่สามารถฝังเล่นภายในเว็บได้ — กดปุ่มด้านล่างเพื่อเข้าไปดูในแท็บใหม่
                         </p>
                       </div>
+                      {safeActiveUrl && (
                       <a
-                        href={active.url}
+                        href={safeActiveUrl}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
                       >
                         <ExternalLink className="w-5 h-5" />
                         เข้าสู่กลุ่ม Facebook
                       </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -280,9 +285,13 @@ export default function Videos() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-slate-500">
-                        <a href={active.url} target="_blank" rel="noreferrer" className="btn-primary">
+                        {safeActiveUrl ? (
+                        <a href={safeActiveUrl} target="_blank" rel="noopener noreferrer" className="btn-primary">
                           <ExternalLink className="w-4 h-4" /> เปิดในแท็บใหม่
                         </a>
+                        ) : (
+                          <span className="text-sm">ลิงก์ไม่พร้อมแสดง</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -323,14 +332,16 @@ export default function Videos() {
                       {active.isWatched ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
                       {active.isWatched ? 'ดูแล้ว' : 'มาร์กดูแล้ว'}
                     </button>
+                    {safeActiveUrl && (
                     <a
-                      href={active.url}
+                      href={safeActiveUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> เปิดต้นฉบับ
                     </a>
+                    )}
                   </div>
                 </div>
 

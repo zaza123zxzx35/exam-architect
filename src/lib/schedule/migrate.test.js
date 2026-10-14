@@ -139,4 +139,32 @@ describe('schedule migration', () => {
     expect(html.notes['2026-10-12']).toBe('n')
     expect(loadSchedule(storage)?.tasks.length).toBe(139)
   })
+
+  it('keeps SSOT when a legacy dual-write key throws (never clears schedule)', () => {
+    const built = buildScheduleFromSources({
+      htmlState: {
+        days: { '2026-10-12': { 0: true } },
+        notes: {},
+      },
+      timetableDays: [],
+    })
+    // Seed prior legacy HTML so failure must leave it untouched
+    storage.setItem(LEGACY_HTML_KEY, JSON.stringify({ days: { '2026-10-12': { 1: true } }, notes: {} }))
+
+    const flaky = {
+      ...storage,
+      setItem(key, value) {
+        if (key === LEGACY_HTML_KEY) throw new Error('quota')
+        return storage.setItem(key, value)
+      },
+      getItem: key => storage.getItem(key),
+      removeItem: key => storage.removeItem(key),
+    }
+
+    expect(() => saveSchedule(built, flaky)).not.toThrow()
+    expect(flaky.getItem(SCHEDULE_KEY)).toBeTruthy()
+    expect(JSON.parse(flaky.getItem(SCHEDULE_KEY)).tasks.length).toBe(139)
+    // Prior legacy HTML preserved (write failed; key not deleted)
+    expect(JSON.parse(flaky.getItem(LEGACY_HTML_KEY)).days['2026-10-12'][1]).toBe(true)
+  })
 })

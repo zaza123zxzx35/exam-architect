@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { timetableDaysFromSessions } from '../lib/schedule/model.js'
+import { safeResourceUrl } from '../lib/planner/safeLink.js'
 
 const LADY_POST_PINNED_URL = 'https://www.facebook.com/groups/152029819565529/posts/1531391668295997/'
 const LADY_ANNOUNCEMENTS_URL = 'https://www.facebook.com/groups/152029819565529/announcements'
@@ -36,11 +37,16 @@ const detectSlotAction = (slot = {}) => {
   const actions = []
 
   if (slot._link) {
-    actions.push({ label: '📂 กดตรงนี้ → ไปคลิป/โพสต์', href: slot._link, external: !!slot._linkExternal, icon: 'ExternalLink' })
+    const external = !!slot._linkExternal
+    const href = external ? safeResourceUrl(slot._link) : slot._link
+    if (href) {
+      actions.push({ label: '📂 กดตรงนี้ → ไปคลิป/โพสต์', href, external, icon: 'ExternalLink' })
+    }
   } else if (/ไลฟ์สด|LIVE|กลุ่ม/i.test(t)) {
     for (const [key, url] of Object.entries(FB_GROUP_URLS)) {
       if (t.includes(key)) {
-        actions.push({ label: `📡 เปิดกลุ่ม ${key}`, href: url, external: true, icon: 'PlayCircle' })
+        const href = safeResourceUrl(url)
+        if (href) actions.push({ label: `📡 เปิดกลุ่ม ${key}`, href, external: true, icon: 'PlayCircle' })
         break
       }
     }
