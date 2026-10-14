@@ -49,6 +49,8 @@ describe('assistant intents (TH/EN)', () => {
     expect(classifyIntent('progress').intent).toBe('summarize_progress')
     expect(classifyIntent('หาลิงก์ อังกฤษ').intent).toBe('find_resources')
     expect(classifyIntent('find resources for law').intent).toBe('find_resources')
+    expect(classifyIntent('ดูจุดอ่อน').intent).toBe('show_weakness')
+    expect(classifyIntent('show weaknesses').intent).toBe('show_weakness')
     expect(classifyIntent('อยากติวอังกฤษ จันทร์-ศุกร์ 20.00-22.00').intent).toBe('create_plan')
     expect(classifyIntent('create a plan for English').intent).toBe('create_plan')
     expect(classifyIntent('เลื่อนงานค้าง').intent).toBe('reschedule_task')
@@ -107,12 +109,45 @@ describe('assistant dialogue workflow', () => {
 
   it('read-only commands do not mutate schedule', () => {
     const before = structuredClone(schedule)
-    for (const msg of ['แผนวันนี้', "today's plan", 'วันสอบ', 'exam dates', 'ความคืบหน้า', 'progress', 'หาลิงก์ อังกฤษ']) {
+    for (const msg of ['แผนวันนี้', "today's plan", 'วันสอบ', 'exam dates', 'ความคืบหน้า', 'progress', 'หาลิงก์ อังกฤษ', 'ดูจุดอ่อน']) {
       const result = processAssistantTurn(schedule, context, msg, { dateProvider: dates })
       expect(result.scheduleChanged).toBe(false)
       expect(result.nextSchedule).toEqual(before)
       context = result.context
     }
+  })
+
+  it('show_weakness is read-only and explains insufficient data without quiz_results', () => {
+    const before = structuredClone(schedule)
+    const result = processAssistantTurn(schedule, context, 'ดูจุดอ่อน', {
+      dateProvider: dates,
+      quizResults: {},
+    })
+    expect(result.classification.intent).toBe('show_weakness')
+    expect(result.scheduleChanged).toBe(false)
+    expect(result.nextSchedule).toEqual(before)
+    expect(result.replies.join('\n')).toMatch(/ยังไม่มีผลแบบทดสอบ|insufficient|attempts:\s*0|ทำไป 0/i)
+  })
+
+  it('show_weakness reports observed weakness from supplied quiz_results without writing schedule', () => {
+    const before = structuredClone(schedule)
+    const quizResults = {
+      'q-g2__1': {
+        score: 1,
+        total: 5,
+        pct: 20,
+        category: 'ภาค ก - ทักษะภาษาอังกฤษ',
+      },
+    }
+    const result = processAssistantTurn(schedule, context, 'show weaknesses', {
+      dateProvider: dates,
+      quizResults,
+    })
+    expect(result.classification.intent).toBe('show_weakness')
+    expect(result.scheduleChanged).toBe(false)
+    expect(result.nextSchedule).toEqual(before)
+    expect(JSON.stringify(quizResults)).toContain('"pct":20')
+    expect(result.replies.join('\n')).toMatch(/20%|weakness|จุดอ่อน|english-skills-a|ทักษะ/i)
   })
 
   it('supports multi-turn create → revise → cancel without writing', () => {

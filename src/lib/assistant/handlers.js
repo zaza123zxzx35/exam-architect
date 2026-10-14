@@ -13,6 +13,13 @@ import {
 } from '../smartPlanner/index.js'
 import { listSupportedCommands } from './intents.js'
 import { parseRelativeDate } from './relativeDates.js'
+import { initialQuizzes } from '../../data/quizData.js'
+import { initialNotes } from '../../data/notesData.js'
+import { initialVideos } from '../../data/videoData.js'
+import { initialStudyPlan } from '../../data/planData.js'
+import { importantLinks } from '../../data/htmlPlannerData.js'
+import { buildStudyHubCatalog, HUB_SUBJECT_LABELS } from '../study/hub.js'
+import { analyzeQuizPerformance, recommendPracticeFromWeakness } from '../study/weakness.js'
 import { findTutorResources, formatTutorResourceMessages } from './tutorResources.js'
 
 function reply(lang, th, en) {
@@ -126,6 +133,58 @@ export function handleFindResources(text, lang) {
     messages: formatTutorResourceMessages(result, lang === 'en' ? 'en' : 'th'),
     readOnly: true,
   }
+}
+
+/**
+ * Read-only weakness analysis from caller-supplied quiz_results (never writes storage).
+ * @param {Record<string, unknown> | null | undefined} quizResults
+ * @param {unknown[]} [quizzes]
+ * @param {'th'|'en'} [lang]
+ */
+export function handleShowWeakness(quizResults, quizzes = initialQuizzes, lang = 'th') {
+  const analysis = analyzeQuizPerformance(quizResults, quizzes)
+  const catalog = buildStudyHubCatalog({
+    quizzes: quizzes?.length ? quizzes : initialQuizzes,
+    notes: initialNotes,
+    videos: initialVideos,
+    planItems: initialStudyPlan,
+    links: importantLinks.map((link, index) => ({
+      id: `important_${index}`,
+      title: link.name,
+      url: link.url,
+    })),
+  })
+  const { reasons, recommendations, mode } = recommendPracticeFromWeakness(analysis, catalog, { limit: 6 })
+
+  if (lang === 'en') {
+    const lines = [
+      `Quiz weakness check (${analysis.engineVersion}) · attempts: ${analysis.attemptCount} · mode: ${mode}`,
+      ...reasons.map(r => `- ${r.messageEn}`),
+    ]
+    if (recommendations.length) {
+      lines.push('Recommended practice (from your library — not a schedule change):')
+      for (const item of recommendations) {
+        const subject = HUB_SUBJECT_LABELS[item.taxonomy?.subjectId] || item.taxonomy?.subjectId
+        lines.push(`• [${item.kind}] ${item.title} · ${subject}${item.href ? ` → ${item.href}` : ''}`)
+      }
+    }
+    lines.push('Tip: this does not change your timetable. Use Smart Planner and confirm if you want to schedule practice.')
+    return { messages: [lines.join('\n')], readOnly: true }
+  }
+
+  const lines = [
+    `ตรวจจุดอ่อนจากผลควิซ (${analysis.engineVersion}) · ทำไป ${analysis.attemptCount} ครั้ง · โหมด: ${mode}`,
+    ...reasons.map(r => `- ${r.messageTh}`),
+  ]
+  if (recommendations.length) {
+    lines.push('แนะนำชุดฝึกจากคลังที่มีอยู่ (ยังไม่แก้ตาราง):')
+    for (const item of recommendations) {
+      const subject = HUB_SUBJECT_LABELS[item.taxonomy?.subjectId] || item.taxonomy?.subjectId
+      lines.push(`• [${item.kind}] ${item.title} · ${subject}${item.href ? ` → ${item.href}` : ''}`)
+    }
+  }
+  lines.push('หมายเหตุ: ไม่เปลี่ยนตารางอัตโนมัติ — ถ้าจะจัดเวลา ให้ใช้ Smart Planner แล้วกดยืนยัน')
+  return { messages: [lines.join('\n')], readOnly: true }
 }
 
 export function handleCreateOrRevisePlan(text, schedule, context, dates, lang, mode) {

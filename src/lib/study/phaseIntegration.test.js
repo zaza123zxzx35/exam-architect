@@ -12,6 +12,7 @@ import { initialStudyPlan } from '../../data/planData.js'
 import { importantLinks } from '../../data/htmlPlannerData.js'
 import { buildStudyHubCatalog, filterStudyHubItems } from './hub.js'
 import { SUBJECT_IDS } from './taxonomy.js'
+import { analyzeQuizPerformance, recommendPracticeFromWeakness } from './weakness.js'
 import { findTutorResources } from '../assistant/tutorResources.js'
 import { districtEvidenceSummary, sanitizeCompetitionRecords } from '../district/intelligence.js'
 
@@ -73,6 +74,23 @@ describe('Phase 6 integration & QA invariants', () => {
     expect(resources).toContain('buildStudyHubCatalog')
     expect(resources).toContain('FilterChips')
     expect(assistant).toContain('PageHeader')
+    expect(assistant).toContain('quizResults')
     expect(handlers).toContain('findTutorResources')
+    expect(handlers).toContain('handleShowWeakness')
+  })
+
+  it('weakness engine distinguishes english-skills-a from english-major and stays pure', () => {
+    const results = {
+      'q-g2__1': { score: 1, total: 5, pct: 20, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-m1__2': { score: 5, total: 5, pct: 100, category: 'ภาค ข - วิชาเอกภาษาอังกฤษ (Grammar)' },
+    }
+    const snap = JSON.stringify(results)
+    const analysis = analyzeQuizPerformance(results, initialQuizzes)
+    expect(JSON.stringify(results)).toBe(snap)
+    expect(analysis.observedWeaknesses.some(w => w.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)).toBe(true)
+    expect(analysis.observedWeaknesses.some(w => w.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(false)
+    const { recommendations, mode } = recommendPracticeFromWeakness(analysis, catalog, { limit: 4 })
+    expect(mode).toBe('target-weakness')
+    expect(recommendations.every(r => r.taxonomy.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)).toBe(true)
   })
 })

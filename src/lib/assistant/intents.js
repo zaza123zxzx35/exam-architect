@@ -18,6 +18,7 @@ export const ASSISTANT_INTENTS = [
   'show_exams',
   'summarize_progress',
   'find_resources',
+  'show_weakness',
   'unsupported',
 ]
 
@@ -80,6 +81,14 @@ const RULES = [
     patterns: [
       /find (a )?(resource|link|video)|show (me )?(resources|links)/i,
       /หา(ลิงก์|ทรัพยากร|คลิป|คอร์ส)|มีลิงก์|resource/i,
+    ],
+  },
+  {
+    intent: 'show_weakness',
+    weight: 92,
+    patterns: [
+      /weak(ness|nesses)?|weak areas?|where.*(weak|improve)|recommend practice/i,
+      /จุดอ่อน|วิชาอ่อน|ควรฝึก|แนะนำ(ชุด)?ฝึก|วิเคราะห์(ผล)?ควิซ|คะแนนต่ำ/i,
     ],
   },
   {
@@ -243,6 +252,7 @@ export function listSupportedCommands(lang = 'th') {
       'Show exam dates',
       'Summarize progress',
       'Find resources by subject',
+      'Show quiz weaknesses / practice recommendations',
       'Revise a proposed plan, then confirm or cancel',
     ]
   }
@@ -256,6 +266,7 @@ export function listSupportedCommands(lang = 'th') {
     'ดูวันสอบ',
     'สรุปความคืบหน้า',
     'หาทรัพยากรตามวิชา',
+    'ดูจุดอ่อนจากผลควิซ / แนะนำชุดฝึก',
     'แก้แผนที่เสนอ แล้วยืนยันหรือยกเลิก',
   ]
 }

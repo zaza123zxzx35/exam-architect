@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, Send, Trash2, Sparkles, Library, MessageSquare } from 'lucide-react'
 import { useScheduleStore } from '../hooks/useScheduleStore'
+import { useLocalStorage } from '../hooks/useLocalStorage'
+import { initialQuizzes } from '../data/quizData'
 import {
   clearAssistantContext,
   createDateProvider,
@@ -13,6 +15,8 @@ import { PageHeader, EmptyState, StatusBanner } from '../components/ui'
 
 export default function Assistant() {
   const { schedule, setSchedule } = useScheduleStore()
+  const [quizzes] = useLocalStorage('study_quizzes', initialQuizzes)
+  const [quizResults] = useLocalStorage('quiz_results', {})
   const [context, setContext] = useState(() => loadAssistantContext(
     typeof window !== 'undefined' ? window.sessionStorage : undefined
   ))
@@ -35,7 +39,11 @@ export default function Assistant() {
     if (!trimmed || busy) return
     setBusy(true)
     try {
-      const result = processAssistantTurn(schedule, context, trimmed, { dateProvider: dates })
+      const result = processAssistantTurn(schedule, context, trimmed, {
+        dateProvider: dates,
+        quizResults,
+        quizzes,
+      })
       if (result.scheduleChanged) {
         setSchedule(() => result.nextSchedule)
       }
@@ -57,8 +65,8 @@ export default function Assistant() {
   }
 
   const suggestions = context.language === 'en'
-    ? ['help', "today's plan", 'exam dates', 'find English major videos', 'create plan for English Mon-Fri 20:00-22:00']
-    : ['ช่วยเหลือ', 'แผนวันนี้', 'วันสอบ', 'หาวิดีโอ วิชาเอกอังกฤษ', 'หาลิงก์ ภาค ก ภาษาอังกฤษ', 'อยากติวอังกฤษ จันทร์-ศุกร์ 20.00-22.00']
+    ? ['help', "today's plan", 'exam dates', 'show weaknesses', 'find English major videos', 'create plan for English Mon-Fri 20:00-22:00']
+    : ['ช่วยเหลือ', 'แผนวันนี้', 'วันสอบ', 'ดูจุดอ่อน', 'หาวิดีโอ วิชาเอกอังกฤษ', 'หาลิงก์ ภาค ก ภาษาอังกฤษ', 'อยากติวอังกฤษ จันทร์-ศุกร์ 20.00-22.00']
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">

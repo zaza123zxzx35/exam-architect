@@ -13,6 +13,7 @@ import {
   handleConfirm,
   handleCreateOrRevisePlan,
   handleFindResources,
+  handleShowWeakness,
   handleHelp,
   handleRemoveTask,
   handleReschedule,
@@ -29,7 +30,7 @@ import {
  * @param {object} schedule
  * @param {object} context
  * @param {string} userText
- * @param {{ dateProvider?: object }} [options]
+ * @param {{ dateProvider?: object, quizResults?: Record<string, unknown>, quizzes?: unknown[] }} [options]
  */
 export function processAssistantTurn(schedule, context, userText, options = {}) {
   const dates = options.dateProvider || createDateProvider()
@@ -89,6 +90,9 @@ export function processAssistantTurn(schedule, context, userText, options = {}) 
       break
     case 'find_resources':
       result = handleFindResources(text, ctx.language)
+      break
+    case 'show_weakness':
+      result = handleShowWeakness(options.quizResults, options.quizzes, ctx.language)
       break
     case 'create_plan':
       result = handleCreateOrRevisePlan(text, schedule, ctx, dates, ctx.language, 'create')

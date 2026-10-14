@@ -42,7 +42,9 @@ npm run build # production bundle
 | Phase I production readiness | [PHASE_I_PRODUCTION_READINESS_REPORT.md](./PHASE_I_PRODUCTION_READINESS_REPORT.md) — deploy only after approval |
 | UI foundation + Study Resource Hub | Done — shared `PageHeader` / `FilterChips` / `EmptyState` / `StatusBanner`; `/resources` hub with taxonomy filters (default `all`) |
 | Smart Tutor hub lookup | Done — assistant `find_resources` uses classify-on-read hub; keeps `english-skills-a` ≠ `english-major` |
+| Smart Tutor weakness engine | Done — rule-based `quiz_results` analysis via `src/lib/study/weakness.js`; intent `show_weakness` / “ดูจุดอ่อน”; never writes storage or invents scores |
 | District intelligence | Done — user-local competition records on Dashboard; HRMS on `/info` stays cited national stats only |
+| Master Phase 0–7 release prep | [MASTER_PHASE_0_7_RELEASE.md](./MASTER_PHASE_0_7_RELEASE.md) — local release candidate; **no deploy / no push** until explicit approval |
 
 ## Data notes
 
