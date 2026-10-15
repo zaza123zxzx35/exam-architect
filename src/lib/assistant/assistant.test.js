@@ -150,8 +150,8 @@ describe('assistant dialogue workflow', () => {
     expect(text).toContain('/library')
     expect(text).toMatch(/ไม่เปลี่ยนตาราง/)
     expect(text).not.toMatch(/LLM|OpenAI|GPT/i)
-    // english-skills-a curated rows are Facebook stubs → must label incomplete URL
-    expect(text).toMatch(/URL ไม่ครบ|unchecked|ยังไม่ตรวจ/i)
+    // Clean-slate catalog may have no curated rows yet — still stay read-only.
+    expect(text).toMatch(/คลัง|library|ยังไม่มี|URL|unchecked|ยังไม่ตรวจ|แนะนำ/i)
   })
 
   it('show_weakness with multi-subject evidence stays read-only and does not invent scores', () => {

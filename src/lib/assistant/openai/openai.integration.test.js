@@ -12,6 +12,7 @@ import { processAssistantTurn } from '../dialogue.js'
 import { createEmptyAssistantContext } from '../context.js'
 import { createDateProvider } from '../dateProvider.js'
 import { enrichCuratedResources } from '../../curated/catalog.js'
+import { FIXTURE_CURATED_RESOURCES } from '../../../data/curatedCatalog.fixture.js'
 import { SUBJECT_IDS } from '../../study/taxonomy.js'
 
 const dates = createDateProvider({ todayIso: '2026-10-14' })
@@ -20,7 +21,7 @@ function validModelJson(overrides = {}) {
   return {
     responseText: 'แนะนำทักษะอังกฤษภาค ก จากคลัง — URL ยัง unchecked',
     intent: 'find_resources',
-    selectedResourceIds: ['eng-skills-share-001'],
+    selectedResourceIds: ['fix-skills-01'],
     proposedScheduleChanges: { type: 'none', summary: '', tasks: [] },
     clarificationQuestion: null,
     needsConfirmation: false,
@@ -54,14 +55,14 @@ describe('schema + sanitize', () => {
   })
 
   it('drops unknown resource ids and keeps incomplete URL warnings', () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const fake = validModelJson({
-      selectedResourceIds: ['eng-skills-share-001', 'totally-fake-id'],
+      selectedResourceIds: ['fix-skills-01', 'totally-fake-id'],
       proposedScheduleChanges: {
         type: 'add_curated_tasks',
         summary: 'เพิ่มงาน',
         tasks: [
-          { resourceId: 'eng-skills-share-001', plannedDate: '2026-10-20', durationMinutes: 45, title: null },
+          { resourceId: 'fix-skills-01', plannedDate: '2026-10-20', durationMinutes: 45, title: null },
           { resourceId: 'nope', plannedDate: '2026-10-21', durationMinutes: 45, title: null },
         ],
       },
@@ -69,14 +70,14 @@ describe('schema + sanitize', () => {
     })
     const out = sanitizeAndValidateAiResult(fake, { catalog })
     expect(out.ok).toBe(true)
-    expect(out.value.selectedResourceIds).toEqual(['eng-skills-share-001'])
+    expect(out.value.selectedResourceIds).toEqual(['fix-skills-01'])
     expect(out.value.proposedScheduleChanges.tasks).toHaveLength(1)
     expect(out.value.needsConfirmation).toBe(true)
     expect(out.value.evidenceNotes.some(n => /unchecked|needs_full_url|ห้ามอ้าง/.test(n))).toBe(true)
   })
 
   it('keeps english-skills-a on ก and english-major on ข', () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const skills = catalog.find(r => r.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)
     const major = catalog.find(r => r.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)
     expect(skills.examPart).toBe('ก')
@@ -145,7 +146,7 @@ describe('server handler (mocked OpenAI)', () => {
   })
 
   it('returns sanitized success for a valid mocked response', async () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const edu = catalog.find(r => r.subjectId === SUBJECT_IDS.EDUCATION)
     const law = catalog.find(r => r.subjectId === SUBJECT_IDS.LAW)
     expect(edu.examPart).toBe('ข')
@@ -198,7 +199,7 @@ describe('server handler (mocked OpenAI)', () => {
 
 describe('proposal apply + confirm safety', () => {
   it('requires confirmation and does not overwrite done/userEdited', () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const row = catalog.find(r => r.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A && r.urlStatus === 'unchecked')
     const aiValue = {
       needsConfirmation: true,
@@ -315,7 +316,7 @@ describe('bridge fallback to rule-based assistant', () => {
   })
 
   it('AI success creates pendingChange that still needs confirm (no direct schedule write)', async () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const row = catalog.find(r => r.subjectId === SUBJECT_IDS.GENERAL_KNOWLEDGE_A)
     const fetchImpl = async () => ({
       ok: true,

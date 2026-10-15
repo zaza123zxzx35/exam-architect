@@ -60,10 +60,10 @@ npm run build # production bundle
 | Smart Tutor weakness engine | Done — rule-based `quiz_results` analysis via `src/lib/study/weakness.js`; intent `show_weakness` / “ดูจุดอ่อน”; never writes storage or invents scores |
 | District intelligence | Done — user-local competition records on Dashboard; HRMS on `/info` stays cited national stats only |
 | Master Phase 0–7 release prep | [MASTER_PHASE_0_7_RELEASE.md](./MASTER_PHASE_0_7_RELEASE.md) — local release candidate; **no deploy / no push** until explicit approval |
-| Unified curated library (ก+ข) | `/library` — 210 user-supplied rows (math=อ.แก็บติวเตอร์, Thai=ครูพี่ตี๋); classify-on-read URL status; add-only `curated_*` merge; catalog integrity audit |
+| Unified curated library (ก+ข) | `/library` — **clean slate** (v10); rebuild one tutor pack at a time (next: ครูเลดี้เก๋เก๋ English ก+ข); classify-on-read URL status; add-only `curated_*` merge |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling the whole catalog |
 | Part ข 29-day forced pack | `/library` — `partB29Plan.js` schedules education + law + english-major first under ≈120 min/day; cuts are budget/official-score caps/duplicates (never “won’t appear”); slim Part ก filler; add-only merge |
-| Live tutor schedule + priority list | Poster lives (ครูเลดี้เก๋เก๋ + VIP เนื้อหา) in `liveTutorSchedule.js`; Library lists 217 by priority/weakness; 29-day plan pins evening lives and aligns daytime clips to VIP subject windows |
+| Live tutor schedule + Today/Overview | Live schedule wiped with catalog; Today/Overview read curated schedule only (no mixed HTML 34-day plan); waiting on Facebook group post for Lady Kaekae pack |
 
 ## Data notes
 
