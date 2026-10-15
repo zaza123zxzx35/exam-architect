@@ -63,7 +63,8 @@ npm run build # production bundle
 | Unified curated library (ก+ข) | `/library` — **v15.3** English + การศึกษา/กฎหมาย + คณิต + ไทย + ข้าราชการที่ดี; อ.นนท์ FB watch จาก `facebook_drive_links_repaired.csv` (201 เปิดได้ / 4 Drive ยังไม่ครบ) |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling the whole catalog |
 | Part ข 29-day forced pack | `/library` — major + education + law core; slim Part ก รวมไทย/ข้าราชการที่ดี; add-only merge |
-| Live tutor schedule + Today/Overview | Lady Kaekae lives + VIP Oct content blocks + online table (ติวเตอร์ตามโปสเตอร์); auto-seed Part ข 29-day plan on first load |
+| แผนพาบรรจุ 100 | Today/Overview — controllable readiness 100/100 (บังคับไทย+คณิต, ไลฟ์เลดี้ชนะเมื่อชนเวลา, mock รายสัปดาห์, ทบทวนทดแทน Drive, ยืนยันความเชื่อ) |
+| Live tutor schedule + Today/Overview | Lady Kaekae lives + VIP Oct content blocks + online table (ติวเตอร์ตามโปสเตอร์); auto-seed victory plan on first load |
 
 ## Data notes
 
