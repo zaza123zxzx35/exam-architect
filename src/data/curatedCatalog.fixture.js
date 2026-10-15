@@ -1,6 +1,6 @@
 /**
  * Tiny catalog for unit tests only — not shipped as the live Library inventory.
- * Production seed is curatedCatalog.js (clean slate until user packs arrive).
+ * Production seed is curatedCatalog.js (Lady Kaekae สพฐ.69 English ก+ข).
  */
 
 /** @type {import('./curatedCatalog.js').CuratedResource[]} */

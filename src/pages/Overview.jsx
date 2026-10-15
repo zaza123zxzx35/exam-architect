@@ -64,11 +64,11 @@ export default function Overview() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <section className="card border-amber-200 bg-amber-50/80 text-sm dark:border-amber-900 dark:bg-amber-950/30">
-        <p className="font-semibold text-amber-950 dark:text-amber-100">แผนภาพรวม — โหมดเริ่มใหม่</p>
-        <p className="mt-1 text-xs text-amber-900/90 dark:text-amber-100/90">
-          คลัง {CURATED_CATALOG_VERSION} ว่างแล้ว · ไม่ใช้แผน HTML 34 วันแบบปนหลายสำนัก
-          · รอชุดครูเลดี้เก๋เก๋ (อังกฤษ ก+ข) แล้วจะสร้างแผนทีละวันชัด ๆ
+      <section className="card border-sky-200 bg-sky-50/80 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+        <p className="font-semibold text-sky-950 dark:text-sky-100">แผนภาพรวม — ชุดครูเลดี้เก๋เก๋</p>
+        <p className="mt-1 text-xs text-sky-900/90 dark:text-sky-100/90">
+          คลัง {CURATED_CATALOG_VERSION} · อังกฤษ ก+ข สพฐ.69 แล้ว
+          · สร้างแผนจากคลัง (ไม่ใช้แผน HTML 34 วันแบบปนหลายสำนัก)
         </p>
         <Link to="/library" className="mt-2 inline-flex text-xs font-semibold text-primary-800 underline dark:text-primary-200">
           ไปคลังหลักสูตร

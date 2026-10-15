@@ -34,7 +34,7 @@ describe('partB29Pack selection (fixture catalog)', () => {
 })
 
 describe('generatePartB29Draft', () => {
-  it('returns empty-safe draft on clean-slate production catalog', () => {
+  it('schedules Lady Kaekae english-major from production catalog (edu/law still empty)', () => {
     const draft = generatePartB29Draft({
       todayIso: '2026-10-15',
       dailyMinutes: 120,
@@ -42,7 +42,13 @@ describe('generatePartB29Draft', () => {
       catalog: enrichCuratedResources(),
     })
     expect(draft.dayCount).toBeLessThanOrEqual(29)
-    expect(draft.proposedTasks.filter(t => t.resourceId)).toHaveLength(0)
+    const resourceTasks = draft.proposedTasks.filter(t => t.resourceId)
+    expect(resourceTasks.length).toBeGreaterThan(0)
+    expect(resourceTasks.every(t => (
+      t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR || t.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A
+    ))).toBe(true)
+    expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
+    // education + law packs not loaded yet → partBCoverageOk stays false
     expect(draft.partBCoverageOk).toBe(false)
   })
 

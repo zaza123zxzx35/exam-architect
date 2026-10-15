@@ -5,13 +5,13 @@ import { generateUnifiedStudyDraft } from './unifiedPlan.js'
 import { FIXTURE_CURATED_RESOURCES } from '../../data/curatedCatalog.fixture.js'
 
 describe('plan coverage audit', () => {
-  it('reports empty coverage on clean-slate catalog', () => {
+  it('reports Lady Kaekae coverage pool on production catalog', () => {
     const coverage = auditPlanCoverage(enrichCuratedResources(), {
       todayIso: '2026-10-14',
       dailyMinutes: 120,
       mode: 'score-max',
     })
-    expect(coverage.totals.planPool).toBe(0)
+    expect(coverage.totals.planPool).toBeGreaterThan(0)
     expect(coverage.dailyMinutes).toBe(120)
   })
 

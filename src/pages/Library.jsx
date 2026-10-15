@@ -220,8 +220,8 @@ export default function Library() {
       <PageHeader
         title="คลังหลักสูตรรวม"
         description={catalog.length
-          ? `${catalog.length} รายการเรียงตามความสำคัญ — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · อังกฤษภาค ก ≠ วิชาเอก`
-          : 'คลังว่าง (เริ่มใหม่) — รอชุดแรก: วิชาเอกอังกฤษ ข + อังกฤษ ก · ครูเลดี้เก๋เก๋'}
+          ? `${catalog.length} รายการ · ครูเลดี้เก๋เก๋ สพฐ.69 (ก ฟ้า / ข ชมพู) · อังกฤษภาค ก ≠ วิชาเอก`
+          : 'คลังว่าง — รอชุดติวเตอร์ถัดไป'}
         actions={(
           <div className="flex flex-wrap gap-2">
             <Link to="/resources" className="btn-secondary text-xs">คลังเรียน (เดิม)</Link>
@@ -230,17 +230,16 @@ export default function Library() {
         )}
       />
 
-      <StatusBanner tone="warning" title="สถานะคลัง · เริ่มใหม่">
+      <StatusBanner tone="info" title="สถานะคลัง · ชุดที่ 1 ครูเลดี้เก๋เก๋">
         {summary.total === 0 ? (
           <>
-            เคลียร์คลังปนหลายสำนักแล้ว · ชุดถัดไป: ครูเลดี้เก๋เก๋ (อังกฤษ ก+ข)
-            · รออ่านโพสต์กลุ่ม Facebook (ต้องล็อกอิน) หรือให้คุณวางรายการลิงก์ในแชท
+            คลังว่าง — รอแพ็กติวเตอร์ถัดไป
           </>
         ) : (
           <>
-            ทั้งหมด {summary.total} · unchecked {summary.unchecked}
+            สพฐ.69 อังกฤษ ก+ข · ทั้งหมด {summary.total} · unchecked {summary.unchecked}
             · URL ไม่ครบ {summary.needs_full_url}
-            · verified_accessible {summary.verified_accessible}
+            · ไม่รวม อปท / กทม / O-NET / ใบประกอบ
             · ห้ามถือว่า unchecked = เปิดได้จริง
           </>
         )}

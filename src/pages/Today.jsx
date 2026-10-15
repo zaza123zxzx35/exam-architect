@@ -88,13 +88,13 @@ export default function Today() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <section className="card border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30">
-        <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-          โหมดเริ่มใหม่ (คลังว่าง · {CURATED_CATALOG_VERSION})
+      <section className="card border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30">
+        <p className="text-sm font-semibold text-sky-950 dark:text-sky-100">
+          คลังชุดที่ 1 พร้อมแล้ว · {CURATED_CATALOG_VERSION}
         </p>
-        <p className="mt-1 text-xs text-amber-900/90 dark:text-amber-100/90">
-          กำลังรอชุดแรก: <strong>วิชาเอกอังกฤษ ข + อังกฤษ ก · ครูเลดี้เก๋เก๋</strong>
-          — เมื่อใส่คลังแล้ว วันนี้จะบอกชัดว่าติวคลิปไหน ของใคร แล้วค่อยทำข้อสอบอันไหน
+        <p className="mt-1 text-xs text-sky-900/90 dark:text-sky-100/90">
+          <strong>ครูเลดี้เก๋เก๋</strong> · อังกฤษภาค ก (ฟ้า) + วิชาเอกอังกฤษภาค ข (ชมพู) สพฐ.69
+          — ไปคลังกดสร้างแผน แล้ววันนี้จะบอกชัดว่าติวคลิปไหน
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Link to="/library" className="btn-secondary text-xs">ไปคลังหลักสูตร</Link>

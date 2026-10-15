@@ -11,10 +11,10 @@ import { SUBJECT_IDS } from '../study/taxonomy.js'
 import { URL_STATUS } from './urlStatus.js'
 
 describe('curated catalog integrity audit', () => {
-  it('audits empty clean-slate catalog as ok', () => {
+  it('audits Lady Kaekae catalog with no hard errors', () => {
     const audit = auditCuratedCatalog()
-    expect(audit.totalRows).toBe(0)
     expect(audit.totalRows).toBe(curatedResources.length)
+    expect(audit.totalRows).toBeGreaterThan(0)
     expect(audit.errorCount).toBe(0)
     expect(audit.ok).toBe(true)
     expect(audit.needsFullUrlIds).toHaveLength(0)
@@ -27,11 +27,17 @@ describe('curated catalog integrity audit', () => {
     ])
   })
 
-  it('reports empty needs_full_url list', () => {
+  it('reports empty needs_full_url list (video URLs only)', () => {
     const audit = auditCuratedCatalog()
     const report = listNeedsFullUrlReport(audit)
     expect(report.count).toBe(0)
     expect(report.noteTh).toMatch(/URL เต็ม/)
+  })
+
+  it('allows intentional shared URLs across ก+ข mixed sessions', () => {
+    const audit = auditCuratedCatalog()
+    expect(audit.sharedUrls.length).toBeGreaterThan(0)
+    expect(audit.warnings.some(w => w.code === 'shared-url')).toBe(true)
   })
 
   it('flags invalid subject / english part mismatch / verified without evidence', () => {

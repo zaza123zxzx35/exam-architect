@@ -9,18 +9,43 @@ import {
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
-  it('starts from a clean slate awaiting tutor packs', () => {
-    expect(CURATED_CATALOG_VERSION).toMatch(/clean-slate/)
-    expect(curatedResources.length).toBe(0)
+  it('ships Lady Kaekae สพฐ.69 English ก+ข pack', () => {
+    expect(CURATED_CATALOG_VERSION).toMatch(/lady-kaekae/)
+    expect(curatedResources.length).toBeGreaterThan(0)
     const enriched = enrichCuratedResources()
-    expect(enriched).toHaveLength(0)
+    expect(enriched.length).toBe(curatedResources.length)
     const summary = summarizeCuratedUrlStatuses(enriched)
-    expect(summary.total).toBe(0)
+    expect(summary.total).toBe(curatedResources.length)
+    expect(summary.needs_full_url || 0).toBe(0)
   })
 
-  it('keeps filter / recommend helpers safe on empty catalog', () => {
+  it('keeps ภาค ก = english-skills-a and ภาค ข = english-major', () => {
     const catalog = enrichCuratedResources()
-    expect(filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })).toHaveLength(0)
-    expect(recommendCuratedForSubject('law', catalog, { limit: 3 })).toHaveLength(0)
+    const partA = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A })
+    const partB = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })
+    expect(partA.length).toBeGreaterThan(0)
+    expect(partB.length).toBeGreaterThan(0)
+    expect(partA.every(r => r.examPart === 'ก')).toBe(true)
+    expect(partB.every(r => r.examPart === 'ข')).toBe(true)
+    expect(recommendCuratedForSubject(SUBJECT_IDS.ENGLISH_MAJOR, catalog, { limit: 3 }).length).toBeGreaterThan(0)
+  })
+
+  it('excludes อปท / กทม / O-NET / ใบประกอบ from this pack', () => {
+    const blocked = /อปท|กทม|O-NET|ใบประกอบ|ท้องถิ่น/i
+    const hits = curatedResources.filter(r =>
+      blocked.test(r.title) || blocked.test(r.series) || blocked.test(r.notes || ''),
+    )
+    expect(hits).toHaveLength(0)
+  })
+
+  it('marks must / if-time / defer packs in notes', () => {
+    const packs = { must: 0, 'if-time': 0, defer: 0 }
+    for (const r of curatedResources) {
+      const m = String(r.notes || '').match(/pack:(must|if-time|defer)/)
+      if (m) packs[m[1]] += 1
+    }
+    expect(packs.must).toBeGreaterThan(20)
+    expect(packs['if-time']).toBeGreaterThan(10)
+    expect(packs.defer).toBeGreaterThan(5)
   })
 })
