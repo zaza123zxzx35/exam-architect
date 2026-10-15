@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock, ExternalLink } from 'lucide-react'
+import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock } from 'lucide-react'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { bangkokTodayIso } from '../data/htmlPlannerData'
@@ -8,11 +8,11 @@ import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { getPrimaryExam } from '../data/examCalendar'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
-import { canOpenExternally } from '../lib/curated/urlStatus.js'
 import {
   CURATED_PLAN_SEED_META_KEY,
   ensureCuratedPartB29Seed,
 } from '../lib/curated/seedPartB29Plan.js'
+import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 
 function subjectLabel(id) {
   return HUB_SUBJECT_LABELS[id] || id || 'ยังไม่จัดวิชา'
@@ -130,7 +130,7 @@ export default function Today() {
         </p>
         <p className="mt-1 text-xs text-emerald-900/90 dark:text-emerald-100/90">
           จัดภาค ข ก่อน + ไลฟ์เลดี้เก๋เก๋ + บล็อก VIP ต.ค. (ไทย/คณิต/ข้าราชการที่ดี/กฎหมาย)
-          · งานด้านล่างคือคิววันนี้ · ลิงก์อ.นนท์ที่ URL ไม่ครบให้ Copy
+          · งานด้านล่างมีปุ่ม <strong>เปิดคลิปติว</strong> หรือ <strong>คัดลอก URL</strong>
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className="btn-primary text-xs" onClick={regenCuratedPlan}>
@@ -207,9 +207,6 @@ export default function Today() {
               {todayTasks.map((task) => {
                 const done = task.status === 'done'
                 const partLabel = HUB_EXAM_PART_LABELS[task.examPart] || task.examPart || ''
-                const openUrl = task.resourceUrl && canOpenExternally(task.urlStatus)
-                  ? task.resourceUrl
-                  : null
                 return (
                   <li key={task.id} className="flex flex-wrap items-start gap-3 py-3">
                     <button
@@ -233,16 +230,7 @@ export default function Today() {
                         <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{task.reasonTh}</p>
                       ) : null}
                     </div>
-                    {openUrl ? (
-                      <a
-                        className="btn-secondary text-xs"
-                        href={openUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" /> เปิดคลิป
-                      </a>
-                    ) : null}
+                    <TaskOpenButtons task={task} />
                   </li>
                 )
               })}

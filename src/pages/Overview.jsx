@@ -6,6 +6,7 @@ import { bangkokTodayIso } from '../data/htmlPlannerData'
 import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
+import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 
 export default function Overview() {
   const { schedule } = useScheduleStore()
@@ -138,27 +139,37 @@ export default function Overview() {
         ) : (
           <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
             {upcoming.map(day => {
-              const sample = day.tasks.slice(0, 2)
+              const pending = day.tasks.filter(t => t.status !== 'done').slice(0, 3)
               return (
-                <li key={day.dateIso} className="flex items-center justify-between gap-3 py-3 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-primary-900 dark:text-primary-100">
-                      {formatThaiPlanDate(day.dateIso)}
+                <li key={day.dateIso} className="space-y-2 py-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-primary-900 dark:text-primary-100">
+                        {formatThaiPlanDate(day.dateIso)}
+                      </div>
+                      <div className="text-xs text-slate-500">{day.done}/{day.total} เสร็จ</div>
                     </div>
-                    <div className="text-xs text-slate-500">
-                      {day.done}/{day.total} เสร็จ
-                      {sample.length ? ` · เช่น ${sample.map(t => t.title).join(' / ')}` : ''}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-slate-400">
-                      {[...new Set(day.tasks.map(t => [
-                        HUB_EXAM_PART_LABELS[t.examPart] || t.examPart,
-                        HUB_SUBJECT_LABELS[t.subjectId] || t.subjectId,
-                      ].filter(Boolean).join(' ')))].slice(0, 3).join(' · ')}
-                    </div>
+                    <Link to="/today" className="shrink-0 text-xs font-semibold text-primary-800 hover:underline dark:text-primary-200">
+                      ไปหน้าวันนี้
+                    </Link>
                   </div>
-                  <Link to="/today" className="shrink-0 text-xs font-semibold text-primary-800 hover:underline dark:text-primary-200">
-                    เปิดวันนี้
-                  </Link>
+                  <ul className="space-y-2">
+                    {pending.map(task => (
+                      <li key={task.id} className="flex flex-wrap items-start justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900/40">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{task.title}</p>
+                          <p className="text-[11px] text-slate-500">
+                            {[
+                              HUB_EXAM_PART_LABELS[task.examPart] || task.examPart,
+                              HUB_SUBJECT_LABELS[task.subjectId] || task.subjectId,
+                              task.tutorTh,
+                            ].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <TaskOpenButtons task={task} />
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               )
             })}

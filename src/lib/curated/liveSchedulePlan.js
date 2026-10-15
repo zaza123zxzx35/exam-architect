@@ -12,6 +12,8 @@ import {
 } from '../../data/liveTutorSchedule.js'
 import { HUB_SUBJECT_LABELS, HUB_EXAM_PART_LABELS } from '../study/hub.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
+import { enrichCuratedResources } from './catalog.js'
+import { attachCatalogLinkToLiveTask } from './taskOpenAction.js'
 
 export const LIVE_SCHEDULE_ORIGIN = 'live-tutor-schedule'
 
@@ -65,6 +67,7 @@ export function generateLiveScheduleTasks(options = {}) {
     kinds: includeLogistics ? undefined : ['live', 'content-block'],
   })
 
+  const catalog = enrichCuratedResources()
   const proposedTasks = []
   for (const event of events) {
     for (const day of expandLiveEventDates(event)) {
@@ -79,7 +82,7 @@ export function generateLiveScheduleTasks(options = {}) {
         ? `${event.startTime}${event.endTime ? `–${event.endTime}` : ''} น.`
         : 'ทั้งวัน (บล็อกเนื้อหา)'
 
-      proposedTasks.push({
+      const baseTask = {
         id: taskId,
         title: isLive
           ? `ไลฟ์ ${timeLabel} · ${event.titleTh}`
@@ -91,6 +94,7 @@ export function generateLiveScheduleTasks(options = {}) {
         subjectId: event.subjectId,
         resourceId: null,
         resourceUrl: '',
+        originalUrl: '',
         urlStatus: 'unchecked',
         estimatedMinutes: event.estimatedMinutes,
         durationMinutes: event.estimatedMinutes,
@@ -116,7 +120,8 @@ export function generateLiveScheduleTasks(options = {}) {
         seriesTh: event.seriesTh,
         sourceTh: event.sourceTh,
         planPack: 'live-tutor',
-      })
+      }
+      proposedTasks.push(attachCatalogLinkToLiveTask(baseTask, catalog))
     }
   }
 
