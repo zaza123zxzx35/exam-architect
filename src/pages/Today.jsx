@@ -10,12 +10,17 @@ import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
 import { classifyTask } from '../lib/study/taxonomy.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import {
-  CURATED_PLAN_SEED_META_KEY,
-  ensureCuratedPartB29Seed,
+  buildClearManagedPreview,
+  commitClearManagedTasks,
+  commitForceVictoryPlan,
 } from '../lib/curated/seedPartB29Plan.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
-import { VICTORY_SEED_META_KEY } from '../lib/curated/victoryPlan.js'
+import ForceRegenConfirmDialog from '../components/ForceRegenConfirmDialog.jsx'
+import ClearManagedConfirmDialog from '../components/ClearManagedConfirmDialog.jsx'
+import {
+  buildForceRegenPreview,
+} from '../lib/curated/victoryPlan.js'
 
 function resolveTaskSubject(task) {
   if (task?.subjectId && HUB_SUBJECT_LABELS[task.subjectId]) {
@@ -41,6 +46,12 @@ export default function Today() {
   const countdown = useExamCountdown()
   const { schedule, setSchedule, runReschedule } = useScheduleStore()
   const [rescheduleMsg, setRescheduleMsg] = useState('')
+  const [forceDialogOpen, setForceDialogOpen] = useState(false)
+  const [forcePreview, setForcePreview] = useState(null)
+  const [forceBusy, setForceBusy] = useState(false)
+  const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [clearPreview, setClearPreview] = useState(null)
+  const [clearBusy, setClearBusy] = useState(false)
   const todayIso = bangkokTodayIso()
 
   const todayTasks = useMemo(() => {
@@ -93,70 +104,78 @@ export default function Today() {
     )
   }
 
-  const clearCuratedPlan = () => {
-    setSchedule((prev) => {
-      const meta = { ...(prev.meta || {}) }
-      delete meta[CURATED_PLAN_SEED_META_KEY]
-      delete meta[VICTORY_SEED_META_KEY]
-      delete meta.curatedPlanSeedVersion
-      delete meta.curatedPlanSeedTodayIso
-      delete meta.curatedPlanSeedTaskCount
-      delete meta.curatedPlanSeedPartBOk
-      delete meta.curatedPlanVictoryScore
-      return {
-        ...prev,
-        tasks: (prev.tasks || []).filter((t) => {
-          const id = String(t.id || '')
-          const origin = String(t.origin || '')
-          if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
-          if (
-            origin === 'curated-unified-plan'
-            || origin === 'curated-part-b-29'
-            || origin === 'live-tutor-schedule'
-            || origin === 'victory-plan-100'
-          ) {
-            return false
-          }
-          return true
-        }),
-        meta,
-        updatedAt: new Date().toISOString(),
-      }
-    })
+  const openClearManagedPreview = () => {
+    // Preview only — schedule must stay unchanged until confirm.
+    setClearPreview(buildClearManagedPreview(schedule))
+    setClearDialogOpen(true)
   }
 
-  const regenCuratedPlan = () => {
-    setSchedule((prev) => {
-      const clearedTasks = (prev.tasks || []).filter((t) => {
-        const id = String(t.id || '')
-        const origin = String(t.origin || '')
-        if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
-        if (
-          origin === 'curated-unified-plan'
-          || origin === 'curated-part-b-29'
-          || origin === 'live-tutor-schedule'
-          || origin === 'victory-plan-100'
-        ) {
-          return false
-        }
-        return true
-      })
-      const meta = { ...(prev.meta || {}) }
-      delete meta[CURATED_PLAN_SEED_META_KEY]
-      delete meta[VICTORY_SEED_META_KEY]
-      const base = { ...prev, tasks: clearedTasks, meta }
-      const { schedule: next, readiness } = ensureCuratedPartB29Seed(base, {
-        todayIso: todayIso,
-        force: true,
-        declareBelief: true,
+  const cancelClearManagedPreview = () => {
+    if (clearBusy) return
+    setClearDialogOpen(false)
+    setClearPreview(null)
+  }
+
+  const confirmClearManaged = () => {
+    if (clearBusy) return
+    setClearBusy(true)
+    try {
+      /** @type {null | ReturnType<typeof commitClearManagedTasks>} */
+      let applied = null
+      setSchedule((prev) => {
+        applied = commitClearManagedTasks(prev)
+        return applied.schedule
       })
       setRescheduleMsg(
-        readiness?.isPerfect
-          ? `แผนพาบรรจุ ${readiness.score}/100 พร้อมแล้ว — เชื่อแล้วพยายามทุกวัน`
-          : `สร้างแผนแล้ว ${readiness?.score ?? '—'}/100`,
+        applied?.removedCount > 0
+          ? `ล้างงาน curated/ไลฟ์แล้ว ${applied.removedCount} รายการ · คงงานอื่น ${applied.keptCount}`
+          : 'ไม่มีงาน curated/ไลฟ์ให้ลบ',
       )
-      return next
-    })
+    } finally {
+      setClearBusy(false)
+      setClearDialogOpen(false)
+      setClearPreview(null)
+    }
+  }
+
+  const openForceRegenPreview = () => {
+    // Preview only — schedule must stay unchanged until confirm.
+    setForcePreview(buildForceRegenPreview(schedule))
+    setForceDialogOpen(true)
+  }
+
+  const cancelForceRegenPreview = () => {
+    if (forceBusy) return
+    setForceDialogOpen(false)
+    setForcePreview(null)
+  }
+
+  const confirmForceRegen = () => {
+    if (forceBusy) return
+    setForceBusy(true)
+    try {
+      /** @type {null | ReturnType<typeof commitForceVictoryPlan>} */
+      let applied = null
+      setSchedule((prev) => {
+        applied = commitForceVictoryPlan(prev, {
+          todayIso,
+          declareBelief: true,
+        })
+        return applied.schedule
+      })
+      const keepNote = applied?.preservedManagedCount > 0
+        ? ` · คงงาน done/userEdited ${applied.preservedManagedCount}`
+        : ''
+      setRescheduleMsg(
+        applied?.readiness?.isPerfect
+          ? `แผนพาบรรจุ ${applied.readiness.score}/100 พร้อมแล้ว — เชื่อแล้วพยายามทุกวัน${keepNote}`
+          : `สร้างแผนแล้ว ${applied?.readiness?.score ?? '—'}/100${keepNote}`,
+      )
+    } finally {
+      setForceBusy(false)
+      setForceDialogOpen(false)
+      setForcePreview(null)
+    }
   }
 
   return (
@@ -171,16 +190,42 @@ export default function Today() {
           งานด้านล่างมีปุ่ม <strong>เปิดคลิปติว</strong> หรือ <strong>คัดลอก URL</strong>
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" className="btn-primary text-xs" onClick={regenCuratedPlan}>
+          <button
+            type="button"
+            className="btn-primary text-xs"
+            onClick={openForceRegenPreview}
+            disabled={forceBusy}
+          >
             สร้าง / รีเฟรชแผน 100
           </button>
           <Link to="/overview" className="btn-secondary text-xs">แผนภาพรวม</Link>
           <Link to="/library" className="btn-secondary text-xs">คลังหลักสูตร</Link>
-          <button type="button" className="btn-secondary text-xs" onClick={clearCuratedPlan}>
+          <button
+            type="button"
+            className="btn-secondary text-xs"
+            onClick={openClearManagedPreview}
+            disabled={clearBusy}
+          >
             ล้างงาน curated/ไลฟ์ในเครื่องนี้
           </button>
         </div>
       </section>
+
+      <ForceRegenConfirmDialog
+        open={forceDialogOpen}
+        preview={forcePreview}
+        busy={forceBusy}
+        onCancel={cancelForceRegenPreview}
+        onConfirm={confirmForceRegen}
+      />
+
+      <ClearManagedConfirmDialog
+        open={clearDialogOpen}
+        preview={clearPreview}
+        busy={clearBusy}
+        onCancel={cancelClearManagedPreview}
+        onConfirm={confirmClearManaged}
+      />
 
       <section className="card flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">

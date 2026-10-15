@@ -3,24 +3,25 @@ import { Flame, Sparkles, Target } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { bangkokTodayIso } from '../data/htmlPlannerData'
+import { commitForceVictoryPlan } from '../lib/curated/seedPartB29Plan.js'
 import {
-  CURATED_PLAN_SEED_META_KEY,
-  ensureCuratedPartB29Seed,
-} from '../lib/curated/seedPartB29Plan.js'
-import {
+  buildForceRegenPreview,
   scoreVictoryReadiness,
   setVictoryEffort,
   VICTORY_META_KEY,
   VICTORY_PLAN_VERSION,
-  VICTORY_SEED_META_KEY,
 } from '../lib/curated/victoryPlan.js'
+import ForceRegenConfirmDialog from './ForceRegenConfirmDialog.jsx'
 
 /**
- * แผนพาบรรจุ 100 — readiness meter + regenerate with belief.
+ * แผนพาบรรจุ 100 — readiness meter + regenerate with belief (confirm first).
  */
 export default function VictoryPlanCard({ compact = false }) {
   const { schedule, setSchedule } = useScheduleStore()
   const [msg, setMsg] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [preview, setPreview] = useState(null)
+  const [busy, setBusy] = useState(false)
   const todayIso = bangkokTodayIso()
 
   const readiness = useMemo(
@@ -28,44 +29,46 @@ export default function VictoryPlanCard({ compact = false }) {
     [schedule, todayIso],
   )
 
-  const applyVictory100 = () => {
-    setSchedule((prev) => {
-      const clearedMeta = { ...(prev.meta || {}) }
-      delete clearedMeta[CURATED_PLAN_SEED_META_KEY]
-      delete clearedMeta[VICTORY_SEED_META_KEY]
-      delete clearedMeta.curatedPlanSeedVersion
-      delete clearedMeta.curatedPlanSeedTodayIso
-      delete clearedMeta.curatedPlanSeedTaskCount
-      delete clearedMeta.curatedPlanSeedPartBOk
-      delete clearedMeta.curatedPlanVictoryScore
-      const base = {
-        ...prev,
-        tasks: (prev.tasks || []).filter((t) => {
-          const id = String(t.id || '')
-          const origin = String(t.origin || '')
-          if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
-          if (
-            origin === 'curated-unified-plan'
-            || origin === 'curated-part-b-29'
-            || origin === 'live-tutor-schedule'
-            || origin === 'victory-plan-100'
-          ) return false
-          return true
-        }),
-        meta: clearedMeta,
-      }
-      const { schedule: next, readiness: scored } = ensureCuratedPartB29Seed(base, {
-        todayIso,
-        force: true,
-        declareBelief: true,
+  const openForcePreview = () => {
+    // Preview only — never mutate schedule here.
+    setPreview(buildForceRegenPreview(schedule))
+    setDialogOpen(true)
+  }
+
+  const cancelForcePreview = () => {
+    if (busy) return
+    setDialogOpen(false)
+    setPreview(null)
+  }
+
+  const confirmForceVictory = () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      /** @type {null | ReturnType<typeof commitForceVictoryPlan>} */
+      let applied = null
+      setSchedule((prev) => {
+        // Deterministic from prev — safe if React Strict Mode re-runs the updater.
+        applied = commitForceVictoryPlan(prev, {
+          todayIso,
+          declareBelief: true,
+        })
+        return applied.schedule
       })
+      const scored = applied?.readiness
+      const keepNote = applied?.preservedManagedCount > 0
+        ? ` · คงงาน done/userEdited ${applied.preservedManagedCount}`
+        : ''
       setMsg(
         scored?.isPerfect
-          ? `พร้อมรบ ${scored.score}/100 — สิ่งที่เป็นไปไม่ได้ จะเป็นไปได้ เพราะความเชื่อและพยายาม`
-          : `อัปเดตแผนแล้ว ${scored?.score ?? '—'}/100 · ดูคันโยกที่ยังค้าง`,
+          ? `พร้อมรบ ${scored.score}/100 — สิ่งที่เป็นไปไม่ได้ จะเป็นไปได้ เพราะความเชื่อและพยายาม${keepNote}`
+          : `อัปเดตแผนแล้ว ${scored?.score ?? '—'}/100 · ดูคันโยกที่ยังค้าง${keepNote}`,
       )
-      return next
-    })
+    } finally {
+      setBusy(false)
+      setDialogOpen(false)
+      setPreview(null)
+    }
   }
 
   const declareBeliefOnly = () => {
@@ -132,7 +135,7 @@ export default function VictoryPlanCard({ compact = false }) {
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" className="btn-primary text-xs" onClick={applyVictory100}>
+        <button type="button" className="btn-primary text-xs" onClick={openForcePreview} disabled={busy}>
           <Sparkles className="mr-1 inline h-3.5 w-3.5" />
           จัดแผน 100/100
         </button>
@@ -154,6 +157,14 @@ export default function VictoryPlanCard({ compact = false }) {
           ความเชื่อถูกบันทึกแล้ว — เหลือแค่พยายามทำให้ครบทุกวัน
         </p>
       )}
+
+      <ForceRegenConfirmDialog
+        open={dialogOpen}
+        preview={preview}
+        busy={busy}
+        onCancel={cancelForcePreview}
+        onConfirm={confirmForceVictory}
+      />
     </section>
   )
 }

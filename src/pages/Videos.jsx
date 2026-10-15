@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   CalendarDays,
   Clock,
@@ -71,19 +71,14 @@ export default function Videos() {
   const categories = ['ทั้งหมด', ...Array.from(new Set(videos.map(v => v.category)))]
 
   const filtered = filter === 'ทั้งหมด' ? videos : videos.filter(v => v.category === filter)
-  const filteredIdsKey = filtered.map(v => v.id).join('|')
+  const filteredIds = useMemo(() => filtered.map(v => v.id), [filtered])
 
-  // Keep a usable selection so open/embed controls are always available.
-  useEffect(() => {
-    const ids = filteredIdsKey ? filteredIdsKey.split('|') : []
-    if (!ids.length) {
-      setActiveId(prev => (prev === null ? prev : null))
-      return
-    }
-    setActiveId(prev => (prev && ids.includes(prev) ? prev : ids[0]))
-  }, [filteredIdsKey])
+  // Derive selection during render — avoid syncing activeId via setState in an effect.
+  const effectiveActiveId = (activeId && filteredIds.includes(activeId))
+    ? activeId
+    : (filteredIds[0] ?? null)
 
-  const active = activeId ? videos.find(v => v.id === activeId) : null
+  const active = effectiveActiveId ? videos.find(v => v.id === effectiveActiveId) : null
   const safeActiveUrl = active ? safeResourceUrl(active.url) : null
   const embed = getEmbedUrl(active?.url || '')
   const isFb = isFacebookGroup(safeActiveUrl || active?.url || '')
@@ -404,7 +399,7 @@ export default function Videos() {
                       }
                     }}
                     className={`w-full cursor-pointer text-left p-3 flex items-start gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 ${
-                      activeId === v.id ? 'bg-primary-50' : 'hover:bg-gray-50 dark:hover:bg-slate-800'
+                      effectiveActiveId === v.id ? 'bg-primary-50' : 'hover:bg-gray-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="w-28 h-16 rounded-lg bg-gray-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden relative">
@@ -425,7 +420,7 @@ export default function Videos() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-1">
-                        <div className={`text-sm font-medium line-clamp-2 ${activeId === v.id ? 'text-primary-700' : 'text-gray-800 dark:text-slate-100'}`}>
+                        <div className={`text-sm font-medium line-clamp-2 ${effectiveActiveId === v.id ? 'text-primary-700' : 'text-gray-800 dark:text-slate-100'}`}>
                           {v.title}
                         </div>
                         <button

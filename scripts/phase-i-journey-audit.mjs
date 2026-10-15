@@ -25,7 +25,7 @@ import {
   courses,
 } from '../src/data/htmlPlannerData.js'
 import { buildHtmlResourceAccounting } from '../src/lib/planner/resourceAccounting.js'
-import { listResourceCatalog, subjectIdsFromText } from '../src/lib/smartPlanner/subjects.js'
+import { listResourceCatalog } from '../src/lib/smartPlanner/subjects.js'
 
 function mem() {
   const map = new Map()

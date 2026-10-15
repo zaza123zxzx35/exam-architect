@@ -590,7 +590,92 @@ export function setVictoryEffort(schedule, patch) {
 }
 
 /**
+ * Tasks owned by curated / live / victory plans (force-regen targets).
+ * @param {object} task
+ */
+export function isVictoryManagedTask(task) {
+  if (!task) return false
+  const id = String(task.id || '')
+  const origin = String(task.origin || '')
+  if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return true
+  return origin === 'curated-unified-plan'
+    || origin === PART_B_29_ORIGIN
+    || origin === LIVE_SCHEDULE_ORIGIN
+    || origin === VICTORY_PLAN_ORIGIN
+}
+
+/**
+ * Protected managed rows: never wipe on force regen (same spirit as AI apply).
+ * @param {object} task
+ */
+export function isProtectedManagedTask(task) {
+  if (!isVictoryManagedTask(task)) return false
+  return task.status === 'done' || task.userEdited === true
+}
+
+/**
+ * Force-regen keep set: non-managed tasks + protected managed (done / userEdited).
+ * Pending unmanaged plan rows are dropped so a fresh draft can be merged.
+ * @param {Array<object>} tasks
+ */
+export function retainTasksForForceRegen(tasks) {
+  return (tasks || []).filter((t) => !isVictoryManagedTask(t) || isProtectedManagedTask(t))
+}
+
+/**
+ * Read-only impact preview for force regen. Never mutates schedule.
+ * @param {object} schedule
+ */
+export function buildForceRegenPreview(schedule) {
+  const tasks = Array.isArray(schedule?.tasks) ? schedule.tasks : []
+  /** @type {object[]} */
+  const replace = []
+  /** @type {object[]} */
+  const keepDone = []
+  /** @type {object[]} */
+  const keepEdited = []
+  /** @type {object[]} */
+  const untouched = []
+
+  for (const t of tasks) {
+    if (!isVictoryManagedTask(t)) {
+      untouched.push(t)
+      continue
+    }
+    if (t.status === 'done') {
+      keepDone.push(t)
+      continue
+    }
+    if (t.userEdited === true) {
+      keepEdited.push(t)
+      continue
+    }
+    replace.push(t)
+  }
+
+  return {
+    originalTaskCount: tasks.length,
+    originalTaskIds: tasks.map((t) => String(t.id)),
+    replaceCount: replace.length,
+    keepDoneCount: keepDone.length,
+    keepUserEditedCount: keepEdited.length,
+    untouchedCount: untouched.length,
+    sampleReplace: replace.slice(0, 10).map((t) => ({
+      id: String(t.id),
+      title: String(t.title || t.id),
+      plannedDate: t.plannedDate ? String(t.plannedDate) : null,
+    })),
+    summaryTh: replace.length > 0
+      ? `จะแทนที่งาน pending ที่ระบบจัดการ ${replace.length} รายการ · คง done ${keepDone.length} · คง userEdited ${keepEdited.length}`
+      : `ยังไม่มีงาน pending ให้แทนที่ · จะสร้าง/รีเฟรชแผน 100 (คง done ${keepDone.length} · userEdited ${keepEdited.length})`,
+  }
+}
+
+/**
  * One-shot / force seed of victory plan.
+ *
+ * force:true removes pending managed plan rows and reseeds, but keeps
+ * status===done and userEdited===true managed tasks (and skips re-adding those ids).
  */
 export function ensureVictoryPlanSeed(schedule, options = {}) {
   const todayIso = options.todayIso || bangkokTodayIso()
@@ -617,34 +702,23 @@ export function ensureVictoryPlanSeed(schedule, options = {}) {
     }
   }
 
+  // Shallow-clone retained rows so later conflict resolution cannot mutate caller objects.
+  const retained = options.force
+    ? retainTasksForForceRegen(schedule.tasks).map((t) => ({ ...t }))
+    : (schedule.tasks || [])
+  const preservedManaged = retained.filter(isProtectedManagedTask)
+
   const draft = generateVictoryDraft({
     todayIso,
     mode: options.mode || 'score-max',
-    existingTasks: options.force ? [] : (schedule.tasks || []),
-    existingTaskIds: options.force
-      ? []
-      : (schedule.tasks || []).map((t) => t?.id).filter(Boolean),
+    // Always honor retained rows (including protected done/userEdited on force).
+    existingTasks: retained,
+    existingTaskIds: retained.map((t) => t?.id).filter(Boolean),
   })
 
-  let base = schedule
-  if (options.force) {
-    // Clear curated/live/victory tasks then reseed
-    base = {
-      ...schedule,
-      tasks: (schedule.tasks || []).filter((t) => {
-        const id = String(t.id || '')
-        const origin = String(t.origin || '')
-        if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
-        if (
-          origin === 'curated-unified-plan'
-          || origin === PART_B_29_ORIGIN
-          || origin === LIVE_SCHEDULE_ORIGIN
-          || origin === VICTORY_PLAN_ORIGIN
-        ) return false
-        return true
-      }),
-    }
-  }
+  const base = options.force
+    ? { ...schedule, tasks: retained }
+    : schedule
 
   let merged = mergeVictoryDraftIntoSchedule(base, draft)
   // Re-resolve any leftover evening overlaps already in SSOT.
@@ -664,5 +738,6 @@ export function ensureVictoryPlanSeed(schedule, options = {}) {
     reason: 'seeded',
     draft,
     readiness,
+    preservedManagedCount: preservedManaged.length,
   }
 }

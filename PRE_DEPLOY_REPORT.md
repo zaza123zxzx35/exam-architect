@@ -1,348 +1,196 @@
 # Pre-Deploy Report — Kru Exam Planner (สพฐ. ครูผู้ช่วย 2569)
 
-**วันที่รายงาน:** 15 ตุลาคม 2026  
-**Branch / HEAD:** `main` @ `0767ac2`  
-**สถานะ Deploy:** **ยังไม่ deploy** — รออนุมัติจากคุณ  
-**Dev ที่รันอยู่:** [http://127.0.0.1:43123](http://127.0.0.1:43123)
+**วันที่/เวลาตรวจสอบ:** 15 ตุลาคม 2026 (รอบ Final Data Safety Review — Confirm Before Clear Managed)  
+**Branch:** `main`  
+**Commit SHA (last commit):** `e1db5fe3bc62f79f185b70716edbf4ec0e980022` (`e1db5fe`)  
+**Remote sync:** `main` = `origin/main` (ahead 0 / behind 0)  
+**Working tree:** **dirty** — มีการแก้ไข local ที่ยังไม่ commit (ดู §9)  
+**สถานะ Deploy:** **NOT DEPLOYED — WAITING FOR SEPARATE EXPLICIT APPROVAL**  
+**คำตัดสิน:** **CONDITIONAL GO**
 
 ---
 
-## 0. สรุปผู้บริหาร (Executive Summary)
+## 0. Executive summary
 
-| หัวข้อ | สถานะ |
+| หัวข้อ | ผล |
 |---|---|
-| แผนพาบรรจุ 100 | **100/100** (ความพร้อมแผนรบที่ควบคุมได้) |
-| คลังหลักสูตร | **205** รายการ · เปิดได้โครงสร้าง **201/205** · ค้าง Drive **4** |
-| ตารางไลฟ์/บล็อก | **30** อีเวนต์ (เลดี้ 15 + VIP 10 + ออนไลน์ 5) |
-| ความเป็นเจ้าของติวเตอร์ | อังกฤษ = เลดี้เก๋เก๋ · การศึกษา/กฎหมาย/ข้าราชการ = อ.นนท์ · ไม่ปนกัน |
-| ทดสอบอัตโนมัติ | **207/207 ผ่าน** (35 ไฟล์) |
-| Production build | **สำเร็จ** |
-| Lint | **3 warnings** (ไม่บล็อก build) |
-| คำแนะนำ | **CONDITIONAL GO** — พร้อม deploy Vercel SPA ส่วนตัว ถ้ายอมรับข้อจำกัดใน §10 |
+| Automated tests | **PASS** 217/217 (35 files) |
+| Lint | **PASS** 0 warnings |
+| Production build | **PASS** |
+| Force regen ต้องยืนยันก่อน | **PASS** (dialog + preview; ยกเลิกไม่แตะ schedule) |
+| Force regen คง `done` / `userEdited` | **PASS** |
+| Force regen ไม่สร้าง resource ซ้ำหลังยืนยัน | **PASS** |
+| ล้างงาน curated/ไลฟ์ ต้องยืนยันก่อน | **PASS** (dialog + preview; ยกเลิกไม่แตะ schedule) |
+| ล้างงานลบรวม done / userEdited (ตามขอบเขตเดิม) | **PASS** — ข้อความยืนยันอธิบายชัด |
+| ล้างงานคงงานที่ไม่ใช่ managed | **PASS** |
+| API key ฝั่ง server เท่านั้น | **PASS** (สถาปัตยกรรม; ไม่เปิดเผยค่า) |
+| Catalog URL taxonomy | **PASS** — 201 `unchecked` · 4 `needs_full_url` · 0 `verified_accessible` |
+| Drive 4 stubs ไม่ถูกเดา URL | **PASS** |
+| Vercel Dashboard / Production | **NOT VERIFIED** |
+| Browser/Mobile E2E | **NOT VERIFIED** |
 
-> **หมายเหตุสำคัญ:** คะแนน **100/100** คือความพร้อมของแผนติวที่ควบคุมได้ในแอป  
-> **ไม่ใช่การการันตีผลสอบ/บรรจุ** — ผลสอบมาจากการรันแผนจริงทุกวัน
-
----
-
-## 1. ผลิตภัณฑ์คืออะไร
-
-แอปวางแผนติวสอบ **ครูผู้ช่วย สพฐ. ปี 2569** แบบ client-first:
-
-- รวมคลังคลิปติว (เลดี้เก๋เก๋ / อ.นนท์ / คณิต / ไทย / ข้าราชการที่ดี)
-- บังคับแพ็ก **ภาค ข 29 วัน** + ไลฟ์/บล็อกจากใบปลิวจริง
-- **แผนพาบรรจุ 100** — คันโยกความพร้อมที่ปิดช่องว่างทั้งหมดที่ควบคุมได้
-- ปุ่ม **เปิดคลิปติว / คัดลอก URL** ต่องาน
-- ผู้ช่วยติว (rule-based + optional OpenAI ผ่าน `/api/assistant`)
-
-**Stack:** Vite 8 · React 19 · React Router 7 · Tailwind 3 · Vitest · Vercel (static + serverless `/api`)
+> **100/100** = ความพร้อมแผนรบในแอป — **ไม่ใช่การการันตีผลสอบ/บรรจุ**
 
 ---
 
-## 2. เส้นทาง (Routes) และหน้าที่หลัก
+## 1. Git status
 
-| Route | หน้า | หน้าที่ |
-|---|---|---|
-| `/` | Dashboard | ภาพรวม English Study Desk + competition ท้องถิ่น |
-| `/today` | Today | งานวันนี้ + **การ์ดแผนพาบรรจุ 100** + ปุ่มเปิดลิงก์ |
-| `/overview` | Overview | แผนที่วัน / streak / ความคืบหน้า + Victory card |
-| `/history` | History | ย้อนดูวัน (`?day=`) |
-| `/library` | Library | คลังหลักสูตร curated + ผสานแผน 29 วัน + รีวิว URL |
-| `/resources` | Resources | Hub เก่า (taxonomy filters) |
-| `/timetable` | Timetable | ตารางติว / generator มรดก HTML |
-| `/planner` | Smart Planner | จัด session อัจฉริยะ |
-| `/assistant` | Assistant | ผู้ช่วยติว (rule / OpenAI) |
-| `/plan` | Plan | แผนการอ่านภาษาอังกฤษ |
-| `/quiz` | Quiz | แบบทดสอบ + จุดอ่อน |
-| `/notes` | Notes | โน้ต |
-| `/videos` | Videos | วิดีโอ seed |
-| `/info` | Info | ข้อมูลสอบ / HRMS อ้างอิง |
-| `*` | NotFound | 404 ใน SPA |
+```
+Branch: main @ e1db5fe (= origin/main)
+Dirty (modified):
+  PRE_DEPLOY_REPORT.md
+  scripts/phase-i-journey-audit.mjs
+  src/components/VictoryPlanCard.jsx
+  src/lib/curated/seedPartB29Plan.js
+  src/lib/curated/seedPartB29Plan.test.js
+  src/lib/curated/victoryPlan.js
+  src/lib/curated/victoryPlan.test.js
+  src/pages/Timetable.jsx
+  src/pages/Today.jsx
+  src/pages/Videos.jsx
+Untracked:
+  src/components/ClearManagedConfirmDialog.jsx
+  src/components/ForceRegenConfirmDialog.jsx
+```
 
-Bootstrap: `StorageBootstrap` migrate localStorage → seed แผน victory อัตโนมัติครั้งแรก
-
----
-
-## 3. วันสอบและหน้าต่างสำคัญ
-
-| รายการ | วันเวลา (Asia/Bangkok) |
-|---|---|
-| รับสมัคร | 19–25 ต.ค. 2569 |
-| สอบภาค ก | **14 พ.ย. 2569 · 09:00** (200 คะแนน) |
-| สอบภาค ข | **15 พ.ย. 2569 · 09:00** (100 คะแนน) |
-
-แหล่งเดียว: `src/data/examCalendar.js`
+Secret scan บน diff: **CLEAN**
 
 ---
 
-## 4. คลังหลักสูตร (Curated Catalog)
-
-**เวอร์ชัน:** `15.3-fb-watch-csv-applied`  
-**ไฟล์:** `src/data/curatedCatalog.js`  
-**CSV ซ่อมลิงก์:** `facebook_drive_links_repaired.csv` (55 แถวข้อมูล)
-
-### 4.1 สรุปจำนวน
-
-| เมตริก | ค่า |
-|---|---|
-| รวม | **205** |
-| โครงสร้าง URL ครบ (`unchecked` → กดเปิดได้) | **201** |
-| `needs_full_url` | **4** |
-| Audit คลัง | **ok** (0 hard errors) |
-
-### 4.2 แยกตามวิชา
-
-| subjectId | จำนวน | ภาค |
-|---|---|---|
-| `english-skills-a` | 77 | ก |
-| `english-major` | 32 | ข |
-| `law` | 33 | ข |
-| `math` | 28 | ก |
-| `civil-servant-a` | 16 | ก |
-| `education` | 13 | ข |
-| `general-knowledge-a` (ไทย) | 6 | ก |
-
-### 4.3 แยกตามติวเตอร์ / แหล่ง
-
-| แหล่ง | จำนวน | ขอบเขต |
-|---|---|---|
-| ครูเลดี้เก๋เก๋ | 109 | อังกฤษ ก + ข เท่านั้น |
-| อ.นนท์ | 60 | การศึกษา · กฎหมาย · ข้าราชการที่ดี |
-| อ.แก็บติวเตอร์ | 19 | คณิตเสริม |
-| ตัวเลขและเหตุผล (YouTube) | 9 | คณิตแกน |
-| ภาษาไทย (YouTube) | 6 | ไทย |
-| ขงเบ้ง | 2 | ข้าราชการที่ดี |
-
-**กฎ ownership (ล็อกด้วยเทสต์):**  
-อังกฤษ LIVE/คลิป ≠ อ.นนท์ · ไทย/คณิต = self-study pack · ไม่ปนวิชา
-
-### 4.4 ลิงก์ที่ยังไม่ครบ (ต้อง URL Drive เต็ม)
-
-1. `edu-nonn-analysis-key` — เฉลยวิเคราะห์การศึกษา  
-2. `law-nonn-special-12-doc` — เอกสารกฎหมายพิเศษ 1–2  
-3. `law-nonn-special-34-key` — เฉลยกฎหมายพิเศษ 3–4  
-4. `civil-nonn-redbook-key` — เฉลยข้าราชการที่ดีเล่มแดง  
-
-**ทางออกในแผน 100:** มีงาน **ทบทวนทดแทน** 4 ชิ้น ที่ผูกคลิป/เอกสารที่เปิดได้อยู่แล้ว — ไม่หยุดติวเพราะลิงก์ค้าง
-
-### 4.5 นโยบาย URL
-
-- ไม่แต่ง URL ที่ขาดตอน  
-- Classify-on-read: stub มี `...` → `needs_full_url` · URL ครบ → `unchecked` (ยังไม่เคลมว่า verified)  
-- ปุ่มเปิดลิงก์ใช้ได้กับ URL ที่โครงสร้างครบ · stub มีปุ่มคัดลอก
-
----
-
-## 5. ตารางติวสด / บล็อกเนื้อหา (Live Schedule)
-
-**เวอร์ชัน:** `4.1-online-tutors-labeled`  
-**ไฟล์:** `src/data/liveTutorSchedule.js`  
-**รวมอีเวนต์:** **30**
-
-### 5.1 ใบปลิว 1 — VIP ครูเลดี้เก๋เก๋ (หมาหอน / แหกโค้ง / เอก)
-
-- ภาค ก แหกโค้ง 21:00–22:30 · หมาหอน 19:00–21:00 (ตามวันที่ในโปสเตอร์)  
-- ภาค ข วิชาเอกอังกฤษ 22:30–00:00 คืนเดียวกัน  
-- **15** ไลฟ์ · ไม่มีลิงก์เข้าห้อง (ไม่แต่ง)
-
-### 5.2 ใบปลิว 2 — VIP ช่วงติวเนื้อหา ต.ค. 69
-
-| ช่วง | โฟกัส |
-|---|---|
-| 6 ต.ค. | ปฐมนิเทศ |
-| 7–10 ต.ค. | ข้าราชการที่ดี |
-| 11–12 ต.ค. | ส่งหนังสือ |
-| 12 ต.ค. ค่ำ | กฎหมายการศึกษา |
-| 13–15 ต.ค. | อังกฤษ |
-| 16–18 ต.ค. | ไทย |
-| 19–22 ต.ค. | วิชาการศึกษา |
-| 23–24, 26 ต.ค. | คณิต |
-| 27–30 ต.ค. | กฎหมาย (ทบทวน) |
-
-### 5.3 ใบปลิว 3 — ตารางออนไลน์ 15–23 ต.ค. (ติวเตอร์ตามโปสเตอร์)
-
-| บล็อก | ติวเตอร์บนโปสเตอร์ | คลังที่ใช้ทบทวน |
-|---|---|---|
-| ข้าราชการที่ดี เช้า–บ่าย | ดร.วิรัตน์ | อ.นนท์ / ขงเบ้ง |
-| มาตรฐานการสอน ค่ำ | ดร.ธนากร | อ.นนท์ การศึกษา |
-| อังกฤษภาค ก ค่ำ | อ.ธนารีย์รัฐ | **เลดี้เก๋เก๋** |
-| กฎหมาย เช้า–บ่าย | ดร.วิรัตน์ | อ.นนท์ กฎหมาย |
-| ตัวเลขและเหตุผล ค่ำ | อ.ศรัญภรณ์ | YouTube / แก็บ |
-
-**นโยบายชนเวลา:** ไลฟ์เลดี้เก๋เก๋ **ชนะ** — บล็อก VIP/ออนไลน์ที่ทับช่วงถูกเลื่อนเป็น **ทบทวนกลางวัน 09:00–11:00**
-
----
-
-## 6. แผนพาบรรจุ 100 (Victory Plan)
-
-**เวอร์ชัน:** `1.0-belief-effort-100`  
-**โมดูล:** `src/lib/curated/victoryPlan.js`  
-**UI:** `VictoryPlanCard` บน `/today` และ `/overview`  
-**คติ:** *สิ่งที่เป็นไปไม่ได้ จะเป็นไปได้ เพราะความเชื่อและพยายาม*
-
-### 6.1 คันโยก (รวมน้ำหนัก = 100)
-
-| คันโยก | น้ำหนัก | สถานะหลังจัดแผน | รายละเอียดตัวอย่าง (seed 15 ต.ค.) |
-|---|---|---|---|
-| บังคับภาค ข | 14 | ✓ | เอก 12 · การศึกษา 5 · กฎหมาย 4 |
-| ไลฟ์เลดี้ครบ | 14 | ✓ | 11 คืนในหน้าต่างแผน |
-| บังคับไทย 6 ตอน | 12 | ✓ | 6/6 |
-| บังคับคณิต ≥ 8 | 12 | ✓ | 8/8 |
-| ข้าราชการที่ดีแกน | 8 | ✓ | 4 |
-| เคลียร์ชนเวลา | 10 | ✓ | เลดี้ชนะ |
-| Mock รายสัปดาห์ | 10 | ✓ | 5 จุดตรวจ |
-| เส้นทางทดแทน Drive | 12 | ✓ | 4/4 งานทดแทนถูกปัก |
-| ยืนยันความเชื่อ | 8 | ✓ | กดยืนยันตอนจัดแผน |
-
-**คะแนนหลังกด「จัดแผน 100/100」:** **100/100**  
-**งานในแผน (seed 15 ต.ค.):** ≈ **98** งาน
-
-### 6.2 สิ่งที่แผน 100 เพิ่มจากแพ็ก 29 วันเดิม
-
-1. บังคับไทย + คณิตเข้าตาราง (ไม่ถูกงบภาค ข กินหมด)  
-2. Resolve conflict ไลฟ์เลดี้ vs VIP/ออนไลน์  
-3. จุดตรวจ mock สลับ ก/ข รายสัปดาห์ + คืนก่อนสอบ  
-4. งานทบทวนทดแทน Drive 4 ไฟล์  
-5. มิเตอร์ความพร้อมบน UI + ปุ่มยืนยันความเชื่อ
-
-### 6.3 เพดานแพ็ก Part ข 29 วัน (`1.2-victory-thai-math-force`)
-
-| วิชา | max ตอน | max นาที |
-|---|---|---|
-| english-major | 12 | 1080 |
-| education | 6 | 360 |
-| law | 6 | 330 |
-| english-skills-a | 4 | 300 |
-| math | **8** | **480** |
-| ไทย (general-knowledge-a) | **6** | **360** |
-| civil-servant-a | 5 | 300 |
-
-แพ็กตัวอย่าง: ภาค ข 21 ตอน ≈ 1560 นาที · ภาค ก 18 ตอน ≈ 1350 นาที · ตัดนอกแพ็ก 166 ตอน (ยังอยู่ในคลัง)
-
----
-
-## 7. Persistence / ความปลอดภัยข้อมูล
-
-| หัวข้อ | รายละเอียด |
-|---|---|
-| SSOT ตาราง | `kru_schedule_v1` (tasks + sessions + notes) |
-| Dual-write | คีย์มรดกไม่ถูกลบ |
-| Sync ข้ามเครื่อง | **ไม่มี** (localStorage เท่านั้น) |
-| Auth / บัญชี | **ไม่มี** |
-| API key OpenAI | อยู่ฝั่งเซิร์ฟเวอร์เท่านั้น (`OPENAI_API_KEY` ใน `.env` / Vercel) — ไม่มี `VITE_OPENAI_*` |
-| URL ภายนอก | `sanitizeUrl` / `safeResourceUrl` (http/https) · ตัด `u_id` ที่เรนเดอร์ |
-| AI แก้ตาราง | เสนออย่างเดียว — ต้องยืนยันจากผู้ใช้ |
-
----
-
-## 8. คุณภาพโค้ดก่อน Deploy
+## 2. Test / Lint / Build (รอบนี้ — รันจริง)
 
 | คำสั่ง | ผล |
 |---|---|
-| `npm test` | **207/207 ผ่าน** · 35 ไฟล์ |
-| `npm run build` | **สำเร็จ** (~0.9s) · `dist/` พร้อม |
-| `npm run lint` | **3 warnings** (ไม่ fail) |
-
-Warnings ที่เหลือ (ไม่บล็อก):
-
-1. `scripts/phase-i-journey-audit.mjs` — import ไม่ใช้  
-2. `src/pages/Timetable.jsx` — `getAnonTopic` ไม่ใช้  
-3. `src/pages/Videos.jsx` — setState ใน effect (คำเตือน React)
-
-เทสต์สำคัญที่ล็อกพฤติกรรม:
-
-- ownership เลดี้/อ.นนท์  
-- URL `needs_full_url` เหลือแค่ 4 Drive  
-- live schedule + conflict Lady wins  
-- victory plan ถึง 100/100  
-- catalog / Part B 29 / open-link buttons
+| `npm test` | **217/217 passed** (35 files) |
+| `npm run lint` | **clean** (oxlint, 0 warnings) |
+| `npm run build` | **success** (vite build) |
 
 ---
 
-## 9. ประวัติงานล่าสุดที่เกี่ยวข้องกับ Deploy นี้
+## 3. Clear managed — ขอบเขตและ confirm
 
-| Commit | สาระ |
+### ขอบเขตการลบ (ฟังก์ชันเดิม / `isVictoryManagedTask`)
+ลบ Task ที่เข้าเงื่อนไขใดเงื่อนไขหนึ่ง:
+- `id` ขึ้นต้นด้วย `curated_` / `live_` / `victory_`
+- หรือ `origin` เป็น `curated-unified-plan` · `curated-part-b-29` · `live-tutor-schedule` · `victory-plan-100`
+
+**รวม `status === 'done'` และ `userEdited === true`** — ไม่เหมือน force regen ที่คงรายการเหล่านี้ไว้
+
+งานอื่น (เช่น manual / user) **คงอยู่** · seed meta flags ถูกล้าง
+
+### หลังแก้ (รอบนี้)
+1. กด「ล้างงาน curated/ไลฟ์ในเครื่องนี้」→ เปิด `ClearManagedConfirmDialog` + `buildClearManagedPreview` (**ไม่ mutate schedule**)
+2. แสดงจำนวนจะลบทั้งหมด · done ที่จะหาย · userEdited ที่จะหาย · pending · งานอื่นที่จะคง · ตัวอย่างชื่อจริง
+3. **ยกเลิก** → ปิด dialog · แผนเดิมไม่เปลี่ยน
+4. **ยืนยัน** → `commitClearManagedTasks` · ลบเฉพาะ managed ตามขอบเขตเดิม · คงงานอื่น
+
+---
+
+## 4. Force regen — ยืนยันซ้ำในรอบนี้
+
+1. กดปุ่ม → `ForceRegenConfirmDialog` + `buildForceRegenPreview` (**ไม่ mutate schedule**)
+2. **ยกเลิก** → แผนเดิมไม่เปลี่ยน
+3. **ยืนยัน** → `commitForceVictoryPlan` · คง done/userEdited · แทนที่ pending · ไม่ซ้ำ resource · score 100
+4. Unit tests ใน `victoryPlan.test.js` + `seedPartB29Plan.test.js` ยัง **PASS**
+
+---
+
+## 5. ปัญหาตามความรุนแรง
+
+### Critical
+*ไม่มี*
+
+### High
+*ไม่มีค้าง* — ทั้ง force regen และล้าง curated ต้องยืนยันก่อนแล้วใน working tree
+
+### Medium
+| รายการ | สถานะ |
 |---|---|
-| `0767ac2` | เอกสารแผนพาบรรจุ 100 ใน README |
-| `d283b76` | แผนพาบรรจุ 100 ทั้งระบบ |
-| `9d94555` | ใส่ FB watch จาก CSV + ตารางออนไลน์ตามโปสเตอร์ |
-| `c64fe48` | ล็อก ownership ติวเตอร์–วิชา |
-| `f175388` | แก้ YouTube คณิต `www.www` |
-| `f60d866` / `659179d` | ปุ่มเปิด/คัดลอกลิงก์ + กันบัคเมนู |
+| Drive 4 × `needs_full_url` | คงไว้; มีทบทวนทดแทน; ห้ามเดา URL |
+| Vercel Production env / dashboard | NOT VERIFIED |
+| localStorage เครื่องเดียว | by design |
+| ปุ่ม「ล้างงาน」ลบรวม done (หลังยืนยัน) | by design ตามขอบเขตเดิม; dialog เตือนชัด |
 
----
-
-## 10. ความเสี่ยงและข้อจำกัดที่ต้องยอมรับก่อน Deploy
-
-| ความเสี่ยง | ระดับ | หมายเหตุ |
-|---|---|---|
-| Drive 4 ลิงก์ยังไม่เต็ม | กลาง | มีเส้นทางทบทวนทดแทนแล้ว |
-| URL ส่วนใหญ่เป็น `unchecked` | ต่ำ–กลาง | โครงสร้างครบ กดเปิดได้ แต่ยังไม่ verified_accessible |
-| ไม่มีลิงก์เข้าห้องไลฟ์จริง | กลาง | ตามนโยบายไม่แต่งลิงก์ — ผู้ใช้เข้าจากกลุ่ม VIP เอง |
-| ข้อมูลอยู่เครื่องเดียว | สูงถ้าใช้หลายเครื่อง | ล้าง browser = แผนหาย (มี backup key ในเครื่อง) |
-| ไม่มีการันตีผลสอบ | — | 100 = แผนพร้อมรบ ไม่ใช่คะแนนสอบ |
-| OpenAI optional | ต่ำ | ไม่มีคีย์ก็ใช้ rule-based ได้ |
-| Lint warnings 3 จุด | ต่ำ | ไม่กระทบ runtime หลัก |
-
----
-
-## 11. Deploy Checklist (เมื่อคุณอนุมัติ)
-
-1. [ ] ยืนยันอ่านรายงานนี้แล้ว  
-2. [ ] (ถ้าต้องการ AI) ตั้ง `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_TIMEOUT_MS` ใน Vercel  
-3. [ ] `vercel` / Git connect → production จาก `main`  
-4. [ ] ตรวจ deep link: `/today` `/overview` `/library` `/assistant`  
-5. [ ] กด **จัดแผน 100/100** บน production ครั้งแรก แล้วตรวจมิเตอร์ = 100  
-6. [ ] ทดลองปุ่มเปิดคลิป FB/YouTube อย่างน้อย 1 รายการต่อติวเตอร์หลัก  
-7. [ ] ไม่ใส่ secret ใน client / chat  
-
-**คำสั่งโลคัลที่ใช้ตรวจแล้วก่อนรายงานนี้**
-
-```bash
-npm test
-npm run lint
-npm run build
-npm run dev   # http://127.0.0.1:43123
-```
-
-**Config deploy:** `vercel.json` — SPA rewrite ยกเว้น `/api/*`
-
----
-
-## 12. แผนรบหลัง Deploy (สำหรับผู้ใช้)
-
-1. กด **จัดแผน 100/100** → ยืนยันความเชื่อ  
-2. ทุกวันทำงานใน `/today` ให้ครบ (ปุ่มเปิดคลิป)  
-3. **คืนไลฟ์เลดี้ห้ามพลาด** — บล็อกที่ชนถูกเลื่อนกลางวันแล้ว  
-4. ทำ **mock รายสัปดาห์** ตามจุดตรวจ  
-5. ทำงาน **ทบทวนทดแทน Drive** 4 ชิ้น (หรือส่ง URL เต็มมาใส่ทีหลัง)  
-6. ช่วงรับสมัคร 19–25 ต.ค. — เตรียมเอกสารจริงคู่กับติว  
-7. คืนก่อนสอบภาค ก — จุดตรวจสุดท้ายในแผน
-
----
-
-## 13. เอกสารอ้างอิงในรีโป
-
-| ไฟล์ | เนื้อหา |
+### Low
+| รายการ | สถานะ |
 |---|---|
-| `README.md` | วิธีรัน + milestone |
-| `PRE_DEPLOY_REPORT.md` | **รายงานฉบับนี้** |
-| `PHASE_I_PRODUCTION_READINESS_REPORT.md` | ออดิทพร้อมผลิตช่วง M1–M5 (ข้อมูลเก่ากว่าบางส่วน) |
-| `MASTER_PHASE_0_7_RELEASE.md` | โน้ต release candidate เฟส 0–7 |
-| `facebook_drive_links_repaired.csv` | ลิงก์ FB ที่ซ่อมแล้ว + Drive ที่ยังค้าง |
-| `RESOURCES_REVIEW.md` | รีวิวทรัพยากร |
+| ไม่มี Playwright E2E สำหรับ dialog | มี unit/contract tests แทน |
+| Rate limit API in-memory | ยอมรับได้สำหรับ SPA ส่วนตัว |
 
 ---
 
-## 14. คำตัดสินก่อน Deploy
+## 6. Resources / URLs
 
-| คำถาม | คำตอบ |
+| urlStatus | จำนวน |
 |---|---|
-| โค้ดพร้อมขึ้น Vercel หรือยัง? | **พร้อม (conditional)** |
-| แผนติวครบ 100 หรือยัง? | **ครบ 100/100 ในระบบ** |
-| มีอะไรต้องทำก่อนกด deploy? | อ่าน §10 แล้วยืนยัน — โดยเฉพาะรับรู้ว่าไม่มี sync ข้ามเครื่อง และ Drive 4 ไฟล์ยังรอ URL เต็ม |
-| ต้องรออะไรจากคุณ? | **คำสั่งอนุมัติ deploy ชัดเจน** |
+| `unchecked` | 201 |
+| `needs_full_url` | 4 |
+| `verified_accessible` | 0 |
+
+Drive stubs ยังมี ellipsis: `edu-nonn-analysis-key`, `law-nonn-special-12-doc`, `law-nonn-special-34-key`, `civil-nonn-redbook-key`
 
 ---
 
-*จบรายงาน — สร้างอัตโนมัติจากสถานะ `main@0767ac2` วันที่ 15 ต.ค. 2026*
+## 7. API / Security (สรุปสั้น)
+
+- คีย์อ่านจาก `OPENAI_API_KEY` ฝั่ง server เท่านั้น · ห้าม `VITE_OPENAI_API_KEY`
+- AI เสนอแผน → ต้องยืนยันก่อนบันทึก · ไม่ทับ done/userEdited
+- ไม่พิมพ์ secret ในรายงานนี้
+
+ชื่อตัวแปร Production (ค่าไม่แสดง): `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_TIMEOUT_MS`
+
+---
+
+## 8. Routing / Vercel (จาก repo)
+
+- `vercel.json`: SPA rewrite ยกเว้น `/api/`
+- Dashboard / deploy จริง: **NOT VERIFIED**
+
+---
+
+## 9. สิ่งที่ยังไม่ได้ตรวจ
+
+1. Vercel Dashboard env  
+2. Production deep links หลัง deploy  
+3. Browser manual เปิด dialog บน desktop/mobile  
+4. Live OpenAI บน production (ไม่ยิงซ้ำในรอบนี้)
+
+---
+
+## 10. ไฟล์ที่เปลี่ยนใน working tree (ยังไม่ commit)
+
+| ไฟล์ | เหตุผล |
+|---|---|
+| `src/lib/curated/victoryPlan.js` | preview + retain/protect + clone กัน mutate |
+| `src/lib/curated/victoryPlan.test.js` | เทสต์ force preview/cancel/confirm preserve |
+| `src/lib/curated/seedPartB29Plan.js` | `commitForceVictoryPlan` + `buildClearManagedPreview` / `commitClearManagedTasks` |
+| `src/lib/curated/seedPartB29Plan.test.js` | force + clear contract tests |
+| `src/components/ForceRegenConfirmDialog.jsx` | **ใหม่** — dialog ยืนยันจัดแผน 100 |
+| `src/components/ClearManagedConfirmDialog.jsx` | **ใหม่** — dialog ยืนยันล้าง curated/ไลฟ์ |
+| `src/components/VictoryPlanCard.jsx` | เปิด preview ก่อน force |
+| `src/pages/Today.jsx` | ปุ่มรีเฟรชแผน + ปุ่มล้างงานใช้ dialog ยืนยัน |
+| `src/pages/Videos.jsx` | lint: derive active id |
+| `src/pages/Timetable.jsx` | lint: ลบ unused |
+| `scripts/phase-i-journey-audit.mjs` | lint: ลบ unused import |
+| `PRE_DEPLOY_REPORT.md` | รายงานรอบนี้ |
+
+---
+
+## 11. Deploy / Post-Deploy (เตรียมไว้เท่านั้น)
+
+ยัง **ห้าม deploy** จนกว่าจะมีคำสั่งอนุมัติแยก  
+หลังอนุมัติ: commit → push → ตั้ง env บน Vercel → deploy → smoke (รวมลองกดจัดแผน 100 และล้าง curated แล้วกดยกเลิก/ยืนยัน)
+
+---
+
+## 12. คำตัดสิน
+
+**CONDITIONAL GO** — โค้ดพร้อมขึ้นได้หลัง commit เมื่อได้รับอนุญาต; Production dashboard ยังไม่ตรวจ; working tree ยัง dirty
+
+---
+
+## DEPLOY / COMMIT STATUS
+
+`COMMIT: NOT AUTHORIZED`  
+`PUSH: NOT AUTHORIZED`  
+`DEPLOY: NOT DEPLOYED — WAITING FOR SEPARATE EXPLICIT APPROVAL`

@@ -131,11 +131,6 @@ function getDayFocusTopic(iso) {
   return { topic: 'ทบทวนรวมเนื้อหาทั้งหมด', owner: 'nonn' }
 }
 
-/** @deprecated use getDayFocusTopic — kept for call sites that only need the label */
-function getAnonTopic(iso) {
-  return getDayFocusTopic(iso).topic
-}
-
 function getLadyLiveInfo(iso) {
   if (iso === '2026-10-07') {
     return { hasLive: true, hasHmahon: false, slots: [
