@@ -28,7 +28,7 @@ import {
   subjectFocusForDate,
 } from './liveSchedulePlan.js'
 
-export const PART_B_29_PLAN_VERSION = '1.1-part-b-forced-lives'
+export const PART_B_29_PLAN_VERSION = '1.2-victory-thai-math-force'
 export const PART_B_29_DAY_TARGET = 29
 export const PART_B_29_ORIGIN = 'curated-part-b-29'
 
@@ -48,8 +48,9 @@ export const PART_B_29_CAPS = Object.freeze({
   [SUBJECT_IDS.EDUCATION]: { maxItems: 6, maxMinutes: 360, examPart: 'ข' },
   [SUBJECT_IDS.LAW]: { maxItems: 6, maxMinutes: 330, examPart: 'ข' },
   [SUBJECT_IDS.ENGLISH_SKILLS_A]: { maxItems: 4, maxMinutes: 300, examPart: 'ก' },
-  [SUBJECT_IDS.MATH]: { maxItems: 5, maxMinutes: 300, examPart: 'ก' },
-  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: { maxItems: 6, maxMinutes: 270, examPart: 'ก' },
+  // Victory 100: Thai ครบ 6 + Math อย่างน้อย 8 (num 01–08) ต้องเข้าแพ็กได้
+  [SUBJECT_IDS.MATH]: { maxItems: 8, maxMinutes: 480, examPart: 'ก' },
+  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: { maxItems: 6, maxMinutes: 360, examPart: 'ก' },
   [SUBJECT_IDS.CIVIL_SERVANT_A]: { maxItems: 5, maxMinutes: 300, examPart: 'ก' },
 })
 
@@ -215,10 +216,7 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'law-nonn-live-02',
   'law-nonn-live-03',
   'law-nonn-live-04',
-  // Math ก · อ.แก็บทั้งชุด + YouTube ตอนท้ายเกิน slim cap
-  'math-num-06',
-  'math-num-07',
-  'math-num-08',
+  // Math ก · อ.แก็บทั้งชุด + num-09 (num 01–08 เข้าแพ็ก victory)
   'math-num-09',
   'math-gab-01',
   'math-gab-02',

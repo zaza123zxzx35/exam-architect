@@ -14,6 +14,8 @@ import {
   ensureCuratedPartB29Seed,
 } from '../lib/curated/seedPartB29Plan.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
+import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
+import { VICTORY_SEED_META_KEY } from '../lib/curated/victoryPlan.js'
 
 function resolveTaskSubject(task) {
   if (task?.subjectId && HUB_SUBJECT_LABELS[task.subjectId]) {
@@ -95,17 +97,24 @@ export default function Today() {
     setSchedule((prev) => {
       const meta = { ...(prev.meta || {}) }
       delete meta[CURATED_PLAN_SEED_META_KEY]
+      delete meta[VICTORY_SEED_META_KEY]
       delete meta.curatedPlanSeedVersion
       delete meta.curatedPlanSeedTodayIso
       delete meta.curatedPlanSeedTaskCount
       delete meta.curatedPlanSeedPartBOk
+      delete meta.curatedPlanVictoryScore
       return {
         ...prev,
         tasks: (prev.tasks || []).filter((t) => {
           const id = String(t.id || '')
           const origin = String(t.origin || '')
-          if (id.startsWith('curated_') || id.startsWith('live_')) return false
-          if (origin === 'curated-unified-plan' || origin === 'curated-part-b-29' || origin === 'live-tutor-schedule') {
+          if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
+          if (
+            origin === 'curated-unified-plan'
+            || origin === 'curated-part-b-29'
+            || origin === 'live-tutor-schedule'
+            || origin === 'victory-plan-100'
+          ) {
             return false
           }
           return true
@@ -121,37 +130,49 @@ export default function Today() {
       const clearedTasks = (prev.tasks || []).filter((t) => {
         const id = String(t.id || '')
         const origin = String(t.origin || '')
-        if (id.startsWith('curated_') || id.startsWith('live_')) return false
-        if (origin === 'curated-unified-plan' || origin === 'curated-part-b-29' || origin === 'live-tutor-schedule') {
+        if (id.startsWith('curated_') || id.startsWith('live_') || id.startsWith('victory_')) return false
+        if (
+          origin === 'curated-unified-plan'
+          || origin === 'curated-part-b-29'
+          || origin === 'live-tutor-schedule'
+          || origin === 'victory-plan-100'
+        ) {
           return false
         }
         return true
       })
       const meta = { ...(prev.meta || {}) }
       delete meta[CURATED_PLAN_SEED_META_KEY]
+      delete meta[VICTORY_SEED_META_KEY]
       const base = { ...prev, tasks: clearedTasks, meta }
-      const { schedule: next } = ensureCuratedPartB29Seed(base, {
+      const { schedule: next, readiness } = ensureCuratedPartB29Seed(base, {
         todayIso: todayIso,
         force: true,
+        declareBelief: true,
       })
+      setRescheduleMsg(
+        readiness?.isPerfect
+          ? `แผนพาบรรจุ ${readiness.score}/100 พร้อมแล้ว — เชื่อแล้วพยายามทุกวัน`
+          : `สร้างแผนแล้ว ${readiness?.score ?? '—'}/100`,
+      )
       return next
     })
-    setRescheduleMsg('สร้างแผน 29 วันใหม่แล้ว (ภาค ข ก่อน + ไลฟ์/บล็อก VIP)')
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <VictoryPlanCard />
+
       <section className="card border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30">
         <p className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">
-          แผน 29 วันพร้อมแล้ว · {CURATED_CATALOG_VERSION}
+          คลัง {CURATED_CATALOG_VERSION} · ภาค ข ก่อน + ไลฟ์เลดี้ + VIP + ทบทวนทดแทน Drive
         </p>
         <p className="mt-1 text-xs text-emerald-900/90 dark:text-emerald-100/90">
-          จัดภาค ข ก่อน + ไลฟ์เลดี้เก๋เก๋ + บล็อก VIP ต.ค. (ไทย/คณิต/ข้าราชการที่ดี/กฎหมาย)
-          · งานด้านล่างมีปุ่ม <strong>เปิดคลิปติว</strong> หรือ <strong>คัดลอก URL</strong>
+          งานด้านล่างมีปุ่ม <strong>เปิดคลิปติว</strong> หรือ <strong>คัดลอก URL</strong>
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className="btn-primary text-xs" onClick={regenCuratedPlan}>
-            สร้าง / รีเฟรชแผน 29 วัน
+            สร้าง / รีเฟรชแผน 100
           </button>
           <Link to="/overview" className="btn-secondary text-xs">แผนภาพรวม</Link>
           <Link to="/library" className="btn-secondary text-xs">คลังหลักสูตร</Link>

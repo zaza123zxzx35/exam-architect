@@ -18,6 +18,68 @@ import { attachCatalogLinkToLiveTask } from './taskOpenAction.js'
 
 export const LIVE_SCHEDULE_ORIGIN = 'live-tutor-schedule'
 
+function parseMinutes(t) {
+  if (!t || !/^\d{1,2}:\d{2}$/.test(String(t))) return null
+  const [h, m] = String(t).split(':').map(Number)
+  return h * 60 + m
+}
+
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  if (aStart == null || aEnd == null || bStart == null || bEnd == null) return false
+  let ae = aEnd
+  let be = bEnd
+  if (ae <= aStart) ae += 24 * 60
+  if (be <= bStart) be += 24 * 60
+  return aStart < be && bStart < ae
+}
+
+/**
+ * Lady live wins: demote overlapping VIP/online content-blocks to daytime review.
+ * @param {Array<object>} tasks
+ */
+export function resolveLadyLiveConflicts(tasks) {
+  const byDate = new Map()
+  for (const t of tasks) {
+    const d = String(t?.plannedDate || '')
+    if (!d) continue
+    if (!byDate.has(d)) byDate.set(d, [])
+    byDate.get(d).push(t)
+  }
+
+  const demotedIds = new Set()
+  for (const [, dayTasks] of byDate) {
+    const lives = dayTasks.filter(
+      (t) => t.liveKind === 'live' && String(t.liveEventId || '').startsWith('lady-'),
+    )
+    if (!lives.length) continue
+    for (const block of dayTasks) {
+      if (block.liveKind !== 'content-block') continue
+      const bs = parseMinutes(block.startTime)
+      const be = parseMinutes(block.endTime)
+      if (bs == null || be == null) continue
+      const hits = lives.some((live) => rangesOverlap(
+        parseMinutes(live.startTime),
+        parseMinutes(live.endTime),
+        bs,
+        be,
+      ))
+      if (!hits) continue
+      demotedIds.add(block.id)
+      block.title = `ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ${String(block.title || '').replace(/^โฟกัสเนื้อหา · /, '')}`
+      block.startTime = '09:00'
+      block.endTime = '11:00'
+      block.reasonTh = [
+        block.reasonTh,
+        'ชนไลฟ์เลดี้เก๋เก๋ — เลื่อนเป็นทบทวนกลางวันตามแผน 100',
+      ].filter(Boolean).join(' · ')
+      block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'victory-lady-wins'])]
+      block.priorityTier = PRIORITY_TIERS.IF_TIME
+      block.conflictResolved = true
+    }
+  }
+  return { tasks, demotedIds: [...demotedIds] }
+}
+
 const SUBJECT_LABEL_EXTRA = Object.freeze({
   [CIVIL_SERVANT_A]: 'ข้าราชการที่ดี (ภาค ก)',
 })
@@ -126,7 +188,9 @@ export function generateLiveScheduleTasks(options = {}) {
     }
   }
 
-  proposedTasks.sort((a, b) => {
+  // Lady live wins over overlapping VIP/online evening content-blocks.
+  const { tasks: resolvedTasks, demotedIds } = resolveLadyLiveConflicts(proposedTasks)
+  resolvedTasks.sort((a, b) => {
     // List/schedule order: priority first, then date, then start time.
     const pa = Number(a.priorityScore)
     const pb = Number(b.priorityScore)
@@ -140,13 +204,15 @@ export function generateLiveScheduleTasks(options = {}) {
     version: LIVE_TUTOR_SCHEDULE_VERSION,
     todayIso,
     untilIso,
-    proposedTasks,
-    upcomingLiveCount: proposedTasks.filter(t => t.liveKind === 'live').length,
-    contentBlockCount: proposedTasks.filter(t => t.liveKind === 'content-block').length,
+    proposedTasks: resolvedTasks,
+    conflictsDemoted: demotedIds,
+    upcomingLiveCount: resolvedTasks.filter(t => t.liveKind === 'live').length,
+    contentBlockCount: resolvedTasks.filter(t => t.liveKind === 'content-block').length,
     notesTh: [
       'ตารางไลฟ์จากโปสเตอร์ที่คุณส่ง — เรียงตามน้ำหนักคะแนนหลักสูตร ไม่ใช่สถิติข้อสอบเก่า',
       'วิชาเอกภาค ข มาก่อน · การศึกษา · กฎหมาย · แล้วค่อยภาค ก',
       'ข้าราชการที่ดี = ภาค ก 50 คะแนน (ไม่ปนกับกฎหมายภาค ข)',
+      'ไลฟ์เลดี้เก๋เก๋ชนะเมื่อชนเวลา VIP/ออนไลน์ — บล็อกที่ชนถูกเลื่อนเป็นทบทวนกลางวัน',
       'ไลฟ์เป็นช่วงเย็น — ไม่แย่งงบติวกลางวันของคลังหลักสูตร แต่ปักหมุดในตาราง',
     ],
   }

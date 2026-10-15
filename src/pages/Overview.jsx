@@ -7,6 +7,7 @@ import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
+import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
 
 export default function Overview() {
   const { schedule } = useScheduleStore()
@@ -65,10 +66,12 @@ export default function Overview() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <VictoryPlanCard compact />
+
       <section className="card border-emerald-200 bg-emerald-50/80 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
-        <p className="font-semibold text-emerald-950 dark:text-emerald-100">แผนภาพรวม — 29 วันบังคับภาค ข</p>
+        <p className="font-semibold text-emerald-950 dark:text-emerald-100">แผนภาพรวม — แผนพาบรรจุ 100</p>
         <p className="mt-1 text-xs text-emerald-900/90 dark:text-emerald-100/90">
-          คลัง {CURATED_CATALOG_VERSION} · ผสานไลฟ์เลดี้เก๋เก๋ + บล็อก VIP ต.ค.
+          คลัง {CURATED_CATALOG_VERSION} · บังคับภาค ข + ไทย/คณิต + ไลฟ์เลดี้ชนะเมื่อชนเวลา
           · ไม่ใช้แผน HTML 34 วันแบบปนหลายสำนัก
         </p>
         <Link to="/library" className="mt-2 inline-flex text-xs font-semibold text-primary-800 underline dark:text-primary-200">
