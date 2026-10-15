@@ -60,6 +60,11 @@ export const SUBJECT_SCOPE = Object.freeze({
     scopeRank: 0.8,
     label: 'ภาษาไทย/จับใจความ สอดคล้องคิดวิเคราะห์เชิงภาษาภาค ก',
   },
+  [SUBJECT_IDS.CIVIL_SERVANT_A]: {
+    examPart: 'ก',
+    scopeRank: 0.85,
+    label: 'ความรู้และลักษณะการเป็นข้าราชการที่ดี ภาค ก (50 คะแนน · ว14/2566) — ไม่ปนกฎหมายภาค ข',
+  },
   [SUBJECT_IDS.ENGLISH_SKILLS_A]: {
     examPart: 'ก',
     scopeRank: 0.9,

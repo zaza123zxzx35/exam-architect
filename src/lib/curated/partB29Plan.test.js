@@ -53,6 +53,8 @@ describe('generatePartB29Draft', () => {
       || t.subjectId === SUBJECT_IDS.EDUCATION
       || t.subjectId === SUBJECT_IDS.LAW
       || t.subjectId === SUBJECT_IDS.MATH
+      || t.subjectId === SUBJECT_IDS.GENERAL_KNOWLEDGE_A
+      || t.subjectId === SUBJECT_IDS.CIVIL_SERVANT_A
     ))).toBe(true)
     expect(draft.packSummary.partBItems).toBeGreaterThan(0)
   })

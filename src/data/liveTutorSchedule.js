@@ -38,7 +38,8 @@ export const LIVE_PRIORITY = Object.freeze({
   LOGISTICS: 90,
 })
 
-export const CIVIL_SERVANT_A = 'civil-servant-a'
+/** @deprecated use SUBJECT_IDS.CIVIL_SERVANT_A */
+export const CIVIL_SERVANT_A = SUBJECT_IDS.CIVIL_SERVANT_A
 
 /**
  * Dates from flyer «ตารางติวพาบรรจุ สพฐ. 69» · VIP Group ครูเลดี้เก๋เก๋

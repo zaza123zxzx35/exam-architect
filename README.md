@@ -60,9 +60,9 @@ npm run build # production bundle
 | Smart Tutor weakness engine | Done — rule-based `quiz_results` analysis via `src/lib/study/weakness.js`; intent `show_weakness` / “ดูจุดอ่อน”; never writes storage or invents scores |
 | District intelligence | Done — user-local competition records on Dashboard; HRMS on `/info` stays cited national stats only |
 | Master Phase 0–7 release prep | [MASTER_PHASE_0_7_RELEASE.md](./MASTER_PHASE_0_7_RELEASE.md) — local release candidate; **no deploy / no push** until explicit approval |
-| Unified curated library (ก+ข) | `/library` — **v14** เลดี้เก๋เก๋ English + อ.นนท์ การศึกษา/กฎหมาย + คณิต/เหตุผล (YT must · Gab supplement); incomplete stubs → `needs_full_url` |
+| Unified curated library (ก+ข) | `/library` — **v15** English + การศึกษา/กฎหมาย + คณิต + ไทย + ข้าราชการที่ดี (`civil-servant-a`); incomplete stubs → `needs_full_url` |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling the whole catalog |
-| Part ข 29-day forced pack | `/library` — major + education + law core; slim Part ก หมาหอน + YouTube math Ep.1–5; add-only merge |
+| Part ข 29-day forced pack | `/library` — major + education + law core; slim Part ก รวมไทย/ข้าราชการที่ดี; add-only merge |
 | Live tutor schedule + Today/Overview | Lady Kaekae VIP flyer lives (Sep–Nov 2026); Today/Overview read curated schedule only |
 
 ## Data notes

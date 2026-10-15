@@ -83,8 +83,8 @@ export const OFFICIAL_CURRICULUM_BUCKETS = Object.freeze([
     examPart: 'ก',
     titleTh: 'ความรู้และลักษณะการเป็นข้าราชการที่ดี',
     maxScore: 50,
-    mapsToSubjectIds: [],
-    noteTh: 'ยังไม่มี subjectId แยกในแอป — อย่าปนกับกฎหมายภาค ข',
+    mapsToSubjectIds: [SUBJECT_IDS.CIVIL_SERVANT_A],
+    noteTh: 'แยกจากกฎหมายครูภาค ข — ใช้ subjectId civil-servant-a',
   },
   {
     examPart: 'ข',
@@ -155,6 +155,13 @@ export const SUBJECT_OFFICIAL_SCOPE = Object.freeze({
     officialBucketTh: 'ความสามารถในการคิดวิเคราะห์ — เชิงภาษา (ส่วนหนึ่งของ 100 คะแนน)',
     sourceIds: ['otepc-w14-2566'],
     noteTh: 'คลังใช้สำหรับภาษาไทย/จับใจความ — สอดคล้องคิดวิเคราะห์เชิงภาษา',
+  },
+  [SUBJECT_IDS.CIVIL_SERVANT_A]: {
+    examPart: 'ก',
+    status: /** @type {ScopeEvidenceStatus} */ ('verified_official'),
+    officialBucketTh: 'ความรู้และลักษณะการเป็นข้าราชการที่ดี (50 คะแนน)',
+    sourceIds: ['otepc-w14-2566', 'sesao1-announce-2569'],
+    noteTh: 'ยืนยันจากหลักสูตร ก.ค.ศ. ว14/2566 — ไม่ปนกับกฎหมายภาค ข',
   },
   [SUBJECT_IDS.GENERAL_REASONING]: {
     examPart: 'ก',
@@ -237,7 +244,7 @@ export function buildOfficialScopeReport(catalog = []) {
     limitationsTh: [
       'หนังสือ สพฐ. ว 16660 / ว 17828 อ้างจากหน้าสรุปที่มีลิงก์ — ควรเปิด PDF ต้นทางบนเว็บ สพฐ. อีกครั้งก่อนใช้งานจริง',
       'คะแนนรายหัวข้อเป็นไปตามหลักสูตร ก.ค.ศ. — ไม่ใช่สถิติความถี่ข้อสอบเก่า',
-      'หมวดข้าราชการที่ดียังไม่มี subjectId แยกในคลัง',
+      'ข้าราชการที่ดี = civil-servant-a ภาค ก — แยกจาก law ภาค ข',
     ],
   }
 }

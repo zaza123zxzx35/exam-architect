@@ -4,7 +4,7 @@
  * Never reads/writes storage, never mutates inputs, never invents exam facts.
  */
 
-export const TAXONOMY_VERSION = '2b.2'
+export const TAXONOMY_VERSION = '2b.3'
 
 /** @typedef {'ก' | 'ข' | 'ค' | 'admin' | 'mixed' | 'unknown'} ExamPart */
 /** @typedef {'explicit' | 'heuristic' | 'mixed' | 'unknown'} TaxonomyConfidence */
@@ -15,6 +15,7 @@ export const SUBJECT_IDS = Object.freeze({
   GENERAL_REASONING: 'general-reasoning',
   ENGLISH_SKILLS_A: 'english-skills-a',
   GENERAL_KNOWLEDGE_A: 'general-knowledge-a',
+  CIVIL_SERVANT_A: 'civil-servant-a',
   EDUCATION: 'education',
   ENGLISH_MAJOR: 'english-major',
   INTERVIEW_C: 'interview-c',
@@ -395,15 +396,15 @@ export function subjectIdToExamPart(subjectId) {
     case SUBJECT_IDS.GENERAL_REASONING:
     case SUBJECT_IDS.ENGLISH_SKILLS_A:
     case SUBJECT_IDS.GENERAL_KNOWLEDGE_A:
+    case SUBJECT_IDS.CIVIL_SERVANT_A:
+    case SUBJECT_IDS.MATH:
+      // Official: ว14/2566 — คิดวิเคราะห์ / อังกฤษ ก / ข้าราชการที่ดี under ภาค ก
       return 'ก'
     case SUBJECT_IDS.EDUCATION:
     case SUBJECT_IDS.ENGLISH_MAJOR:
     case SUBJECT_IDS.LAW:
       // Official: ก.ค.ศ. ว14/2566 — education + law under ภาค ข
       return 'ข'
-    case SUBJECT_IDS.MATH:
-      // Official: quantitative analysis under ภาค ก ความสามารถในการคิดวิเคราะห์
-      return 'ก'
     case SUBJECT_IDS.INTERVIEW_C:
       return 'ค'
     case SUBJECT_IDS.ADMIN:

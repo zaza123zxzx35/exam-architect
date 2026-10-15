@@ -50,6 +50,7 @@ export const PART_B_29_CAPS = Object.freeze({
   [SUBJECT_IDS.ENGLISH_SKILLS_A]: { maxItems: 4, maxMinutes: 300, examPart: 'ก' },
   [SUBJECT_IDS.MATH]: { maxItems: 5, maxMinutes: 300, examPart: 'ก' },
   [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: { maxItems: 6, maxMinutes: 270, examPart: 'ก' },
+  [SUBJECT_IDS.CIVIL_SERVANT_A]: { maxItems: 5, maxMinutes: 300, examPart: 'ก' },
 })
 
 /**
@@ -99,7 +100,21 @@ const PREFER_IDS = Object.freeze(new Set([
   'math-num-03',
   'math-num-04',
   'math-num-05',
+  // Thai ก · YouTube วิเคราะห์ข้อสอบ
+  'thai-yt-01',
+  'thai-yt-02',
+  'thai-yt-03',
+  'thai-yt-04',
+  'thai-yt-05',
+  'thai-yt-06',
+  // ข้าราชการที่ดี ก · ขงเบ้งชุดที่ 1 + อ.นนท์แกน
+  'civil-kongbeng-01',
+  'civil-nonn-01',
+  'civil-nonn-03',
+  'civil-nonn-11',
+  'civil-nonn-12',
 ]))
+
 /**
  * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
@@ -224,6 +239,16 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'math-gab-16',
   'math-gab-17',
   'math-gab-18',
+  // ข้าราชการที่ดี · playlist สั้น + ตอนท้ายเกิน slim cap
+  'civil-kongbeng-playlist',
+  'civil-nonn-05',
+  'civil-nonn-06',
+  'civil-nonn-07',
+  'civil-nonn-08',
+  'civil-nonn-09',
+  'civil-nonn-10',
+  'civil-nonn-13',
+  'civil-nonn-redbook-key',
 ]))
 
 function isoDate(d) {
@@ -302,12 +327,12 @@ export function buildPartB29CutPolicy() {
       },
       {
         id: 'part-a-slim',
-        titleTh: 'ภาค ก — หมาหอนอังกฤษ + YouTube คณิต Ep.1–5 · ตัดแก็บ/ตอนท้าย',
-        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เหลือช่องว่างจึงเก็บอังกฤษล่าสุด + คณิตชุดหลักไม่เกิน 5 ตอน',
+        titleTh: 'ภาค ก — อังกฤษ/คณิต/ไทย/ข้าราชการที่ดี ชุดหลัก · ตัดเสริมและตอนท้าย',
+        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เก็บหมาหอน + คณิต YT + ไทย YT + ข้าราชการที่ดีแกน (ขงเบ้ง/อ.นนท์)',
         exampleIds: [
           'lady-a-025',
           'math-gab-15',
-          'math-num-09',
+          'civil-kongbeng-playlist',
         ],
       },
     ],
@@ -407,6 +432,7 @@ export function buildPartB29Pack(ranked) {
     SUBJECT_IDS.ENGLISH_SKILLS_A,
     SUBJECT_IDS.MATH,
     SUBJECT_IDS.GENERAL_KNOWLEDGE_A,
+    SUBJECT_IDS.CIVIL_SERVANT_A,
   ]
   const packs = {}
   const cutList = []

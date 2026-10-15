@@ -25,7 +25,7 @@ const taxonomySource = readFileSync(
 
 describe('study taxonomy (Phase 2B)', () => {
   it('exposes a stable taxonomyVersion', () => {
-    expect(TAXONOMY_VERSION).toBe('2b.2')
+    expect(TAXONOMY_VERSION).toBe('2b.3')
     const sample = classifyQuiz(initialQuizzes[0])
     expect(sample.taxonomyVersion).toBe(TAXONOMY_VERSION)
   })

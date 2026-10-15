@@ -9,37 +9,38 @@ import {
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
-  it('ships English + อ.นนท์ edu/law + math packs', () => {
-    expect(CURATED_CATALOG_VERSION).toMatch(/math-num-gab/)
+  it('ships v15 packs including Thai + civil-servant-a', () => {
+    expect(CURATED_CATALOG_VERSION).toMatch(/thai-civil/)
     expect(curatedResources.length).toBeGreaterThan(0)
     expect(curatedResources.every(Boolean)).toBe(true)
     const enriched = enrichCuratedResources()
     expect(enriched.length).toBe(curatedResources.length)
     const summary = summarizeCuratedUrlStatuses(enriched)
     expect(summary.total).toBe(curatedResources.length)
-    // อ.นนท์ Facebook/Drive stubs are incomplete — honest needs_full_url
     expect(summary.needs_full_url).toBeGreaterThan(0)
   })
 
-  it('keeps taxonomy and math ก packs (YT must + Gab supplement)', () => {
+  it('keeps Part ก/ข taxonomy across all packs', () => {
     const catalog = enrichCuratedResources()
     const partA = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A })
     const partB = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })
     const edu = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.EDUCATION })
     const law = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.LAW })
     const math = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.MATH })
+    const thai = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.GENERAL_KNOWLEDGE_A })
+    const civil = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.CIVIL_SERVANT_A })
     expect(partA.length).toBeGreaterThan(0)
     expect(partB.length).toBeGreaterThan(0)
     expect(edu.length).toBeGreaterThan(0)
     expect(law.length).toBeGreaterThan(0)
     expect(math.length).toBe(28)
-    expect(partA.every(r => r.examPart === 'ก')).toBe(true)
-    expect(math.every(r => r.examPart === 'ก')).toBe(true)
-    expect(partB.every(r => r.examPart === 'ข')).toBe(true)
-    expect(edu.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
-    expect(law.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
-    expect(math.filter(r => r.id.startsWith('math-num-')).every(r => /pack:must/.test(r.notes))).toBe(true)
-    expect(math.filter(r => r.id.startsWith('math-gab-')).length).toBe(19)
+    expect(thai.length).toBe(6)
+    expect(civil.length).toBe(16)
+    expect(thai.every(r => r.examPart === 'ก')).toBe(true)
+    expect(civil.every(r => r.examPart === 'ก')).toBe(true)
+    expect(law.every(r => r.examPart === 'ข')).toBe(true)
+    expect(civil.some(r => r.tutorTh === 'อ.นนท์')).toBe(true)
+    expect(civil.some(r => r.tutorTh === 'ขงเบ้ง')).toBe(true)
     expect(recommendCuratedForSubject(SUBJECT_IDS.ENGLISH_MAJOR, catalog, { limit: 3 }).length).toBeGreaterThan(0)
   })
 

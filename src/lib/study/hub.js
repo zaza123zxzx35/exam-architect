@@ -41,7 +41,8 @@ export const HUB_EXAM_PART_LABELS = Object.freeze({
 export const HUB_SUBJECT_LABELS = Object.freeze({
   [SUBJECT_IDS.GENERAL_REASONING]: 'คิดวิเคราะห์',
   [SUBJECT_IDS.ENGLISH_SKILLS_A]: 'อังกฤษ ภาค ก',
-  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: 'ความรู้ทั่วไป',
+  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: 'ภาษาไทย / ความรู้ทั่วไป',
+  [SUBJECT_IDS.CIVIL_SERVANT_A]: 'ข้าราชการที่ดี (ภาค ก)',
   [SUBJECT_IDS.EDUCATION]: 'วิชาการศึกษา',
   [SUBJECT_IDS.ENGLISH_MAJOR]: 'วิชาเอกอังกฤษ',
   [SUBJECT_IDS.INTERVIEW_C]: 'สัมภาษณ์',
@@ -49,7 +50,6 @@ export const HUB_SUBJECT_LABELS = Object.freeze({
   [SUBJECT_IDS.MATH]: 'คณิต',
   [SUBJECT_IDS.ADMIN]: 'สมัคร/เอกสาร',
   [SUBJECT_IDS.UNKNOWN]: 'ยังไม่จัดวิชา',
-  'civil-servant-a': 'ข้าราชการที่ดี (ภาค ก)',
 })
 
 /**

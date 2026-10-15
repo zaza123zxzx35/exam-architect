@@ -127,6 +127,22 @@ export function validateCuratedRow(row, idCounts = new Map(), urlToIds = new Map
       message: 'math ต้องอยู่ภาค ก (คิดวิเคราะห์เชิงปริมาณ)',
     })
   }
+  if (row.subjectId === SUBJECT_IDS.CIVIL_SERVANT_A && row.examPart !== 'ก') {
+    issues.push({
+      severity: 'error',
+      code: 'civil-servant-part-mismatch',
+      id,
+      message: 'civil-servant-a ต้องอยู่ภาค ก (ข้าราชการที่ดี) — ไม่ปนกฎหมายภาค ข',
+    })
+  }
+  if (row.subjectId === SUBJECT_IDS.GENERAL_KNOWLEDGE_A && row.examPart !== 'ก') {
+    issues.push({
+      severity: 'error',
+      code: 'general-knowledge-part-mismatch',
+      id,
+      message: 'general-knowledge-a ต้องอยู่ภาค ก (ภาษาไทย/คิดวิเคราะห์เชิงภาษา)',
+    })
+  }
 
   const url = String(row.url || '')
   const classified = url.trim() ? classifyResourceUrl(url) : { status: URL_STATUS.NEEDS_FULL_URL, safeUrl: null }
