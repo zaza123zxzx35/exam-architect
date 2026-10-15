@@ -22,6 +22,8 @@ export const VICTORY_PLAN_VERSION = '1.0-belief-effort-100'
 export const VICTORY_PLAN_ORIGIN = 'victory-plan-100'
 export const VICTORY_META_KEY = 'victoryPlan'
 export const VICTORY_SEED_META_KEY = 'victoryPlanSeededAt'
+/** Set when the user confirms「ล้างงาน curated/ไลฟ์」so soft bootstrap does not reseed. */
+export const VICTORY_CLEARED_META_KEY = 'victoryPlanClearedAt'
 
 /** Drive stubs that still need full URLs — effort substitute closes the lever. */
 export const VICTORY_DRIVE_AWAITING = Object.freeze([
@@ -548,20 +550,23 @@ export function generateVictoryDraft(options = {}) {
 export function mergeVictoryDraftIntoSchedule(schedule, draft) {
   const merged = mergePartB29DraftIntoSchedule(schedule, draft)
   const scored = scoreVictoryReadiness(merged, { todayIso: draft.todayIso })
+  const meta = {
+    ...merged.meta,
+    [VICTORY_SEED_META_KEY]: new Date().toISOString(),
+    [VICTORY_META_KEY]: {
+      version: VICTORY_PLAN_VERSION,
+      lastScoredAt: new Date().toISOString(),
+      lastScore: scored.score,
+      effort: merged.meta?.[VICTORY_META_KEY]?.effort || {},
+      creedTh: scored.creedTh,
+    },
+    curatedPlanSeedVersion: VICTORY_PLAN_VERSION,
+  }
+  // Successful seed/force regen cancels a prior user clear.
+  delete meta[VICTORY_CLEARED_META_KEY]
   return {
     ...merged,
-    meta: {
-      ...merged.meta,
-      [VICTORY_SEED_META_KEY]: new Date().toISOString(),
-      [VICTORY_META_KEY]: {
-        version: VICTORY_PLAN_VERSION,
-        lastScoredAt: new Date().toISOString(),
-        lastScore: scored.score,
-        effort: merged.meta?.[VICTORY_META_KEY]?.effort || {},
-        creedTh: scored.creedTh,
-      },
-      curatedPlanSeedVersion: VICTORY_PLAN_VERSION,
-    },
+    meta,
     updatedAt: new Date().toISOString(),
   }
 }
@@ -681,6 +686,16 @@ export function ensureVictoryPlanSeed(schedule, options = {}) {
   const todayIso = options.todayIso || bangkokTodayIso()
   if (!schedule || typeof schedule !== 'object') {
     return { schedule, seeded: false, reason: 'no-schedule' }
+  }
+  // User explicitly cleared managed plans — do not soft-reseed on refresh/bootstrap.
+  // Force regen / Library merge still pass force:true (and clear this flag) to rebuild.
+  if (!options.force && schedule.meta?.[VICTORY_CLEARED_META_KEY]) {
+    return {
+      schedule,
+      seeded: false,
+      reason: 'user-cleared',
+      readiness: scoreVictoryReadiness(schedule, { todayIso }),
+    }
   }
   if (!options.force && schedule.meta?.[VICTORY_SEED_META_KEY]) {
     let next = schedule

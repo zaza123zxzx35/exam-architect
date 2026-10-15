@@ -127,6 +127,7 @@ describe('schedule migration', () => {
 
   it('preserves curated duration/userEdited markers through sanitize', () => {
     const { schedule } = sanitizeSchedule({
+      schemaVersion: 1,
       tasks: [{
         id: 'curated_math-1',
         title: 'Math',
@@ -141,6 +142,7 @@ describe('schedule migration', () => {
         durationIsEstimate: true,
       }],
       sessions: [],
+      notes: {},
     })
     const task = schedule.tasks.find(t => t.id === 'curated_math-1')
     expect(task.durationMinutes).toBe(90)
@@ -148,6 +150,42 @@ describe('schedule migration', () => {
     expect(task.userEdited).toBe(true)
     expect(task.resourceId).toBe('math-1')
     expect(task.urlStatus).toBe('needs_full_url')
+  })
+
+  it('preserves victory clear/seed meta through sanitize and saveSchedule', () => {
+    const input = {
+      schemaVersion: 1,
+      tasks: [{ id: 'manual_1', title: 'keep', status: 'pending', origin: 'user-manual' }],
+      sessions: [],
+      notes: {},
+      meta: {
+        engineVersion: 'm3-1',
+        migratedFrom: ['test'],
+        taskCountSeed: 1,
+        sessionCountSeed: 0,
+        victoryPlanClearedAt: '2026-10-15T12:00:00.000Z',
+        victoryPlanSeededAt: undefined,
+        victoryPlan: { version: '1.0-belief-effort-100', effort: { beliefCommitted: true } },
+        curatedPartB29SeededAt: undefined,
+        curatedPlanSeedVersion: '1.0-belief-effort-100',
+        // Transient / invalid — must not persist
+        debugTemp: { leak: true },
+        accidentalFn: () => {},
+      },
+    }
+    const { schedule, recovered } = sanitizeSchedule(input)
+    expect(recovered).toBe(false)
+    expect(schedule.meta.victoryPlanClearedAt).toBe('2026-10-15T12:00:00.000Z')
+    expect(schedule.meta.victoryPlan?.effort?.beliefCommitted).toBe(true)
+    expect(schedule.meta.curatedPlanSeedVersion).toBe('1.0-belief-effort-100')
+    expect(schedule.meta.debugTemp).toBeUndefined()
+    expect(schedule.meta.accidentalFn).toBeUndefined()
+
+    saveSchedule(input, storage)
+    const raw = JSON.parse(storage.getItem(SCHEDULE_KEY))
+    expect(raw.meta.victoryPlanClearedAt).toBe('2026-10-15T12:00:00.000Z')
+    expect(raw.meta.victoryPlan?.effort?.beliefCommitted).toBe(true)
+    expect(raw.meta.debugTemp).toBeUndefined()
   })
 
   it('saveSchedule dual-writes HTML planner shape', () => {

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { SUBJECT_IDS } from '../study/taxonomy.js'
+import { SCHEDULE_KEY } from '../schedule/constants.js'
+import { loadSchedule, saveSchedule } from '../schedule/migrate.js'
 import {
   CURATED_PLAN_SEED_META_KEY,
+  VICTORY_CLEARED_META_KEY,
   buildClearManagedPreview,
   clearCuratedSeedMetaFlags,
   commitClearManagedTasks,
@@ -157,7 +160,49 @@ describe('clear managed tasks — preview confirm contract', () => {
     })
     expect(out.schedule.tasks.every((t) => !isVictoryManagedTask(t))).toBe(true)
     expect(out.schedule.meta[CURATED_PLAN_SEED_META_KEY]).toBeUndefined()
+    expect(out.schedule.meta[VICTORY_CLEARED_META_KEY]).toBeTruthy()
     expect(out.keptCount).toBe(out.schedule.tasks.length)
+  })
+
+  it('soft seed after clear does not restore managed tasks; force regen does', () => {
+    const { withProgress, manual } = seededWithMixedProgress()
+    const cleared = commitClearManagedTasks(withProgress)
+    expect(cleared.removedCount).toBeGreaterThan(0)
+    expect(cleared.schedule.meta[VICTORY_CLEARED_META_KEY]).toBeTruthy()
+
+    const soft = ensureCuratedPartB29Seed(cleared.schedule, { todayIso: '2026-10-15' })
+    expect(soft.seeded).toBe(false)
+    expect(soft.reason).toBe('user-cleared')
+    expect(soft.schedule.tasks.every((t) => !isVictoryManagedTask(t))).toBe(true)
+    expect(soft.schedule.tasks.find((t) => t.id === manual.id)).toBeTruthy()
+
+    const forced = commitForceVictoryPlan(cleared.schedule, {
+      todayIso: '2026-10-15',
+      declareBelief: true,
+    })
+    expect(forced.seeded).toBe(true)
+    expect(forced.schedule.meta[VICTORY_CLEARED_META_KEY]).toBeUndefined()
+    expect(forced.schedule.tasks.some(isVictoryManagedTask)).toBe(true)
+    expect(forced.schedule.tasks.find((t) => t.id === manual.id)).toBeTruthy()
+  })
+
+  it('clear marker survives saveSchedule sanitize (refresh / bootstrap path)', () => {
+    const { withProgress } = seededWithMixedProgress()
+    const cleared = commitClearManagedTasks(withProgress)
+    const mem = new Map()
+    const storage = {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => { mem.set(k, String(v)) },
+      removeItem: (k) => { mem.delete(k) },
+    }
+    saveSchedule(cleared.schedule, storage)
+    const raw = JSON.parse(storage.getItem(SCHEDULE_KEY))
+    expect(raw.meta[VICTORY_CLEARED_META_KEY]).toBeTruthy()
+    const loaded = loadSchedule(storage)
+    expect(loaded.meta[VICTORY_CLEARED_META_KEY]).toBeTruthy()
+    const soft = ensureCuratedPartB29Seed(loaded, { todayIso: '2026-10-15' })
+    expect(soft.seeded).toBe(false)
+    expect(soft.reason).toBe('user-cleared')
   })
 
   it('confirm with empty managed set is a no-op on tasks', () => {
