@@ -147,13 +147,13 @@ describe('study taxonomy (Phase 2B)', () => {
     expect(friUnspecified.subjectId).toBe(SUBJECT_IDS.UNKNOWN)
   })
 
-  it('keeps title-only law/math heuristics unknown while subjectIdToExamPart follows official scope', () => {
-    // Title keywords alone still do not invent a part on classifyTask (confidence path).
+  it('maps bare law without part markers; math titles map to ภาค ก per official scope', () => {
     const law = classifyTask({ id: 't-law', title: 'ทบทวนกฎหมายครู' })
     const math = classifyTask({ id: 't-math', title: 'ฝึกคณิตศาสตร์เพิ่มเติม' })
+    // Bare "กฎหมาย" without พ.ร.บ./การศึกษา → subject only, part unknown
     expect(law).toMatchObject({ subjectId: SUBJECT_IDS.LAW, examPart: 'unknown' })
-    expect(math).toMatchObject({ subjectId: SUBJECT_IDS.MATH, examPart: 'unknown' })
-    // Phase 8.2: official curriculum mapping (ก.ค.ศ. ว14/2566) for known subject ids.
+    // Math is officially under ภาค ก (ว14/2566)
+    expect(math).toMatchObject({ subjectId: SUBJECT_IDS.MATH, examPart: 'ก' })
     expect(subjectIdToExamPart(SUBJECT_IDS.LAW)).toBe('ข')
     expect(subjectIdToExamPart(SUBJECT_IDS.MATH)).toBe('ก')
     expect(subjectIdToExamPart(SUBJECT_IDS.EDUCATION)).toBe('ข')

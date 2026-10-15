@@ -7,12 +7,29 @@ import { bangkokTodayIso } from '../data/htmlPlannerData'
 import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { getPrimaryExam } from '../data/examCalendar'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
+import { classifyTask } from '../lib/study/taxonomy.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import {
   CURATED_PLAN_SEED_META_KEY,
   ensureCuratedPartB29Seed,
 } from '../lib/curated/seedPartB29Plan.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
+
+function resolveTaskSubject(task) {
+  if (task?.subjectId && HUB_SUBJECT_LABELS[task.subjectId]) {
+    return { subjectId: task.subjectId, examPart: task.examPart, tutorTh: task.tutorTh }
+  }
+  const classified = classifyTask({
+    title: task?.title,
+    text: task?.title,
+    subjectId: task?.subjectId,
+  })
+  return {
+    subjectId: classified.subjectId !== 'unknown' ? classified.subjectId : task?.subjectId,
+    examPart: task?.examPart || (classified.examPart !== 'unknown' ? classified.examPart : undefined),
+    tutorTh: task?.tutorTh,
+  }
+}
 
 function subjectLabel(id) {
   return HUB_SUBJECT_LABELS[id] || id || 'ยังไม่จัดวิชา'
@@ -206,7 +223,8 @@ export default function Today() {
             <ul className="divide-y divide-slate-100 dark:divide-slate-800">
               {todayTasks.map((task) => {
                 const done = task.status === 'done'
-                const partLabel = HUB_EXAM_PART_LABELS[task.examPart] || task.examPart || ''
+                const resolved = resolveTaskSubject(task)
+                const partLabel = HUB_EXAM_PART_LABELS[resolved.examPart] || resolved.examPart || ''
                 return (
                   <li key={task.id} className="flex flex-wrap items-start gap-3 py-3">
                     <button
@@ -221,7 +239,7 @@ export default function Today() {
                         {task.title}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {[partLabel, subjectLabel(task.subjectId), task.tutorTh || task.seriesTh]
+                        {[partLabel, subjectLabel(resolved.subjectId), resolved.tutorTh || task.seriesTh]
                           .filter(Boolean)
                           .join(' · ')}
                         {task.estimatedMinutes ? ` · ≈ ${task.estimatedMinutes} นาที` : ''}

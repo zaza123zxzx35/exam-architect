@@ -94,17 +94,46 @@ function getTag(date, iso) {
   return 'ก่อนปิดเทอม (สอนจนถึง ศุกร์ 9 ต.ค.)'
 }
 
+/**
+ * Daily focus topic. Tutor ownership (do not mix):
+ * - ภาษาอังกฤษ ก/ข, แหกโค้ง, หมาหอน → ครูเลดี้เก๋เก๋ only
+ * - ภาษาไทย / คณิต → self-study (YouTube), not อ.นนท์ LIVE
+ * - วิชาการศึกษา / กฎหมาย / ข้าราชการที่ดี → อ.นนท์
+ */
+function getDayFocusTopic(iso) {
+  if (iso >= '2026-10-07' && iso <= '2026-10-10') {
+    return { topic: 'พรบ.ฉบับจริง + ข้อสอบจริง (ข้าราชการที่ดี)', owner: 'nonn' }
+  }
+  if (iso === '2026-10-12') {
+    return { topic: 'พรบ.ฉบับจริง + ข้อสอบจริง (กฎหมายการศึกษา)', owner: 'nonn' }
+  }
+  if (iso >= '2026-10-13' && iso <= '2026-10-15') {
+    return { topic: 'ภาษาอังกฤษภาค ก', owner: 'lady' }
+  }
+  if (iso >= '2026-10-16' && iso <= '2026-10-18') {
+    return { topic: 'ภาษาไทย', owner: 'self' }
+  }
+  if (iso >= '2026-10-19' && iso <= '2026-10-22') {
+    return { topic: 'ภาค ข มาตรฐานความรู้ทั่วไปในการจัดการเรียนการสอน (วิชาการศึกษา)', owner: 'nonn' }
+  }
+  if ((iso >= '2026-10-23' && iso <= '2026-10-24') || iso === '2026-10-26') {
+    return { topic: 'คณิตศาสตร์ / ตัวเลขและเหตุผล', owner: 'self' }
+  }
+  if (iso >= '2026-10-27' && iso <= '2026-10-30') {
+    return { topic: 'กฎหมายการศึกษา', owner: 'nonn' }
+  }
+  if (iso >= '2026-11-01' && iso <= '2026-11-06') {
+    return { topic: 'หมาหอน ภาค ก ภาษาอังกฤษ (เฉลยข้อสอบย้อนหลัง)', owner: 'lady' }
+  }
+  if (iso === '2026-11-08' || iso === '2026-11-09' || iso === '2026-11-10') {
+    return { topic: 'แหกโค้ง ภาค ก ภาษาอังกฤษ + จุดผิดสะสม', owner: 'lady' }
+  }
+  return { topic: 'ทบทวนรวมเนื้อหาทั้งหมด', owner: 'nonn' }
+}
+
+/** @deprecated use getDayFocusTopic — kept for call sites that only need the label */
 function getAnonTopic(iso) {
-  if (iso >= '2026-10-07' && iso <= '2026-10-10') return 'พรบ.ฉบับจริง + ข้อสอบจริง (ข้าราชการที่ดี)'
-  if (iso === '2026-10-12') return 'พรบ.ฉบับจริง + ข้อสอบจริง (กฎหมายการศึกษา)'
-  if (iso >= '2026-10-13' && iso <= '2026-10-15') return 'ภาษาอังกฤษ (ภาค ก)'
-  if (iso >= '2026-10-16' && iso <= '2026-10-18') return 'ภาษาไทย'
-  if (iso >= '2026-10-19' && iso <= '2026-10-22') return 'ภาค ข มาตรฐานความรู้ทั่วไปในการจัดการเรียนการสอน (วิชาการศึกษา)'
-  if ((iso >= '2026-10-23' && iso <= '2026-10-24') || iso === '2026-10-26') return 'คณิตศาสตร์'
-  if (iso >= '2026-10-27' && iso <= '2026-10-30') return 'กฎหมายการศึกษา'
-  if (iso >= '2026-11-01' && iso <= '2026-11-06') return 'หมาหอนรวม (เฉลยข้อสอบย้อนหลัง 3 ปี)'
-  if (iso === '2026-11-08' || iso === '2026-11-09' || iso === '2026-11-10') return 'แหกโค้ง เก็งข้อสอบน่าจะออก + จุดผิดสะสม'
-  return 'ทบทวนรวมเนื้อหาทั้งหมด'
+  return getDayFocusTopic(iso).topic
 }
 
 function getLadyLiveInfo(iso) {
@@ -190,13 +219,14 @@ function defaultSlotsForWeekday(weekday, iso) {
   let sIdx = 0
   const nextId = () => `s${++sIdx}`
 
-  const anonTopic = getAnonTopic(iso)
+  const focus = getDayFocusTopic(iso)
+  const anonTopic = focus.topic
   const ladyInfo = getLadyLiveInfo(iso)   // คืนค่า hasLive / hasHmahon / slots (ห้ามตัดออกอีก! วิชาเอก User เป็นคนสั่ง)
   const isMockOrRest = ['2026-11-07','2026-11-11','2026-11-12','2026-11-13'].includes(iso)
 
   // === ช่วงปิดเทอมทองคำ (10 ต.ค.-1 พ.ย. = 25 วัน) → เต็มที่ 3-4 ช่องต่อวัน ===
   if (!schoolOpen) {
-    slots.push({ id: nextId(), time: '09.00 - 11.00', zone: 'เช้า', title: 'P2: ทบทวนเนื้อหาคืนก่อน + จดโน้ตจุดผิด', note: `อ้างอิงไลฟ์สด 2 คนเมื่อคืนก่อน — เน้นเฉพาะจุดผิด ${anonTopic}`, done: false })
+    slots.push({ id: nextId(), time: '09.00 - 11.00', zone: 'เช้า', title: 'P2: ทบทวนเนื้อหาคืนก่อน + จดโน้ตจุดผิด', note: `อ้างอิงไลฟ์สดเมื่อคืนก่อน — เน้นเฉพาะจุดผิด ${anonTopic}`, done: false })
     slots.push({ id: nextId(), time: '11.15 - 12.15', zone: 'เช้า', title: 'P4: Quiz 1 ชุด (50-60 ข้อ) — เก็บคะแนนใน Dashboard', note: 'ดู % Trend Graph สีฟ้า — เป้าหมายเฉลี่ย ≥ 75% (สู้ๆ)', done: false })
     const ladyVod = getLadyVodForToday(iso)
     if (iso === '2026-10-12') {
@@ -220,41 +250,73 @@ function defaultSlotsForWeekday(weekday, iso) {
     slots.push({ id: nextId(), time: '17.15 - 18.15', zone: 'คืน', title: `P3: อ่านนำหน้า ${anonTopic} (ก่อนติวสดคืนนี้)`, note: `อ่าน 1-2 หัวข้อเบื้องต้น — เวลาติวสดจะจดไว้ได้เร็วขึ้น (2 พ.ย. เปิดเทอม 2 แล้วนะ!)`, done: false })
   }
 
-  // === P1 (สูงสุด) ช่วงคืน: จัด Conflict อย่างชัดเจน เลยนะครับ ===
-  // Logic ใหม่ (ตรงตามคำสั่ง "คืนวิชาเอกผมออกมา!"):
-  //   1) ถ้าวันนี้มี LIVE เลดี้เก๋ 21.00+ (วิชาเอกอังกฤษ = จริงๆ User สั่ง P1 สูงสุด!)
-  //      → อ.นนท์ 20.00-21.00 (ฟัง LIVE 1 ชม.แรก = เนื้อหาหลัก/แนะนำ)
-  //      → ตัดอ.นนท์ส่วน 21.00-22.00 ออก ไปดูย้อนหลังวันถัดไปแทน (เนื้อหาอ.นนท์ มีบันทึกเสมอ คลิปเต็ม)
-  //      → 21.00-00.00 ฟัง LIVE เลดี้เก๋ ต่อเนื่อง (วิชาเอกสูงสุด! ตามคำสั่ง User)
-  //   2) ถ้าวันนี้ไม่มี LIVE เลดี้เก๋
-  //      → อ.นนท์ 20.00-22.00 เต็มๆ (ปกติ)
+  // === P1 คืน: ห้ามผสมติวเตอร์กับวิชา ===
+  // - โฟกัสอังกฤษ/หมาหอน/แหกโค้ง → เลดี้เก๋เก๋เท่านั้น (ไม่มีอ.นนท์หัวข้ออังกฤษ)
+  // - โฟกัสไทย/คณิต → ทบทวนเอง (YouTube) ไม่ติดป้ายอ.นนท์
+  // - โฟกัสการศึกษา/กฎหมาย/ข้าราชการที่ดี → อ.นนท์
+  // - วันที่มี LIVE เลดี้: อ.นนท์ได้เฉพาะหัวข้อของนนท์ (ถ้ามี) 1 ชม. แล้วสลับเลดี้
 
   if (!isMockOrRest && ladyInfo.hasLive) {
-    slots.push({
-      id: nextId(),
-      time: '20.00 - 21.00',
-      zone: 'คืน',
-      title: `🔴 [P1 รอง] LIVE อ.นนท์ VIP (1 ชม.แรก): ${anonTopic}  [จากนั้นสลับ!]`,
-      note: 'ปรับเวลาเรียนให้เหมาะกับตัวเอง ตรวจตารางถ่ายทอดสดและคลิปย้อนหลังจากกลุ่มผู้เผยแพร่โดยตรง',
-      done: false,
-      _link: ANON_ANNOUNCEMENTS_URL,
-      _linkExternal: true
-    })
-    // ทุก LIVE slot ของเลดี้เก๋ 21.00+ push ตรงๆ (getLadyLiveInfo() คืนค่ามาแล้ว พร้อม _link ทุกอัน)
+    if (focus.owner === 'nonn') {
+      slots.push({
+        id: nextId(),
+        time: '20.00 - 21.00',
+        zone: 'คืน',
+        title: `🔴 [P1 รอง] LIVE อ.นนท์ VIP (1 ชม.แรก): ${anonTopic}  [จากนั้นสลับ!]`,
+        note: 'อ.นนท์เฉพาะวิชาของนนท์ — 21.00 สลับไป LIVE เลดี้เก๋เก๋ (อังกฤษ)',
+        done: false,
+        _link: ANON_ANNOUNCEMENTS_URL,
+        _linkExternal: true,
+      })
+    } else if (focus.owner === 'self') {
+      slots.push({
+        id: nextId(),
+        time: '20.00 - 21.00',
+        zone: 'คืน',
+        title: `📺 ทบทวน ${anonTopic} (ก่อน LIVE เลดี้)`,
+        note: 'ไม่ใช่ไลฟ์อ.นนท์ — ทบทวนเองแล้วสลับไปเลดี้เก๋เก๋',
+        done: false,
+      })
+    }
     for (const s of ladyInfo.slots) {
-      slots.push({ ...s, id: nextId(), title: '🔴 [วิชาเอกอังกฤษ] ' + s.title.replace('🔴 LIVE! ',''), note: (s.note || '') + ' | ตรวจประกาศล่าสุดจากผู้เผยแพร่ก่อนรับชม' })
+      slots.push({ ...s, id: nextId(), title: '🔴 [เลดี้เก๋เก๋] ' + s.title.replace('🔴 LIVE! ', ''), note: (s.note || '') + ' | ตรวจประกาศล่าสุดจากผู้เผยแพร่ก่อนรับชม' })
     }
   } else if (!isMockOrRest) {
-    slots.push({
-      id: nextId(),
-      time: '20.00 - 22.00',
-      zone: 'คืน',
-      title: `🔴 LIVE อ.นนท์ VIP: ${anonTopic}`,
-      note: 'กำหนดการนี้เป็นรายการอ้างอิง ตรวจวันเวลาและลิงก์ประกาศจากกลุ่มผู้เผยแพร่ก่อนรับชม',
-      done: false,
-      _link: ANON_ANNOUNCEMENTS_URL,
-      _linkExternal: true
-    })
+    if (focus.owner === 'lady') {
+      const ladyVod = getLadyVodForToday(iso)
+      slots.push({
+        id: nextId(),
+        time: '20.00 - 22.00',
+        zone: 'คืน',
+        title: ladyVod
+          ? `🔴 [เลดี้เก๋เก๋] ${ladyVod.cat} ${ladyVod.title}`
+          : `🔴 [เลดี้เก๋เก๋] ทบทวน/ย้อนหลัง · ${anonTopic}`,
+        note: 'ภาษาอังกฤษภาค ก/ข เป็นของครูเลดี้เก๋เก๋เท่านั้น — ไม่ใช่อ.นนท์',
+        done: false,
+        _link: ladyVod?.link || LADY_ANNOUNCEMENTS_URL,
+        _linkExternal: true,
+      })
+    } else if (focus.owner === 'self') {
+      slots.push({
+        id: nextId(),
+        time: '20.00 - 22.00',
+        zone: 'คืน',
+        title: `📺 ทบทวน ${anonTopic} (YouTube / คลังหลักสูตร)`,
+        note: 'ภาษาไทยและคณิตใช้คลิปในคลัง — ไม่ติดป้ายไลฟ์อ.นนท์',
+        done: false,
+      })
+    } else {
+      slots.push({
+        id: nextId(),
+        time: '20.00 - 22.00',
+        zone: 'คืน',
+        title: `🔴 LIVE อ.นนท์ VIP: ${anonTopic}`,
+        note: 'อ.นนท์: วิชาการศึกษา / กฎหมาย / ข้าราชการที่ดี — ตรวจวันเวลาจากกลุ่มผู้เผยแพร่',
+        done: false,
+        _link: ANON_ANNOUNCEMENTS_URL,
+        _linkExternal: true,
+      })
+    }
   }
 
   // Slots พิเศษสำหรับ Mock, การสมัคร และการทบทวนก่อนสอบ
@@ -307,13 +369,14 @@ function defaultSlotsForWeekday(weekday, iso) {
   }
 
   if (iso === '2026-10-24') {
+    // โฟกัสวัน = คณิต (self) — ห้ามติดป้ายอ.นนท์; คืนมีเลดี้ถ้ามี LIVE
     return [
       { id: nextId(), time: '08.00 - 09.30', zone: 'เช้า', title: 'ตรวจยอดผู้สมัครในระบบ (ถ้ามีข้อมูลแสดง)', note: 'บันทึกจำนวนผู้สมัครและเวลาที่ตรวจไว้เป็นข้อมูลประกอบ ไม่ใช่การคาดการณ์โอกาสสอบติด', done: false },
       { id: nextId(), time: '09.45 - 11.15', zone: 'เช้า', title: 'ทบทวนคุณสมบัติและประกาศของเขตที่สนใจ', note: 'เทียบคุณสมบัติ เอกสาร อัตราที่ประกาศ และความพร้อมส่วนตัว โดยยึดข้อมูลจากหน่วยงานต้นทาง', done: false },
       { id: nextId(), time: '13.30 - 14.30', zone: 'กลางวัน', title: 'ยื่นหรือยืนยันใบสมัครภายในกำหนด', note: 'ตรวจความถูกต้องของข้อมูลและเอกสารก่อนส่ง ไม่ควรรอจนใกล้ปิดระบบ', done: false },
       { id: nextId(), time: '15.00 - 16.00', zone: 'บ่าย', title: 'บันทึกหลักฐานและตรวจสถานะใบสมัคร', note: 'ดาวน์โหลด/เก็บหลักฐานการส่ง และตรวจสถานะตามช่องทางที่ประกาศระบุ', done: false },
-      { id: nextId(), time: '20.00 - 21.00', zone: 'คืน', title: `🔴 [P1 รอง] LIVE อ.นนท์ VIP (1 ชม.แรก): ${getAnonTopic(iso)}  [จากนั้นสลับ!]`, note: '24 ต.ค. = วันเสาร์ LIVE เลดี้ 21.00+ ด้วย! → สลับ 21.00 ไปฟังวิชาเอก เลดี้เก๋ ต่อเนื่อง', done: false, _link: ANON_ANNOUNCEMENTS_URL, _linkExternal: true },
-      ...(ladyInfo.hasLive ? ladyInfo.slots.map(s => ({ ...s, id: nextId(), title: '🔴 [P1 สูงสุด! วิชาเอก] ' + s.title.replace('🔴 LIVE! ',''), note: (s.note || '') + ' | สมัครเสร็จสบายใจ! ฟังวิชาเอก ให้เต็มที่ 21.00+' })) : [])
+      { id: nextId(), time: '20.00 - 21.00', zone: 'คืน', title: '📺 ทบทวนคณิต/ตัวเลขและเหตุผล (ก่อน LIVE เลดี้)', note: 'คณิตไม่ใช่ไลฟ์อ.นนท์ — ใช้คลิปในคลังหลักสูตร', done: false },
+      ...(ladyInfo.hasLive ? ladyInfo.slots.map(s => ({ ...s, id: nextId(), title: '🔴 [เลดี้เก๋เก๋] ' + s.title.replace('🔴 LIVE! ', ''), note: (s.note || '') + ' | สมัครเสร็จสบายใจ! ฟังเลดี้เก๋เก๋ ให้เต็มที่' })) : [])
     ]
   }
 
@@ -321,7 +384,7 @@ function defaultSlotsForWeekday(weekday, iso) {
     return [
       { id: nextId(), time: '09.00 - 10.00', zone: 'เช้า', title: '🔍 ตรวจสถานะการสมัครและหลักฐาน', note: 'ยืนยันการส่งใบสมัครและเก็บหลักฐาน หากพบปัญหาให้ติดต่อหน่วยงานตามช่องทางในประกาศ', done: false },
       { id: nextId(), time: '14.00 - 15.00', zone: 'บ่าย', title: '⏳ ตรวจอีเมลและข้อความยืนยัน', note: 'ยึดวันและเวลาปิดรับสมัครตามประกาศ ไม่ควรรอแก้ปัญหาจนใกล้เวลาปิดระบบ', done: false },
-      { id: nextId(), time: '20.00 - 22.00', zone: 'คืน', title: `🔴 [P1] LIVE อ.นนท์ VIP: ${getAnonTopic(iso)} + พักใจ 2 ชม.`, note: 'สมัครเสร็จแล้ว! ไม่ต้องเที่ยว กลับมาติวต่อ → ไปนอนเร็วหลัง 22.00', done: false, _link: ANON_ANNOUNCEMENTS_URL, _linkExternal: true }
+      { id: nextId(), time: '20.00 - 22.00', zone: 'คืน', title: '🔴 LIVE อ.นนท์ VIP: ทบทวนรวมเนื้อหาทั้งหมด + พักใจ 2 ชม.', note: 'สมัครเสร็จแล้ว — อ.นนท์เฉพาะวิชาของนนท์ (การศึกษา/กฎหมาย/ข้าราชการที่ดี)', done: false, _link: ANON_ANNOUNCEMENTS_URL, _linkExternal: true }
     ]
   }
 

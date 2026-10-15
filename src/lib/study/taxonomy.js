@@ -350,8 +350,17 @@ export function classifyTask(task) {
     return result('ข', SUBJECT_IDS.ENGLISH_MAJOR, 'heuristic', ['task.title:english-major'], id, scheduleExamId)
   }
 
-  if (hasSkillsAEnglishSignal(title) || /หมาหอน.*ภาค\s*ก.*ภาษาอังกฤษ|ภาษาอังกฤษภาค\s*ก/.test(title)) {
+  if (
+    hasSkillsAEnglishSignal(title)
+    || /หมาหอน.*ภาค\s*ก.*ภาษาอังกฤษ|ภาษาอังกฤษภาค\s*ก|แหกโค้ง\s*ภาค\s*ก\s*ภาษาอังกฤษ|หมาหอน\s*ภาค\s*ก\s*ภาษาอังกฤษ/.test(title)
+    || (/เลดี้เก๋|ครูเลดี้/.test(title) && /ภาค\s*ก|หมาหอน|แหกโค้ง/.test(title) && !/วิชาเอก/.test(title))
+  ) {
     return result('ก', SUBJECT_IDS.ENGLISH_SKILLS_A, 'heuristic', ['task.title:english-skills-a'], id, scheduleExamId)
+  }
+
+  // i-test English skill drills (Lady/Kaekae track under ภาค ก)
+  if (/i-test/i.test(title) && /Grammar|Vocabulary|Conversation|Reading|ทักษะภาษาอังกฤษ/i.test(title)) {
+    return result('ก', SUBJECT_IDS.ENGLISH_SKILLS_A, 'heuristic', ['task.title:i-test-english-skills'], id, scheduleExamId)
   }
 
   // Bare "อังกฤษ" without part markers → unknown (do not collapse skills vs major)
@@ -359,8 +368,16 @@ export function classifyTask(task) {
     return result('unknown', SUBJECT_IDS.UNKNOWN, 'unknown', ['task.title:english-without-part'], id, scheduleExamId)
   }
 
-  if (/วิชาการศึกษา|จิตวิทยา|หลักสูตร/.test(title)) {
+  if (/วิชาการศึกษา|จิตวิทยา|หลักสูตร|เศรษฐกิจพอเพียง|พัฒนาผู้เรียน/.test(title)) {
     return result('ข', SUBJECT_IDS.EDUCATION, 'heuristic', ['task.title:education'], id, scheduleExamId)
+  }
+
+  if (/ภาษาไทย/.test(title) && !/อังกฤษ/.test(title)) {
+    return result('ก', SUBJECT_IDS.GENERAL_KNOWLEDGE_A, 'heuristic', ['task.title:thai-general-knowledge'], id, scheduleExamId)
+  }
+
+  if (/ข้าราชการที่ดี|จริยธรรมข้าราชการ|วิปกครอง|ประมวลอาญา|ความผิดทางละเมิด/.test(title)) {
+    return result('ก', SUBJECT_IDS.CIVIL_SERVANT_A, 'heuristic', ['task.title:civil-servant-a'], id, scheduleExamId)
   }
 
   if (/คิดวิเคราะห์|ตรรกะ|ลำดับตัวเลข/.test(title)) {
@@ -375,12 +392,15 @@ export function classifyTask(task) {
     return result('admin', SUBJECT_IDS.ADMIN, 'heuristic', ['task.title:admin'], id, scheduleExamId)
   }
 
-  // Conditional law/math — subject only; never invent exam part from the word alone
+  // Law with education context → ภาค ข; bare law stays unknown part
+  if (/กฎหมายการศึกษา|พ\.ร\.บ\.|พรบ/.test(title)) {
+    return result('ข', SUBJECT_IDS.LAW, 'heuristic', ['task.title:education-law'], id, scheduleExamId)
+  }
   if (/กฎหมาย/.test(title) && !/ภาค\s*[กขค]/.test(title)) {
     return result('unknown', SUBJECT_IDS.LAW, 'heuristic', ['task.title:law-no-exam-part'], id, scheduleExamId)
   }
-  if (/คณิต/.test(title) && !/ภาค\s*[กขค]/.test(title)) {
-    return result('unknown', SUBJECT_IDS.MATH, 'heuristic', ['task.title:math-no-exam-part'], id, scheduleExamId)
+  if (/คณิต|ตัวเลขและเหตุผล/.test(title) && !/ภาค\s*[กขค]/.test(title)) {
+    return result('ก', SUBJECT_IDS.MATH, 'heuristic', ['task.title:math'], id, scheduleExamId)
   }
 
   // Content unknown — scheduleExamId may still be present but does not classify content

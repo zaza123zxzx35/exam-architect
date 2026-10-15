@@ -3,6 +3,7 @@ import {
   getPlanDateByIndex,
 } from '../../data/htmlPlannerData.js'
 import { EXAMS } from '../../data/examCalendar.js'
+import { classifyTask } from '../study/taxonomy.js'
 import {
   DEFAULT_AVAILABILITY,
   SCHEDULE_ENGINE_VERSION,
@@ -63,11 +64,14 @@ export function buildTasksFromHtmlPlan(plan = dailyPlan) {
     const dateIso = getPlanDateByIndex(dayIndex)
     dayTasks.forEach((task, taskIndex) => {
       const type = inferTaskType(task.text)
+      const title = String(task.text || '')
+      const classified = classifyTask({ text: title, title })
       const base = {
         id: htmlTaskId(dateIso, taskIndex),
-        title: String(task.text || ''),
+        title,
         type,
-        subjectId: undefined,
+        subjectId: classified.subjectId !== 'unknown' ? classified.subjectId : undefined,
+        examPart: classified.examPart !== 'unknown' ? classified.examPart : undefined,
         topicId: undefined,
         resourceUrl: task.link || undefined,
         priority: task.pri === 'high' || task.pri === 'med' || task.pri === 'low' ? task.pri : 'med',

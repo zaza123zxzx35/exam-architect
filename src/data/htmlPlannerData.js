@@ -82,7 +82,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/14iDtAkcMHX/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก (Ep9.1 แหกโค้ง เก็งปี69)",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก (Ep9.1 แหกโค้ง เก็งปี69)",
       "pri": "high",
       "link": "https://www.facebook.com/share/v/1F1niimQ2j/"
     },
@@ -109,7 +109,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1CnWdcv2eJ/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก",
       "pri": "high",
       "link": "https://www.facebook.com/share/v/1HpyAzrXVq/"
     },
@@ -131,7 +131,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/19ttD1qEtW/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก",
       "pri": "high",
       "link": "https://www.facebook.com/share/v/1HpyAzrXVq/"
     },
@@ -153,7 +153,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/16bcpJCcRu/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาไทย",
+      "text": "📺 ทบทวนภาษาไทย (YouTube)",
       "pri": "med"
     },
     {
@@ -174,7 +174,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/19MSg8MgQL/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาไทย",
+      "text": "📺 ทบทวนภาษาไทย (YouTube)",
       "pri": "med"
     },
     {
@@ -190,7 +190,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1C7Ktt7sci/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: ภาษาไทย",
+      "text": "📺 ทบทวนภาษาไทย (YouTube)",
       "pri": "med"
     },
     {
@@ -321,7 +321,7 @@ export const dailyPlan = [
       "pri": "med"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (อนุมกรม + การให้เหตุผล)",
+      "text": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (อนุมกรม + การให้เหตุผล)",
       "pri": "high",
       "link": "https://www.facebook.com/1401771264932757"
     },
@@ -350,7 +350,7 @@ export const dailyPlan = [
       "pri": "high"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (ร้อยละ + โจทย์ปัญหา)",
+      "text": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (ร้อยละ + โจทย์ปัญหา)",
       "pri": "high",
       "link": "https://www.facebook.com/1032176626550122"
     },
@@ -386,7 +386,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1F1niimQ2j/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (ลำดับตัวเลข + ตรรกะ)",
+      "text": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (ลำดับตัวเลข + ตรรกะ)",
       "pri": "high",
       "link": "https://www.facebook.com/2102028477068318"
     },
@@ -506,7 +506,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/19biq1naRt/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม (เฉลยข้อสอบย้อนหลัง 3 ปี)",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ (เฉลยข้อสอบย้อนหลัง)",
       "pri": "high"
     },
     {
@@ -522,7 +522,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1AYi9Csi1D/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม (เฉลยข้อสอบย้อนหลัง 3 ปี)",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ (เฉลยข้อสอบย้อนหลัง)",
       "pri": "high"
     },
     {
@@ -538,7 +538,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/19ovUV74ZP/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ",
       "pri": "high"
     },
     {
@@ -554,7 +554,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/16xa2HNhDa/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ",
       "pri": "high"
     },
     {
@@ -574,7 +574,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1CWoHwCv2Y/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ",
       "pri": "high"
     },
     {
@@ -590,7 +590,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/1EZp9yBiCd/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: หมาหอนรวม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: หมาหอน ภาค ก ภาษาอังกฤษ",
       "pri": "high"
     },
     {
@@ -625,7 +625,7 @@ export const dailyPlan = [
       "link": "https://www.facebook.com/share/v/18BFoWAtpg/"
     },
     {
-      "text": "🔴 LIVE อ.นนท์: แหกโค้ง เก็งข้อสอบน่าจะออก + จุดผิดสะสม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: แหกโค้ง ภาค ก ภาษาอังกฤษ + จุดผิดสะสม",
       "pri": "high"
     },
     {
@@ -640,7 +640,7 @@ export const dailyPlan = [
   ],
   [
     {
-      "text": "🔴 LIVE อ.นนท์: แหกโค้ง เก็งข้อสอบน่าจะออก + จุดผิดสะสม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: แหกโค้ง ภาค ก ภาษาอังกฤษ + จุดผิดสะสม",
       "pri": "high"
     },
     {
@@ -655,7 +655,7 @@ export const dailyPlan = [
   ],
   [
     {
-      "text": "🔴 LIVE อ.นนท์: แหกโค้ง เก็งข้อสอบน่าจะออก + จุดผิดสะสม",
+      "text": "🔴 LIVE ครูเลดี้เก๋เก๋: แหกโค้ง ภาค ก ภาษาอังกฤษ + จุดผิดสะสม",
       "pri": "high"
     },
     {
@@ -806,7 +806,7 @@ export const courses = [
     "desc": "12 ตอน: อนุมกรม, การให้เหตุผล, ร้อยละ, โจทย์ปัญหา"
   },
   {
-    "name": "อ.นนท์ VIP — หมาหอนภาคก อังกฤษ",
+    "name": "ครูเลดี้เก๋เก๋ VIP — หมาหอนภาคก อังกฤษ",
     "desc": "Ep1-4: เฉลยข้อสอบจริง 65-68 | Ep8.1-8.6 + Ep9.1-9.2: แหกโค้งเก็งปี69"
   },
   {
@@ -879,7 +879,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/share/v/1F1niimQ2j/",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก (Ep9.1 แหกโค้ง เก็งปี69)",
+    "title": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก (Ep9.1 แหกโค้ง เก็งปี69)",
     "status": "imported",
     "dayIndex": 1,
     "taskIndex": 1,
@@ -924,7 +924,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/share/v/1HpyAzrXVq/",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก",
+    "title": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก",
     "status": "imported",
     "dayIndex": 2,
     "taskIndex": 2,
@@ -960,7 +960,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/share/v/1HpyAzrXVq/",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: ภาษาอังกฤษภาค ก",
+    "title": "🔴 LIVE ครูเลดี้เก๋เก๋: ภาษาอังกฤษภาค ก",
     "status": "imported",
     "dayIndex": 3,
     "taskIndex": 1,
@@ -1194,7 +1194,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/1401771264932757",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (อนุมกรม + การให้เหตุผล)",
+    "title": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (อนุมกรม + การให้เหตุผล)",
     "status": "imported",
     "dayIndex": 11,
     "taskIndex": 3,
@@ -1221,7 +1221,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/1032176626550122",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (ร้อยละ + โจทย์ปัญหา)",
+    "title": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (ร้อยละ + โจทย์ปัญหา)",
     "status": "imported",
     "dayIndex": 12,
     "taskIndex": 3,
@@ -1257,7 +1257,7 @@ export const htmlPlannerLinkInventory = [
   {
     "url": "https://www.facebook.com/2102028477068318",
     "source": "dailyPlan",
-    "title": "🔴 LIVE อ.นนท์: คณิตศาสตร์ (ลำดับตัวเลข + ตรรกะ)",
+    "title": "📺 ทบทวนคณิต/ตัวเลขและเหตุผล (ลำดับตัวเลข + ตรรกะ)",
     "status": "imported",
     "dayIndex": 14,
     "taskIndex": 1,

@@ -7,7 +7,7 @@ import { bangkokTodayIso } from '../../data/htmlPlannerData.js'
 import { generatePartB29Draft, mergePartB29DraftIntoSchedule } from './partB29Plan.js'
 
 export const CURATED_PLAN_SEED_META_KEY = 'curatedPartB29SeededAt'
-export const CURATED_PLAN_SEED_VERSION = '15.0-thai-civil-a+vip-oct'
+export const CURATED_PLAN_SEED_VERSION = '15.2-tutor-ownership-lady-eng'
 
 function hasCuratedOrLiveTasks(schedule) {
   return (schedule?.tasks || []).some((t) => {
