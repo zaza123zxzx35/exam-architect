@@ -15,6 +15,12 @@ import {
   mergePartB29DraftIntoSchedule,
   buildPartB29CutPolicy,
 } from '../lib/curated/partB29Plan.js'
+import {
+  generateLiveScheduleTasks,
+  sortCatalogByPriority,
+  subjectLabelTh,
+} from '../lib/curated/liveSchedulePlan.js'
+import { listLiveTutorEvents } from '../data/liveTutorSchedule.js'
 import { auditPlanCoverage } from '../lib/curated/planCoverage.js'
 import { buildCatalogReviewReport } from '../lib/curated/catalogReview.js'
 import {
@@ -55,7 +61,7 @@ export default function Library() {
   const [kind, setKind] = useState('all')
   const [urlStatus, setUrlStatus] = useState('all')
   const [tierFilter, setTierFilter] = useState('all')
-  const [mode, setMode] = useState('balanced')
+  const [mode, setMode] = useState('score-max')
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState('')
   const [planMsg, setPlanMsg] = useState('')
@@ -79,9 +85,25 @@ export default function Library() {
 
   const filtered = useMemo(() => {
     const base = filterCuratedResources(catalog, { examPart, subjectId, kind, urlStatus, query })
-    if (tierFilter === 'all') return base
-    return base.filter(item => scoreById.get(item.id)?.tier === tierFilter)
-  }, [catalog, examPart, subjectId, kind, urlStatus, query, tierFilter, scoreById])
+    const tiered = tierFilter === 'all'
+      ? base
+      : base.filter(item => scoreById.get(item.id)?.tier === tierFilter)
+    // Always list by priority (must → if-time → defer) / weakness when mode = weakness-focus.
+    return sortCatalogByPriority(tiered, ranked)
+  }, [catalog, examPart, subjectId, kind, urlStatus, query, tierFilter, scoreById, ranked])
+
+  const liveUpcoming = useMemo(() => {
+    const todayIso = new Date().toISOString().slice(0, 10)
+    return listLiveTutorEvents(todayIso, { includePast: false })
+  }, [])
+
+  const liveTasksPreview = useMemo(
+    () => generateLiveScheduleTasks({
+      todayIso: new Date().toISOString().slice(0, 10),
+      existingTaskIds: (schedule.tasks || []).map(t => t.id),
+    }),
+    [schedule.tasks],
+  )
 
   const summary = useMemo(() => summarizeCuratedUrlStatuses(catalog), [catalog])
   const seriesList = useMemo(
@@ -154,6 +176,7 @@ export default function Library() {
       + ` · เสนอ ${draft.proposedTasks.length} งาน · วันที่ ${draft.dayCount}`
       + ` · ภาค ข must ในแพ็ก ${draft.partBMustScheduled}/${draft.partBMustInPack}`
       + (draft.partBCoverageOk ? ' · ครอบคลุมครบ' : ` · ค้าง ${draft.partBMustLeft}`)
+      + ` · ไลฟ์/บล็อก ${draft.liveSchedule?.taskCount ?? 0}`
       + ` · ตัดจากแพ็ก ${draft.cutList.length} ตอน (ยังอยู่ในคลัง)`,
     )
   }
@@ -196,7 +219,7 @@ export default function Library() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title="คลังหลักสูตรรวม"
-        description="จัดลำดับคุ้มคะแนนภายในเวลาจริง — ไม่บังคับครบ 217 · ไม่สร้างลิงก์ปลอม · อังกฤษภาค ก ≠ วิชาเอกอังกฤษ"
+        description="217 รายการเรียงตามความสำคัญ (โหมดด้านล่าง) — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · มีตารางไลฟ์จากโปสเตอร์ · อังกฤษภาค ก ≠ วิชาเอก"
         actions={(
           <div className="flex flex-wrap gap-2">
             <Link to="/resources" className="btn-secondary text-xs">คลังเรียน (เดิม)</Link>
@@ -233,13 +256,52 @@ export default function Library() {
         ) : null}
       </StatusBanner>
 
+      <section className="card space-y-3" data-testid="live-tutor-schedule">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+          <CalendarRange className="h-5 w-5 text-primary-700" /> ตารางไลฟ์สด (จากโปสเตอร์)
+        </h2>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          เรียงตามน้ำหนักคะแนน: เอก ข → การศึกษา → กฎหมาย ข → อังกฤษ ก / ข้าราชการที่ดี → หมาหอน
+          · ใกล้ถึง {liveUpcoming.length} รายการต้นทาง
+          · จะปักหมุด {liveTasksPreview.proposedTasks.length} งานเมื่อผสานแผน 29 วัน
+        </p>
+        <ul className="max-h-64 space-y-2 overflow-y-auto text-xs">
+          {liveUpcoming.length === 0 ? (
+            <li className="text-slate-500">ไม่มีไลฟ์ที่เหลือจากวันนี้เป็นต้นไป</li>
+          ) : liveUpcoming.map(ev => (
+            <li
+              key={ev.id}
+              className="rounded-lg border border-slate-200/80 p-2 dark:border-slate-800"
+            >
+              <p className="font-medium text-slate-900 dark:text-white">
+                {ev.date}{ev.dateEnd && ev.dateEnd !== ev.date ? `–${ev.dateEnd}` : ''}
+                {ev.startTime ? ` · ${ev.startTime}${ev.endTime ? `–${ev.endTime}` : ''} น.` : ''}
+                {' · '}{ev.titleTh}
+              </p>
+              <p className="mt-0.5 text-slate-500">
+                ลำดับ {ev.priorityRank}
+                {' · '}{ev.examPart === 'admin' ? 'ธุรการ' : `ภาค ${ev.examPart}`}
+                {' · '}{subjectLabelTh(ev.subjectId)}
+                {' · '}{ev.kind === 'live' ? 'ไลฟ์' : ev.kind === 'content-block' ? 'บล็อกเนื้อหา' : 'โลจิสติกส์'}
+              </p>
+              <p className="mt-0.5 text-slate-600 dark:text-slate-300">{ev.reasonTh}</p>
+            </li>
+          ))}
+        </ul>
+        <ul className="list-disc space-y-0.5 pl-4 text-xs text-slate-500">
+          {liveTasksPreview.notesTh.map(n => <li key={n}>{n}</li>)}
+        </ul>
+      </section>
+
       <section className="card space-y-3">
         <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
           <CalendarRange className="h-5 w-5 text-primary-700" /> แผนคุ้มคะแนน (ร่าง)
         </h2>
 
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">ความเข้มข้น</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            ความเข้มข้น (เรียงรายการคลังตามโหมดนี้)
+          </p>
           <FilterChips
             ariaLabel="โหมดจัดลำดับความสำคัญ"
             value={mode}
@@ -396,10 +458,11 @@ export default function Library() {
       <section className="card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
-            <BookOpenCheck className="h-5 w-5 text-primary-700" /> รายการหลักสูตร
+            <BookOpenCheck className="h-5 w-5 text-primary-700" /> รายการหลักสูตร (เรียงตามความสำคัญ)
           </h2>
           <p className="text-xs text-slate-500">
             แสดง {filtered.length} / {catalog.length}
+            {' · '}{PRIORITY_MODE_LABELS_TH[normalizePriorityMode(mode)]}
             {seriesList.length ? ` · ${seriesList.length} ชุดวิชา` : ''}
           </p>
         </div>
@@ -472,13 +535,16 @@ export default function Library() {
           />
         ) : (
           <ul className="space-y-3">
-            {filtered.map(item => {
+            {filtered.map((item, index) => {
               const score = scoreById.get(item.id)
               return (
                 <li key={item.id} className="rounded-xl border border-slate-200/80 p-3 dark:border-slate-800">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        <span className="mr-2 text-xs font-normal text-slate-400">#{index + 1}</span>
+                        {item.title}
+                      </p>
                       <p className="text-xs text-slate-500">
                         {item.series}
                         {item.episode != null ? ` · ตอน ${item.episode}` : ''}

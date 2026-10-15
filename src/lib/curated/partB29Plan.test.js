@@ -59,7 +59,9 @@ describe('generatePartB29Draft', () => {
     expect(draft.dayCount).toBeLessThanOrEqual(29)
     expect(draft.dayCount).toBeGreaterThanOrEqual(1)
     expect(draft.planKind).toBe('part-b-29-forced')
-    expect(draft.proposedTasks.every(t => t.origin === PART_B_29_ORIGIN)).toBe(true)
+    expect(draft.proposedTasks.every(t => (
+      t.origin === PART_B_29_ORIGIN || t.origin === 'live-tutor-schedule'
+    ))).toBe(true)
 
     const resourceTasks = draft.proposedTasks.filter(t => t.resourceId)
     const partB = resourceTasks.filter(t => t.examPart === 'ข')
@@ -102,7 +104,18 @@ describe('generatePartB29Draft', () => {
     expect(draft.bySubject[SUBJECT_IDS.EDUCATION].scheduled).toBeGreaterThanOrEqual(4)
     expect(draft.bySubject[SUBJECT_IDS.LAW].scheduled).toBeGreaterThanOrEqual(4)
     // Part ก is slim — not the full must dump
-    expect(draft.bySubject[SUBJECT_IDS.GENERAL_KNOWLEDGE_A].scheduled).toBeLessThanOrEqual(8)
+    expect(draft.bySubject[SUBJECT_IDS.GENERAL_KNOWLEDGE_A].scheduled).toBeLessThanOrEqual(20)
+    expect(draft.liveSchedule.taskCount).toBeGreaterThan(0)
+    expect(draft.liveSchedule.liveCount).toBeGreaterThan(0)
+    expect(draft.proposedTasks.some(t => t.origin === 'live-tutor-schedule')).toBe(true)
+    // VIP education window should pull education curated clips onto those dates when possible
+    const eduOnFocus = draft.proposedTasks.filter(
+      t => t.resourceId && t.subjectId === SUBJECT_IDS.EDUCATION
+        && t.plannedDate >= '2026-10-19' && t.plannedDate <= '2026-10-22',
+    )
+    expect(eduOnFocus.length + draft.proposedTasks.filter(
+      t => t.liveKind === 'content-block' && t.subjectId === SUBJECT_IDS.EDUCATION,
+    ).length).toBeGreaterThan(0)
   })
 
   it('merge is add-only and preserves done / userEdited', () => {

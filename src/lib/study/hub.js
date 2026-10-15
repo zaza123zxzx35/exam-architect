@@ -49,6 +49,7 @@ export const HUB_SUBJECT_LABELS = Object.freeze({
   [SUBJECT_IDS.MATH]: 'คณิต',
   [SUBJECT_IDS.ADMIN]: 'สมัคร/เอกสาร',
   [SUBJECT_IDS.UNKNOWN]: 'ยังไม่จัดวิชา',
+  'civil-servant-a': 'ข้าราชการที่ดี (ภาค ก)',
 })
 
 /**

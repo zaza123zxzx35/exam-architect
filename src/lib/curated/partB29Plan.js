@@ -22,8 +22,13 @@ import {
   weaknessMapFromAnalysis,
 } from './priorityScoring.js'
 import { OFFICIAL_CURRICULUM_BUCKETS } from './officialExamScope.js'
+import {
+  generateLiveScheduleTasks,
+  reorderQueueForDateFocus,
+  subjectFocusForDate,
+} from './liveSchedulePlan.js'
 
-export const PART_B_29_PLAN_VERSION = '1.0-part-b-forced'
+export const PART_B_29_PLAN_VERSION = '1.1-part-b-forced-lives'
 export const PART_B_29_DAY_TARGET = 29
 export const PART_B_29_ORIGIN = 'curated-part-b-29'
 
@@ -403,11 +408,11 @@ export function generatePartB29Draft(options = {}) {
   const pack = buildPartB29Pack(ranked)
   const cutPolicy = buildPartB29CutPolicy()
 
-  const partBQueue = [...pack.partBQueue]
-  const partAQueue = [...pack.partAQueue]
+  /** @type {Array<{ row: object, score: object }>} */
+  let remainingB = [...pack.partBQueue]
+  /** @type {Array<{ row: object, score: object }>} */
+  let remainingA = [...pack.partAQueue]
   const proposedTasks = []
-  let bIdx = 0
-  let aIdx = 0
 
   const pushTask = (entry, date, reasonExtraTh = '') => {
     const res = entry.row
@@ -420,6 +425,7 @@ export function generatePartB29Draft(options = {}) {
       return false
     }
     const minutes = estimateMinutes(res)
+    const focus = subjectFocusForDate(date)
     proposedTasks.push({
       id: taskId,
       title: res.title,
@@ -442,72 +448,86 @@ export function generatePartB29Draft(options = {}) {
         entry.score.tier === PRIORITY_TIERS.MUST
           ? PRIORITY_TIER_LABELS_TH[PRIORITY_TIERS.MUST]
           : PRIORITY_TIER_LABELS_TH[entry.score.tier] || entry.score.tier,
+        focus && focus.subjectId === res.subjectId
+          ? `ตรงบล็อกไลฟ์/เนื้อหา: ${focus.titleTh}`
+          : null,
         reasonExtraTh,
         entry.score.reasonTh,
       ].filter(Boolean).join(' · '),
-      reasonCodes: [...new Set([...(entry.score.reasonCodes || []), 'part-b-29-forced'])],
+      reasonCodes: [...new Set([
+        ...(entry.score.reasonCodes || []),
+        'part-b-29-forced',
+        ...(focus && focus.subjectId === res.subjectId ? ['vip-date-focus'] : []),
+      ])],
       planPack: 'part-b-29',
     })
     return minutes
   }
 
-  // Phase 1: Part ข only until pack drained (or study days end).
-  for (let day = 0; day < studyDays && bIdx < partBQueue.length; day += 1) {
-    const date = addDaysIso(todayIso, day)
-    let budget = Math.max(0, dailyMinutes - (committed.get(date) || 0))
-    while (budget > 0 && bIdx < partBQueue.length) {
-      const entry = partBQueue[bIdx]
+  const packQueueIntoDay = (date, budget, queue, reasonTh) => {
+    const ordered = reorderQueueForDateFocus(date, queue)
+    /** @type {Array<{ row: object, score: object }>} */
+    const leftover = []
+    let remainingBudget = budget
+    for (const entry of ordered) {
+      if (remainingBudget <= 0) {
+        leftover.push(entry)
+        continue
+      }
       const minutes = estimateMinutes(entry.row)
       const dayHasWork = (committed.get(date) || 0) > 0
         || proposedTasks.some(t => t.plannedDate === date)
-      if (minutes > budget && dayHasWork) break
-      if (minutes > budget && !dayHasWork && budget < dailyMinutes) break
-      const used = pushTask(entry, date, 'จัดก่อนภาค ก')
-      if (used === false) {
-        bIdx += 1
+      if (minutes > remainingBudget && dayHasWork) {
+        leftover.push(entry)
         continue
       }
-      budget -= used
-      bIdx += 1
+      if (minutes > remainingBudget && !dayHasWork && remainingBudget < dailyMinutes) {
+        leftover.push(entry)
+        continue
+      }
+      const used = pushTask(entry, date, reasonTh)
+      if (used === false) continue
+      remainingBudget -= used
     }
+    return { leftover, remainingBudget }
   }
 
-  // Phase 2: fill remaining study-day budget with slim Part ก, then any leftover Part ข.
+  // Phase 1: Part ข only (VIP date focus reorders within the pack).
+  for (let day = 0; day < studyDays && remainingB.length > 0; day += 1) {
+    const date = addDaysIso(todayIso, day)
+    const budget = Math.max(0, dailyMinutes - (committed.get(date) || 0))
+    const result = packQueueIntoDay(date, budget, remainingB, 'จัดก่อนภาค ก')
+    remainingB = result.leftover
+  }
+
+  // Phase 2: leftover Part ข then slim Part ก, still honouring date focus.
   for (let day = 0; day < studyDays; day += 1) {
     const date = addDaysIso(todayIso, day)
     let budget = Math.max(0, dailyMinutes - (committed.get(date) || 0))
     budget -= proposedTasks
-      .filter(t => t.plannedDate === date)
+      .filter(t => t.plannedDate === date && String(t.origin || '').startsWith('curated'))
       .reduce((s, t) => s + (Number(t.estimatedMinutes) || 0), 0)
     if (budget <= 0) continue
+    if (remainingB.length) {
+      const r = packQueueIntoDay(date, budget, remainingB, 'ส่วนที่เหลือของแพ็กภาค ข')
+      remainingB = r.leftover
+      budget = r.remainingBudget
+    }
+    if (budget > 0 && remainingA.length) {
+      const r = packQueueIntoDay(date, budget, remainingA, 'เติมภาค กหลังบังคับภาค ข')
+      remainingA = r.leftover
+    }
+  }
 
-    // Prefer Part ก filler once Part ข for earlier days is placed; still drain leftover ข first if any.
-    while (budget > 0 && bIdx < partBQueue.length) {
-      const entry = partBQueue[bIdx]
-      const minutes = estimateMinutes(entry.row)
-      const dayHasWork = proposedTasks.some(t => t.plannedDate === date) || (committed.get(date) || 0) > 0
-      if (minutes > budget && dayHasWork) break
-      const used = pushTask(entry, date, 'ส่วนที่เหลือของแพ็กภาค ข')
-      if (used === false) {
-        bIdx += 1
-        continue
-      }
-      budget -= used
-      bIdx += 1
-    }
-    while (budget > 0 && aIdx < partAQueue.length) {
-      const entry = partAQueue[aIdx]
-      const minutes = estimateMinutes(entry.row)
-      const dayHasWork = proposedTasks.some(t => t.plannedDate === date) || (committed.get(date) || 0) > 0
-      if (minutes > budget && dayHasWork) break
-      const used = pushTask(entry, date, 'เติมภาค กหลังบังคับภาค ข')
-      if (used === false) {
-        aIdx += 1
-        continue
-      }
-      budget -= used
-      aIdx += 1
-    }
+  // Pin poster live / content-block tasks (evening lives do not consume daytime curated budget).
+  const liveDraft = generateLiveScheduleTasks({
+    todayIso,
+    untilIso: addDaysIso(todayIso, Math.max(0, dayCount - 1)),
+    existingTaskIds: [...existing],
+  })
+  for (const task of liveDraft.proposedTasks) {
+    if (existing.has(task.id) || proposedTasks.some(t => t.id === task.id)) continue
+    proposedTasks.push(task)
   }
 
   // Review buffer
@@ -563,6 +583,9 @@ export function generatePartB29Draft(options = {}) {
     && bySubject[SUBJECT_IDS.LAW]?.scheduled > 0
     && bySubject[SUBJECT_IDS.ENGLISH_MAJOR]?.scheduled > 0
 
+  const liveTasks = proposedTasks.filter(t => t.origin === 'live-tutor-schedule')
+  const curatedTasks = proposedTasks.filter(t => t.resourceId)
+
   return {
     version: PART_B_29_PLAN_VERSION,
     planKind: 'part-b-29-forced',
@@ -587,9 +610,15 @@ export function generatePartB29Draft(options = {}) {
     partBMustScheduled: partBMustScheduled.length,
     partBMustLeft: partBMustLeft.length,
     partBCoverageOk,
+    liveSchedule: {
+      taskCount: liveTasks.length,
+      liveCount: liveTasks.filter(t => t.liveKind === 'live').length,
+      contentBlockCount: liveTasks.filter(t => t.liveKind === 'content-block').length,
+      notesTh: liveDraft.notesTh,
+    },
     unscheduled: {
-      partBPackLeft: partBQueue.length - bIdx,
-      partAPackLeft: partAQueue.length - aIdx,
+      partBPackLeft: remainingB.length,
+      partAPackLeft: remainingA.length,
       partBMustLeft: partBMustLeft.length,
     },
     limitationsTh: [
@@ -597,11 +626,13 @@ export function generatePartB29Draft(options = {}) {
       'เพดานวิชาอิงคะแนนหลักสูตร ก.ค.ศ. ไม่ใช่น้ำหนักรายข้อ',
       'URL unchecked / needs_full_url ยังไม่ใช่ verified_accessible',
       'english-skills-a (ภาค ก) ≠ english-major (ภาค ข)',
+      'ข้าราชการที่ดี = ภาค ก — ไม่ปนกับกฎหมายภาค ข',
     ],
     notesTh: [
       `แผนบังคับภาค ข ${dayCount} วัน · งบ ≈ ${dailyMinutes} นาที/วัน`,
       `แพ็กภาค ข ${pack.summary.partBItems} ตอน ≈ ${pack.summary.partBMinutes} นาที · ภาค ก เติม ${pack.summary.partAItems} ตอน ≈ ${pack.summary.partAMinutes} นาที`,
       `ตัดออกจากแพ็กนี้ ${pack.summary.cutItems} ตอน (ยังอยู่ในคลัง) ≈ ${pack.summary.cutMinutes} นาที`,
+      `ปักหมุดไลฟ์/บล็อกเนื้อหาจากโปสเตอร์ ${liveTasks.length} งาน (เย็น ไม่แย่งงบกลางวัน) · คลิปคลัง ${curatedTasks.length} งาน`,
       partBCoverageOk
         ? 'จัด must ในแพ็กภาค ข ได้ครบภายใต้งบ (ตามการประมาณ)'
         : `ยังจัด must ภาค ข ในแพ็กไม่ครบ ${partBMustLeft.length} รายการ — งบ/วันไม่พอหรือชนงานเดิม`,
