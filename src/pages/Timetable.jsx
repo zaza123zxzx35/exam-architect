@@ -40,7 +40,7 @@ const detectSlotAction = (slot = {}) => {
     const external = !!slot._linkExternal
     const href = external ? safeResourceUrl(slot._link) : slot._link
     if (href) {
-      actions.push({ label: '📂 กดตรงนี้ → ไปคลิป/โพสต์', href, external, icon: 'ExternalLink' })
+      actions.push({ label: 'เปิดคลิปติว', href, external, icon: 'ExternalLink' })
     }
   } else if (/ไลฟ์สด|LIVE|กลุ่ม/i.test(t)) {
     for (const [key, url] of Object.entries(FB_GROUP_URLS)) {

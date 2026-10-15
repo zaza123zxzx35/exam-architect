@@ -10,6 +10,7 @@ import {
   LIVE_TUTOR_SCHEDULE_VERSION,
   subjectFocusForDate,
 } from '../../data/liveTutorSchedule.js'
+import { bangkokTodayIso } from '../../data/htmlPlannerData.js'
 import { HUB_SUBJECT_LABELS, HUB_EXAM_PART_LABELS } from '../study/hub.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 import { enrichCuratedResources } from './catalog.js'
@@ -57,7 +58,7 @@ export function sortCatalogByPriority(items, ranked) {
  * }} [options]
  */
 export function generateLiveScheduleTasks(options = {}) {
-  const todayIso = options.todayIso || new Date().toISOString().slice(0, 10)
+  const todayIso = options.todayIso || bangkokTodayIso()
   const untilIso = options.untilIso || null
   const existing = new Set((options.existingTaskIds || []).map(String))
   const includeLogistics = options.includeLogistics === true

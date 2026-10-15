@@ -252,7 +252,7 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
 ]))
 
 function isoDate(d) {
-  return d.toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(d)
 }
 
 function addDaysIso(iso, days) {

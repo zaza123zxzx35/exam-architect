@@ -544,7 +544,7 @@ export function expandLiveEventDates(event) {
   const cursor = new Date(`${start}T12:00:00+07:00`)
   const last = new Date(`${end}T12:00:00+07:00`)
   while (cursor <= last) {
-    const plannedDate = cursor.toISOString().slice(0, 10)
+    const plannedDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(cursor)
     out.push({ ...event, plannedDate })
     cursor.setDate(cursor.getDate() + 1)
   }

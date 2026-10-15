@@ -5,6 +5,7 @@ const KNOWN = [
   { to: '/today', label: 'วันนี้' },
   { to: '/overview', label: 'แผนภาพรวม' },
   { to: '/history', label: 'ย้อนดูวัน' },
+  { to: '/library', label: 'คลังหลักสูตรรวม' },
   { to: '/resources', label: 'คลังเรียน' },
   { to: '/timetable', label: 'ตารางติว' },
   { to: '/planner', label: 'Smart Planner' },

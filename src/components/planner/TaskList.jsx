@@ -53,7 +53,7 @@ export default function TaskList({ dateIso, tasks, state, onToggle }) {
                       className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100"
                       onClick={event => event.stopPropagation()}
                     >
-                      <ExternalLink className="h-3 w-3" /> เปิดลิงก์
+                      <ExternalLink className="h-3 w-3" /> เปิดคลิปติว
                     </a>
                   ) : (
                     <span className="text-[11px] text-slate-400">ไม่มีลิงก์แนบ</span>

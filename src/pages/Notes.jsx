@@ -230,10 +230,19 @@ export default function Notes() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(n => (
-            <button
+            <div
               key={n.id}
+              role="button"
+              tabIndex={0}
               onClick={() => { setActiveId(n.id); setMode('view') }}
-              className="card text-left p-5 hover:border-primary-300 hover:shadow group"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setActiveId(n.id)
+                  setMode('view')
+                }
+              }}
+              className="card cursor-pointer text-left p-5 hover:border-primary-300 hover:shadow group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex flex-wrap gap-2">
@@ -242,7 +251,9 @@ export default function Notes() {
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); deleteNote(n.id) }}
+                  aria-label={`ลบโน้ต ${n.title}`}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-slate-500 hover:text-red-500 transition p-1"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -259,7 +270,7 @@ export default function Notes() {
                   เปิดอ่าน →
                 </span>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}

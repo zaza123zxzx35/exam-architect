@@ -71,6 +71,17 @@ export default function Videos() {
   const categories = ['ทั้งหมด', ...Array.from(new Set(videos.map(v => v.category)))]
 
   const filtered = filter === 'ทั้งหมด' ? videos : videos.filter(v => v.category === filter)
+  const filteredIdsKey = filtered.map(v => v.id).join('|')
+
+  // Keep a usable selection so open/embed controls are always available.
+  useEffect(() => {
+    const ids = filteredIdsKey ? filteredIdsKey.split('|') : []
+    if (!ids.length) {
+      setActiveId(prev => (prev === null ? prev : null))
+      return
+    }
+    setActiveId(prev => (prev && ids.includes(prev) ? prev : ids[0]))
+  }, [filteredIdsKey])
 
   const active = activeId ? videos.find(v => v.id === activeId) : null
   const safeActiveUrl = active ? safeResourceUrl(active.url) : null
@@ -328,7 +339,7 @@ export default function Videos() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" /> เปิดต้นฉบับ
+                      <ExternalLink className="w-3.5 h-3.5" /> เปิดคลิปติว
                     </a>
                     )}
                   </div>
@@ -382,9 +393,17 @@ export default function Videos() {
                 const isFbItem = isFacebookGroup(v.url)
                 return (
                 <li key={v.id}>
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setActiveId(v.id)}
-                    className={`w-full text-left p-3 flex items-start gap-3 transition-colors ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setActiveId(v.id)
+                      }
+                    }}
+                    className={`w-full cursor-pointer text-left p-3 flex items-start gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 ${
                       activeId === v.id ? 'bg-primary-50' : 'hover:bg-gray-50 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -410,7 +429,9 @@ export default function Videos() {
                           {v.title}
                         </div>
                         <button
+                          type="button"
                           onClick={(e) => { e.stopPropagation(); deleteVideo(v.id) }}
+                          aria-label={`ลบวิดีโอ ${v.title}`}
                           className="text-gray-300 dark:text-slate-600 hover:text-red-500 flex-shrink-0"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -437,7 +458,7 @@ export default function Videos() {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 </li>
               )})
             )}

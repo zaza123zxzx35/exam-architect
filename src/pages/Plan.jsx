@@ -11,6 +11,7 @@ import {
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { initialStudyPlan, initialMockExams } from '../data/planData'
+import { bangkokTodayIso } from '../data/htmlPlannerData'
 
 const colorCls = {
   blue: {
@@ -88,7 +89,7 @@ export default function Plan() {
       part: newMock.part,
       totalScore: Number(newMock.totalScore) || 100,
       userScore: newMock.userScore === '' ? null : Number(newMock.userScore),
-      date: new Date().toISOString().split('T')[0],
+      date: bangkokTodayIso(),
       note: ''
     }
     setMockExams(prev => [...prev, exam])

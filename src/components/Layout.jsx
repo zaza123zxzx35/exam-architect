@@ -55,7 +55,8 @@ export default function Layout({ children }) {
   const { theme, toggleTheme } = useThemeCtx()
   const countdown = useExamCountdown()
   const [now, setNow] = useState(() => new Date())
-  const activeItem = navItems.find(item => item.to === location.pathname) || navItems[0]
+  const activeItem = navItems.find(item => item.to === location.pathname) || null
+  const pageTitle = activeItem?.label || (location.pathname === '/' ? 'ภาพรวม' : 'ไม่พบหน้า')
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000)
@@ -123,7 +124,7 @@ export default function Layout({ children }) {
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white lg:hidden"><BookOpen className="h-4 w-4" /></div>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:text-lg">{activeItem.label}</h1>
+                <h1 className="truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:text-lg">{pageTitle}</h1>
                 <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">{formatBangkokDate(now)} · เวลาไทย</p>
               </div>
             </div>

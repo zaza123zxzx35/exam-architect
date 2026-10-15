@@ -13,12 +13,27 @@ export default function TaskOpenButtons({ task, className = '' }) {
   if (action.mode === 'none') return null
 
   const onCopy = async () => {
+    const text = action.copyText
+    if (!text) return
     try {
-      await navigator.clipboard.writeText(action.copyText)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.setAttribute('readonly', '')
+        ta.style.position = 'fixed'
+        ta.style.left = '-9999px'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
       setCopied(false)
+      window.prompt('คัดลอกลิงก์นี้:', text)
     }
   }
 

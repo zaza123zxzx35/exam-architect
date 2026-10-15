@@ -35,6 +35,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage'
 import { initialQuizzes } from '../data/quizData'
 import { analyzeQuizPerformance } from '../lib/study/weakness.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
+import { bangkokTodayIso } from '../data/htmlPlannerData.js'
 
 const KIND_LABELS = {
   all: 'ทุกประเภท',
@@ -92,17 +93,19 @@ export default function Library() {
     return sortCatalogByPriority(tiered, ranked)
   }, [catalog, examPart, subjectId, kind, urlStatus, query, tierFilter, scoreById, ranked])
 
-  const liveUpcoming = useMemo(() => {
-    const todayIso = new Date().toISOString().slice(0, 10)
-    return listLiveTutorEvents(todayIso, { includePast: false })
-  }, [])
+  const todayIso = bangkokTodayIso()
+
+  const liveUpcoming = useMemo(
+    () => listLiveTutorEvents(todayIso, { includePast: false }),
+    [todayIso],
+  )
 
   const liveTasksPreview = useMemo(
     () => generateLiveScheduleTasks({
-      todayIso: new Date().toISOString().slice(0, 10),
+      todayIso,
       existingTaskIds: (schedule.tasks || []).map(t => t.id),
     }),
-    [schedule.tasks],
+    [schedule.tasks, todayIso],
   )
 
   const summary = useMemo(() => summarizeCuratedUrlStatuses(catalog), [catalog])
@@ -614,7 +617,7 @@ export default function Library() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" /> เปิดลิงก์
+                          <ExternalLink className="h-3.5 w-3.5" /> เปิดคลิปติว
                         </a>
                       ) : null}
                     </div>

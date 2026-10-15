@@ -256,7 +256,7 @@ export default function Resources() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 font-medium text-sky-700 hover:underline dark:text-sky-300"
                           >
-                            <ExternalLink className="h-3 w-3" /> เปิดลิงก์
+                            <ExternalLink className="h-3 w-3" /> เปิดคลิปติว
                           </a>
                         ) : null}
                       </div>

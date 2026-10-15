@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import Layout from './components/Layout'
 import StorageBootstrap from './components/StorageBootstrap'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Info = lazy(() => import('./pages/Info'))
@@ -39,25 +40,27 @@ export default function App() {
       <StorageBootstrap>
         <BrowserRouter>
           <Layout>
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/today" element={<Today />} />
-                <Route path="/overview" element={<Overview />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/resources" element={<Resources />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/planner" element={<SmartPlanner />} />
-                <Route path="/assistant" element={<Assistant />} />
-                <Route path="/timetable" element={<Timetable />} />
-                <Route path="/info" element={<Info />} />
-                <Route path="/plan" element={<Plan />} />
-                <Route path="/quiz" element={<Quiz />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/videos" element={<Videos />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/today" element={<Today />} />
+                  <Route path="/overview" element={<Overview />} />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/resources" element={<Resources />} />
+                  <Route path="/library" element={<Library />} />
+                  <Route path="/planner" element={<SmartPlanner />} />
+                  <Route path="/assistant" element={<Assistant />} />
+                  <Route path="/timetable" element={<Timetable />} />
+                  <Route path="/info" element={<Info />} />
+                  <Route path="/plan" element={<Plan />} />
+                  <Route path="/quiz" element={<Quiz />} />
+                  <Route path="/notes" element={<Notes />} />
+                  <Route path="/videos" element={<Videos />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </Layout>
         </BrowserRouter>
       </StorageBootstrap>
