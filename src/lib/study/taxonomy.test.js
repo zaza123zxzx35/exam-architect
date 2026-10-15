@@ -25,7 +25,7 @@ const taxonomySource = readFileSync(
 
 describe('study taxonomy (Phase 2B)', () => {
   it('exposes a stable taxonomyVersion', () => {
-    expect(TAXONOMY_VERSION).toBe('2b.1')
+    expect(TAXONOMY_VERSION).toBe('2b.2')
     const sample = classifyQuiz(initialQuizzes[0])
     expect(sample.taxonomyVersion).toBe(TAXONOMY_VERSION)
   })
@@ -147,13 +147,16 @@ describe('study taxonomy (Phase 2B)', () => {
     expect(friUnspecified.subjectId).toBe(SUBJECT_IDS.UNKNOWN)
   })
 
-  it('does not assign exam part to law/math from generic keywords alone', () => {
+  it('keeps title-only law/math heuristics unknown while subjectIdToExamPart follows official scope', () => {
+    // Title keywords alone still do not invent a part on classifyTask (confidence path).
     const law = classifyTask({ id: 't-law', title: 'ทบทวนกฎหมายครู' })
     const math = classifyTask({ id: 't-math', title: 'ฝึกคณิตศาสตร์เพิ่มเติม' })
     expect(law).toMatchObject({ subjectId: SUBJECT_IDS.LAW, examPart: 'unknown' })
     expect(math).toMatchObject({ subjectId: SUBJECT_IDS.MATH, examPart: 'unknown' })
-    expect(subjectIdToExamPart(SUBJECT_IDS.LAW)).toBe('unknown')
-    expect(subjectIdToExamPart(SUBJECT_IDS.MATH)).toBe('unknown')
+    // Phase 8.2: official curriculum mapping (ก.ค.ศ. ว14/2566) for known subject ids.
+    expect(subjectIdToExamPart(SUBJECT_IDS.LAW)).toBe('ข')
+    expect(subjectIdToExamPart(SUBJECT_IDS.MATH)).toBe('ก')
+    expect(subjectIdToExamPart(SUBJECT_IDS.EDUCATION)).toBe('ข')
   })
 
   it('does not derive content examPart from schedule examId alone', () => {

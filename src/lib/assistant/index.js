@@ -16,3 +16,5 @@ export {
   clearAssistantContext,
 } from './context.js'
 export { processAssistantTurn } from './dialogue.js'
+export { processAssistantTurnWithAi } from './openaiBridge.js'
+export { proposalToPendingChange, applyOpenAiProposal } from './openai/applyProposal.js'

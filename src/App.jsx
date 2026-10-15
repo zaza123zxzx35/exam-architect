@@ -15,6 +15,7 @@ const Today = lazy(() => import('./pages/Today'))
 const Overview = lazy(() => import('./pages/Overview'))
 const History = lazy(() => import('./pages/History'))
 const Resources = lazy(() => import('./pages/Resources'))
+const Library = lazy(() => import('./pages/Library'))
 const SmartPlanner = lazy(() => import('./pages/SmartPlanner'))
 const Assistant = lazy(() => import('./pages/Assistant'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -45,6 +46,7 @@ export default function App() {
                 <Route path="/overview" element={<Overview />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/resources" element={<Resources />} />
+                <Route path="/library" element={<Library />} />
                 <Route path="/planner" element={<SmartPlanner />} />
                 <Route path="/assistant" element={<Assistant />} />
                 <Route path="/timetable" element={<Timetable />} />

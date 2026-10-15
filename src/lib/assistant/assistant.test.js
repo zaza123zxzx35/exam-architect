@@ -129,6 +129,48 @@ describe('assistant dialogue workflow', () => {
     expect(result.replies.join('\n')).toMatch(/ยังไม่มีผลแบบทดสอบ|insufficient|attempts:\s*0|ทำไป 0/i)
   })
 
+  it('show_weakness links curated catalog recommendations without changing schedule', () => {
+    const quizResults = {
+      'q-g2__1': {
+        score: 1,
+        total: 5,
+        pct: 20,
+        category: 'ภาค ก - ทักษะภาษาอังกฤษ',
+      },
+    }
+    const before = structuredClone(schedule)
+    const result = processAssistantTurn(schedule, context, 'ดูจุดอ่อน', {
+      dateProvider: dates,
+      quizResults,
+    })
+    expect(result.scheduleChanged).toBe(false)
+    expect(result.nextSchedule).toEqual(before)
+    const text = result.replies.join('\n')
+    expect(text).toMatch(/เบื้องต้น|preliminary/i)
+    expect(text).toContain('/library')
+    expect(text).toMatch(/ไม่เปลี่ยนตาราง/)
+    expect(text).not.toMatch(/LLM|OpenAI|GPT/i)
+    // english-skills-a curated rows are Facebook stubs → must label incomplete URL
+    expect(text).toMatch(/URL ไม่ครบ|unchecked|ยังไม่ตรวจ/i)
+  })
+
+  it('show_weakness with multi-subject evidence stays read-only and does not invent scores', () => {
+    const quizResults = {
+      'q-g2__1': { score: 1, total: 5, pct: 20, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-g2__2': { score: 2, total: 5, pct: 40, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-m1__1': { score: 1, total: 5, pct: 20, category: 'ภาค ข - วิชาเอกภาษาอังกฤษ (Grammar)' },
+      'q-m1__2': { score: 1, total: 5, pct: 20, category: 'ภาค ข - วิชาเอกภาษาอังกฤษ (Grammar)' },
+    }
+    const result = processAssistantTurn(schedule, context, 'show weaknesses', {
+      dateProvider: dates,
+      quizResults,
+    })
+    expect(result.scheduleChanged).toBe(false)
+    const text = result.replies.join('\n')
+    expect(text).toMatch(/english-skills-a|ทักษะ/i)
+    expect(text).toMatch(/english-major|วิชาเอก/i)
+    expect(text).not.toMatch(/invent|แต่งคะแนน/i)
+  })
   it('show_weakness reports observed weakness from supplied quiz_results without writing schedule', () => {
     const before = structuredClone(schedule)
     const quizResults = {

@@ -126,4 +126,32 @@ describe('Smart Tutor weakness analysis (Phase 4/8)', () => {
     expect(reasons[0].kind).toBe('insufficient-data')
     expect(recommendations.every(r => r.kind === 'quiz')).toBe(true)
   })
+
+  it('targets multiple weak subjects without inventing scores', () => {
+    const results = {
+      'q-g2__1': { score: 1, total: 5, pct: 20, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-g2__2': { score: 2, total: 5, pct: 40, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-m1__1': { score: 1, total: 5, pct: 20, category: 'ภาค ข - วิชาเอกภาษาอังกฤษ (Grammar)' },
+      'q-m1__2': { score: 2, total: 5, pct: 40, category: 'ภาค ข - วิชาเอกภาษาอังกฤษ (Grammar)' },
+    }
+    const analysis = analyzeQuizPerformance(results, initialQuizzes)
+    expect(analysis.observedWeaknesses.length).toBeGreaterThanOrEqual(2)
+    expect(analysis.observedWeaknesses.some(w => w.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A)).toBe(true)
+    expect(analysis.observedWeaknesses.some(w => w.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
+    const { recommendations, mode } = recommendPracticeFromWeakness(analysis, catalog, { limit: 8 })
+    expect(mode).toBe('target-weakness')
+    const subjects = new Set(recommendations.map(r => r.taxonomy.subjectId))
+    expect(subjects.has(SUBJECT_IDS.ENGLISH_SKILLS_A) || subjects.has(SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
+  })
+
+  it('does not fabricate weakness when only high scores exist', () => {
+    const results = {
+      'q-g2__1': { score: 5, total: 5, pct: 100, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+      'q-g2__2': { score: 5, total: 5, pct: 100, category: 'ภาค ก - ทักษะภาษาอังกฤษ' },
+    }
+    const analysis = analyzeQuizPerformance(results, initialQuizzes)
+    expect(analysis.observedWeaknesses).toHaveLength(0)
+    const { mode } = recommendPracticeFromWeakness(analysis, catalog)
+    expect(mode).toBe('maintain')
+  })
 })

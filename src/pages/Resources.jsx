@@ -126,6 +126,11 @@ export default function Resources() {
       <PageHeader
         title="คลังเรียน"
         description="ศูนย์รวมแบบทดสอบ โน้ต วิดีโอ แผนอ่าน และลิงก์ — กรองตามภาค/วิชาจาก taxonomy แบบ classify-on-read"
+        actions={(
+          <Link to="/library" className="btn-secondary text-xs">
+            <Library className="h-3.5 w-3.5" /> คลังหลักสูตรรวม (ก+ข)
+          </Link>
+        )}
       />
 
       <section className="card space-y-4">

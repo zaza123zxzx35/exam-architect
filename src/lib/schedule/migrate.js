@@ -89,7 +89,15 @@ function sanitizeTask(raw, index) {
   const status = ['pending', 'done', 'deferred', 'cancelled'].includes(raw.status)
     ? raw.status
     : 'pending'
-  return {
+  // Prefer schema durationMinutes; fall back to curated estimatedMinutes (same meaning).
+  const durationFromSchema = Number(raw.durationMinutes)
+  const durationFromCurated = Number(raw.estimatedMinutes)
+  const durationMinutes = Number.isFinite(durationFromSchema) && durationFromSchema > 0
+    ? durationFromSchema
+    : Number.isFinite(durationFromCurated) && durationFromCurated > 0
+      ? durationFromCurated
+      : 45
+  const task = {
     id,
     title: String(raw.title || 'Untitled task'),
     type: raw.type ? String(raw.type) : 'study',
@@ -99,7 +107,7 @@ function sanitizeTask(raw, index) {
     priority: ['high', 'med', 'low'].includes(raw.priority) ? raw.priority : 'med',
     plannedDate: isValidIsoDate(raw.plannedDate) ? raw.plannedDate : undefined,
     originalPlannedDate: isValidIsoDate(raw.originalPlannedDate) ? raw.originalPlannedDate : undefined,
-    durationMinutes: Number.isFinite(Number(raw.durationMinutes)) ? Number(raw.durationMinutes) : 45,
+    durationMinutes,
     deadline: isValidIsoDate(raw.deadline) ? raw.deadline : undefined,
     examId: raw.examId ? String(raw.examId) : undefined,
     status,
@@ -110,6 +118,18 @@ function sanitizeTask(raw, index) {
     parentTaskId: raw.parentTaskId ? String(raw.parentTaskId) : undefined,
     rescheduleHistory: Array.isArray(raw.rescheduleHistory) ? raw.rescheduleHistory : [],
   }
+  // Preserve curated / user-edit markers without a full schema bump.
+  if (raw.userEdited) task.userEdited = true
+  if (raw.resourceId != null) task.resourceId = String(raw.resourceId)
+  if (raw.urlStatus != null) task.urlStatus = String(raw.urlStatus)
+  if (raw.examPart != null) task.examPart = String(raw.examPart)
+  if (raw.durationIsEstimate) task.durationIsEstimate = true
+  if (Number.isFinite(durationFromCurated) && durationFromCurated > 0) {
+    task.estimatedMinutes = durationFromCurated
+  } else if (task.durationIsEstimate) {
+    task.estimatedMinutes = durationMinutes
+  }
+  return task
 }
 
 function sanitizeSession(raw, index) {

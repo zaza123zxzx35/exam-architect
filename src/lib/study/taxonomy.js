@@ -4,7 +4,7 @@
  * Never reads/writes storage, never mutates inputs, never invents exam facts.
  */
 
-export const TAXONOMY_VERSION = '2b.1'
+export const TAXONOMY_VERSION = '2b.2'
 
 /** @typedef {'ก' | 'ข' | 'ค' | 'admin' | 'mixed' | 'unknown'} ExamPart */
 /** @typedef {'explicit' | 'heuristic' | 'mixed' | 'unknown'} TaxonomyConfidence */
@@ -398,13 +398,16 @@ export function subjectIdToExamPart(subjectId) {
       return 'ก'
     case SUBJECT_IDS.EDUCATION:
     case SUBJECT_IDS.ENGLISH_MAJOR:
+    case SUBJECT_IDS.LAW:
+      // Official: ก.ค.ศ. ว14/2566 — education + law under ภาค ข
       return 'ข'
+    case SUBJECT_IDS.MATH:
+      // Official: quantitative analysis under ภาค ก ความสามารถในการคิดวิเคราะห์
+      return 'ก'
     case SUBJECT_IDS.INTERVIEW_C:
       return 'ค'
     case SUBJECT_IDS.ADMIN:
       return 'admin'
-    case SUBJECT_IDS.LAW:
-    case SUBJECT_IDS.MATH:
     case SUBJECT_IDS.UNKNOWN:
     default:
       return 'unknown'

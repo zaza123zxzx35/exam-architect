@@ -125,6 +125,31 @@ describe('schedule migration', () => {
     expect(schedule.notes.bad).toBeUndefined()
   })
 
+  it('preserves curated duration/userEdited markers through sanitize', () => {
+    const { schedule } = sanitizeSchedule({
+      tasks: [{
+        id: 'curated_math-1',
+        title: 'Math',
+        status: 'pending',
+        plannedDate: '2026-10-20',
+        estimatedMinutes: 90,
+        origin: 'curated-unified-plan',
+        userEdited: true,
+        resourceId: 'math-1',
+        urlStatus: 'needs_full_url',
+        examPart: 'ก',
+        durationIsEstimate: true,
+      }],
+      sessions: [],
+    })
+    const task = schedule.tasks.find(t => t.id === 'curated_math-1')
+    expect(task.durationMinutes).toBe(90)
+    expect(task.estimatedMinutes).toBe(90)
+    expect(task.userEdited).toBe(true)
+    expect(task.resourceId).toBe('math-1')
+    expect(task.urlStatus).toBe('needs_full_url')
+  })
+
   it('saveSchedule dual-writes HTML planner shape', () => {
     const built = buildScheduleFromSources({
       htmlState: {

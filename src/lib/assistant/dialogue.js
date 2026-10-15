@@ -80,7 +80,10 @@ export function processAssistantTurn(schedule, context, userText, options = {}) 
       result = handleHelp(ctx.language)
       break
     case 'show_today':
-      result = handleShowToday(schedule, dates, ctx.language)
+      result = handleShowToday(schedule, dates, ctx.language, {
+        weaknessAnalysis: options.weaknessAnalysis,
+        priorityMode: options.priorityMode,
+      })
       break
     case 'show_exams':
       result = handleShowExams(ctx.language)

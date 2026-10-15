@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, Send, Trash2, Sparkles, Library, MessageSquare } from 'lucide-react'
 import { useScheduleStore } from '../hooks/useScheduleStore'
@@ -8,9 +8,10 @@ import {
   clearAssistantContext,
   createDateProvider,
   loadAssistantContext,
-  processAssistantTurn,
   saveAssistantContext,
 } from '../lib/assistant'
+import { processAssistantTurnWithAi } from '../lib/assistant/openaiBridge.js'
+import { analyzeQuizPerformance } from '../lib/study/weakness.js'
 import { PageHeader, EmptyState, StatusBanner } from '../components/ui'
 
 export default function Assistant() {
@@ -22,8 +23,16 @@ export default function Assistant() {
   ))
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [sendError, setSendError] = useState('')
+  const [lastSource, setLastSource] = useState(null)
   const bottomRef = useRef(null)
+  const inputRef = useRef(null)
   const dates = createDateProvider()
+
+  const weaknessAnalysis = useMemo(
+    () => analyzeQuizPerformance(quizResults, quizzes),
+    [quizResults, quizzes],
+  )
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -34,21 +43,32 @@ export default function Assistant() {
     saveAssistantContext(next, window.sessionStorage)
   }
 
-  const send = (text) => {
+  const send = async (text) => {
     const trimmed = String(text || '').trim()
     if (!trimmed || busy) return
     setBusy(true)
+    setSendError('')
     try {
-      const result = processAssistantTurn(schedule, context, trimmed, {
+      const result = await processAssistantTurnWithAi(schedule, context, trimmed, {
         dateProvider: dates,
         quizResults,
         quizzes,
+        weaknessAnalysis,
+        priorityMode: 'balanced',
       })
       if (result.scheduleChanged) {
         setSchedule(() => result.nextSchedule)
       }
       persist(result.context)
+      setLastSource(result.source || null)
       setInput('')
+      if (inputRef.current) inputRef.current.value = ''
+      if (result.fallbackNote && result.source === 'fallback') {
+        // Non-blocking notice — reply already came from rules
+        setSendError('')
+      }
+    } catch (err) {
+      setSendError(err?.message ? String(err.message) : 'ส่งข้อความไม่สำเร็จ')
     } finally {
       setBusy(false)
     }
@@ -56,12 +76,18 @@ export default function Assistant() {
 
   const onSubmit = (event) => {
     event.preventDefault()
-    send(input)
+    const form = event.currentTarget
+    const fromDom = form instanceof HTMLFormElement
+      ? String(new FormData(form).get('message') || '')
+      : ''
+    const fromRef = inputRef.current ? String(inputRef.current.value || '') : ''
+    void send(fromDom || fromRef || input)
   }
 
   const onClear = () => {
     const empty = clearAssistantContext(window.sessionStorage)
     persist(empty)
+    setLastSource(null)
   }
 
   const suggestions = context.language === 'en'
@@ -72,9 +98,12 @@ export default function Assistant() {
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <PageHeader
         title="ผู้ช่วยติว"
-        description="สนทนาภาษาไทย/อังกฤษ เพื่อดูแผน หาทรัพยากรจากคลังเรียน หรือเสนอการเปลี่ยนแปลงตาราง — ยืนยันก่อนบันทึกเสมอ"
+        description="สนทนาภาษาไทย/อังกฤษ — ลอง OpenAI ผ่านเซิร์ฟเวอร์ก่อน แล้ว fallback เป็นกฎหากคีย์/API ไม่พร้อม · ยืนยันก่อนบันทึกตารางเสมอ"
         actions={(
           <div className="flex flex-wrap gap-2">
+            <Link to="/library" className="btn-secondary text-xs">
+              <Library className="h-3.5 w-3.5" /> คลังหลักสูตร
+            </Link>
             <Link to="/resources" className="btn-secondary text-xs">
               <Library className="h-3.5 w-3.5" /> คลังเรียน
             </Link>
@@ -86,15 +115,18 @@ export default function Assistant() {
         )}
       />
 
-      <StatusBanner tone="warning" title="ไม่มี LLM API">
-        ใช้ตัวจัดประเภทคำสั่งแบบกฎ + คลังเรียน (taxonomy) + Smart Planner/M3 — ไม่เดาวันสอบ ไม่สร้าง URL ใหม่
-        และไม่ปน `english-skills-a` กับ `english-major`
+      <StatusBanner tone="info" title="OpenAI ผ่านเซิร์ฟเวอร์เท่านั้น">
+        คีย์อ่านจาก <code className="text-xs">OPENAI_API_KEY</code> ฝั่ง server (`/api/assistant`) — ไม่ใส่ใน Vite client
+        · ไม่มีคีย์/timeout/โควต้า → ใช้ผู้ช่วยแบบกฎอัตโนมัติ
+        · education/law = ภาค ข · english-skills-a ≠ english-major
+        {lastSource ? ` · แหล่งล่าสุด: ${lastSource}` : ''}
       </StatusBanner>
 
       {context.pendingChange ? (
         <StatusBanner tone="warning" title="มีตัวอย่างรอยืนยัน">
           {context.pendingChange.summary || context.pendingChange.type}
           {' '}— พิมพ์ <strong>ยืนยัน</strong> หรือ <strong>ยกเลิก</strong>
+          {context.pendingChange.source === 'openai' ? ' (ข้อเสนอจาก AI — ยังไม่บันทึก)' : ''}
         </StatusBanner>
       ) : null}
 
@@ -102,6 +134,7 @@ export default function Assistant() {
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
             <Bot className="h-4 w-4 text-primary-700" /> บทสนทนา
+            {busy ? <span className="text-xs font-normal text-slate-400">กำลังคิด…</span> : null}
           </div>
           <button type="button" className="btn-secondary text-xs" onClick={onClear}>
             <Trash2 className="h-3.5 w-3.5" /> ล้างประวัติ
@@ -121,7 +154,7 @@ export default function Assistant() {
                       key={s}
                       type="button"
                       className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
-                      onClick={() => send(s)}
+                      onClick={() => { void send(s) }}
                     >
                       {s}
                     </button>
@@ -149,16 +182,24 @@ export default function Assistant() {
           <div ref={bottomRef} />
         </div>
 
+        {sendError ? (
+          <p className="px-4 pb-2 text-xs text-rose-700 dark:text-rose-300" role="alert">{sendError}</p>
+        ) : null}
+
         <form onSubmit={onSubmit} className="flex gap-2 border-t border-slate-100 p-3 dark:border-slate-800">
           <input
+            ref={inputRef}
+            name="message"
             className="input flex-1"
             value={input}
             onChange={e => setInput(e.target.value)}
+            onInput={e => setInput(e.currentTarget.value)}
             placeholder="พิมพ์ภาษาไทยหรืออังกฤษ..."
             disabled={busy}
             aria-label="ข้อความถึงผู้ช่วย"
+            autoComplete="off"
           />
-          <button type="submit" className="btn-primary" disabled={busy || !input.trim()}>
+          <button type="submit" className="btn-primary" disabled={busy}>
             <Send className="h-4 w-4" /> ส่ง
           </button>
         </form>

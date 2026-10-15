@@ -34,6 +34,7 @@ const navItems = [
   { to: '/info', icon: BarChart3, label: 'ข้อมูลและสถิติ' },
   { to: '/plan', icon: CalendarCheck, label: 'แผนการอ่าน' },
   { to: '/resources', icon: Library, label: 'คลังเรียน' },
+  { to: '/library', icon: BookOpen, label: 'คลังหลักสูตรรวม' },
   { to: '/quiz', icon: FileQuestion, label: 'แบบทดสอบ' },
   { to: '/notes', icon: NotebookPen, label: 'โน้ต' },
   { to: '/videos', icon: PlayCircle, label: 'วิดีโอ' },

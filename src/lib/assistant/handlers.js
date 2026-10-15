@@ -20,7 +20,11 @@ import { initialStudyPlan } from '../../data/planData.js'
 import { importantLinks } from '../../data/htmlPlannerData.js'
 import { buildStudyHubCatalog, HUB_SUBJECT_LABELS } from '../study/hub.js'
 import { analyzeQuizPerformance, recommendPracticeFromWeakness } from '../study/weakness.js'
+import { enrichCuratedResources, recommendCuratedForSubject } from '../curated/catalog.js'
+import { generateUnifiedStudyDraft } from '../curated/unifiedPlan.js'
+import { PRIORITY_MODE_LABELS_TH, PRIORITY_TIER_LABELS_TH } from '../curated/priorityScoring.js'
 import { findTutorResources, formatTutorResourceMessages } from './tutorResources.js'
+import { applyOpenAiProposal } from './openai/applyProposal.js'
 
 function reply(lang, th, en) {
   return lang === 'en' ? en : th
@@ -71,7 +75,7 @@ export function handleHelp(lang) {
   }
 }
 
-export function handleShowToday(schedule, dates, lang) {
+export function handleShowToday(schedule, dates, lang, options = {}) {
   const today = dates.todayIso()
   const dayIndex = getDayIndexForDate(today)
   const tasks = dayIndex >= 0 && dayIndex < dailyPlan.length ? dailyPlan[dayIndex] : []
@@ -100,9 +104,45 @@ export function handleShowToday(schedule, dates, lang) {
     `${s.startTime}-${s.endTime} ${s.title}${s.status === 'done' ? ' ✓' : ''}`
   )
 
+  const curatedToday = (schedule.tasks || [])
+    .filter(t => String(t.id).startsWith('curated_') && t.plannedDate === today && t.status !== 'cancelled')
+    .slice(0, 8)
+
+  let priorityBlock = ''
+  if (curatedToday.length) {
+    const lines = curatedToday.map(t => {
+      const tier = PRIORITY_TIER_LABELS_TH[t.priorityTier] || t.priorityTier || 'จัดแล้ว'
+      return `• [${tier}] ${t.title}${t.reasonTh ? ` — ${t.reasonTh}` : ''}`
+    })
+    priorityBlock = lang === 'en'
+      ? `\n\nScore-first curated tasks today:\n${lines.join('\n')}`
+      : `\n\nงานคลังคุ้มคะแนนวันนี้:\n${lines.join('\n')}`
+  } else {
+    const draft = generateUnifiedStudyDraft({
+      todayIso: today,
+      existingTaskIds: (schedule.tasks || []).map(t => t.id),
+      existingTasks: schedule.tasks || [],
+      mode: options.priorityMode || 'balanced',
+      weaknessAnalysis: options.weaknessAnalysis,
+    })
+    const suggested = draft.proposedTasks.filter(t => t.plannedDate === today && t.resourceId).slice(0, 5)
+    if (suggested.length) {
+      const lines = suggested.map(t =>
+        `• [${PRIORITY_TIER_LABELS_TH[t.priorityTier] || t.priorityTier}] ${t.title}`,
+      )
+      priorityBlock = lang === 'en'
+        ? `\n\nSuggested score-first focus (${PRIORITY_MODE_LABELS_TH[draft.mode]} — not applied until you merge in /library):\n${lines.join('\n')}\nDeferred sample: ${draft.unscheduled.deferred} items kept in catalog.`
+        : `\n\nแนะนำโฟกัสคุ้มคะแนน (${draft.modeLabelTh} — ยังไม่บันทึกจนกว่าจะผสานใน /library):\n${lines.join('\n')}\nหัวข้อที่พักไว้: ${draft.unscheduled.deferred} รายการ (ยังอยู่ในคลัง)\nข้อจำกัด: ยังไม่มีสถิติความถี่ข้อสอบในระบบ`
+    } else {
+      priorityBlock = lang === 'en'
+        ? '\n\nNo curated score-first tasks for today yet. Open /library to merge a draft.'
+        : '\n\nยังไม่มีงานคลังคุ้มคะแนนวันนี้ — เปิด /library เพื่อผสานร่าง (ระบบไม่เดาสถิติข้อสอบ)'
+    }
+  }
+
   const body = lang === 'en'
-    ? `Today (${today})\nPlan tasks: ${htmlDone}/${tasks.length}\n${taskLines.join('\n')}\n\nSessions:\n${sessionLines.length ? sessionLines.join('\n') : '(none)'}`
-    : `วันนี้ (${today})\nงานในแผน: ${htmlDone}/${tasks.length}\n${taskLines.join('\n')}\n\nช่วงตาราง:\n${sessionLines.length ? sessionLines.join('\n') : '(ไม่มี)'}`
+    ? `Today (${today})\nPlan tasks: ${htmlDone}/${tasks.length}\n${taskLines.join('\n')}\n\nSessions:\n${sessionLines.length ? sessionLines.join('\n') : '(none)'}${priorityBlock}`
+    : `วันนี้ (${today})\nงานในแผน: ${htmlDone}/${tasks.length}\n${taskLines.join('\n')}\n\nช่วงตาราง:\n${sessionLines.length ? sessionLines.join('\n') : '(ไม่มี)'}${priorityBlock}`
 
   return { messages: [body], readOnly: true }
 }
@@ -183,7 +223,24 @@ export function handleShowWeakness(quizResults, quizzes = initialQuizzes, lang =
       lines.push(`• [${item.kind}] ${item.title} · ${subject}${item.href ? ` → ${item.href}` : ''}`)
     }
   }
-  lines.push('หมายเหตุ: ไม่เปลี่ยนตารางอัตโนมัติ — ถ้าจะจัดเวลา ให้ใช้ Smart Planner แล้วกดยืนยัน')
+  const curated = enrichCuratedResources()
+  for (const weak of analysis.observedWeaknesses.slice(0, 3)) {
+    const curatedHits = recommendCuratedForSubject(weak.subjectId, curated, { limit: 2 })
+    if (!curatedHits.length) {
+      lines.push(`จากคลังหลักสูตรรวม (${weak.subjectId}): ยังไม่มีรายการตรงหัวข้อในคลังที่มีอยู่`)
+      continue
+    }
+    lines.push(`จากคลังหลักสูตรรวม (${weak.subjectId}):`)
+    for (const hit of curatedHits) {
+      const openHint = hit.urlStatus === 'needs_full_url'
+        ? ' · URL ไม่ครบ (คัดลอกได้ที่ /library — ไม่เปิดจากระบบ)'
+        : hit.urlStatus === 'unchecked'
+          ? ' · ยังไม่ตรวจสิทธิ์ (unchecked)'
+          : ''
+      lines.push(`• ${hit.title}${openHint} → /library`)
+    }
+  }
+  lines.push('หมายเหตุ: ไม่เปลี่ยนตารางอัตโนมัติ — ดูคลังหลักสูตรรวมที่ /library หรือใช้ Smart Planner แล้วกดยืนยัน')
   return { messages: [lines.join('\n')], readOnly: true }
 }
 
@@ -579,6 +636,22 @@ export function handleConfirm(schedule, context, lang) {
       ],
       applySchedule: pending.nextSchedule,
       clearPending: true,
+    }
+  }
+
+  if (pending.type === 'apply_openai_proposal') {
+    const applied = applyOpenAiProposal(schedule, pending)
+    return {
+      messages: [
+        reply(
+          lang,
+          `บันทึกข้อเสนอ AI แล้ว: เพิ่ม ${applied.added} · ข้ามที่มีอยู่ ${applied.skippedExisting} · คงงาน done/userEdited ${applied.skippedProtected}`,
+          `Saved AI proposal: +${applied.added}, skipped existing ${applied.skippedExisting}, kept done/userEdited ${applied.skippedProtected}`,
+        ),
+      ],
+      applySchedule: applied.schedule,
+      clearPending: true,
+      readOnly: false,
     }
   }
 
