@@ -9,9 +9,10 @@ import {
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
-  it('ships Lady Kaekae English + อ.นนท์ education packs', () => {
-    expect(CURATED_CATALOG_VERSION).toMatch(/lady-kaekae-nonn/)
+  it('ships Lady Kaekae English + อ.นนท์ education/law packs', () => {
+    expect(CURATED_CATALOG_VERSION).toMatch(/lady-kaekae-nonn-edu-law/)
     expect(curatedResources.length).toBeGreaterThan(0)
+    expect(curatedResources.every(Boolean)).toBe(true)
     const enriched = enrichCuratedResources()
     expect(enriched.length).toBe(curatedResources.length)
     const summary = summarizeCuratedUrlStatuses(enriched)
@@ -20,17 +21,20 @@ describe('curated catalog', () => {
     expect(summary.needs_full_url).toBeGreaterThan(0)
   })
 
-  it('keeps taxonomy: skills-a=ก · major=ข · education=ข (อ.นนท์)', () => {
+  it('keeps taxonomy: skills-a=ก · major/education/law=ข (อ.นนท์)', () => {
     const catalog = enrichCuratedResources()
     const partA = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A })
     const partB = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })
     const edu = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.EDUCATION })
+    const law = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.LAW })
     expect(partA.length).toBeGreaterThan(0)
     expect(partB.length).toBeGreaterThan(0)
     expect(edu.length).toBeGreaterThan(0)
+    expect(law.length).toBeGreaterThan(0)
     expect(partA.every(r => r.examPart === 'ก')).toBe(true)
     expect(partB.every(r => r.examPart === 'ข')).toBe(true)
     expect(edu.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
+    expect(law.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
     expect(recommendCuratedForSubject(SUBJECT_IDS.ENGLISH_MAJOR, catalog, { limit: 3 }).length).toBeGreaterThan(0)
   })
 

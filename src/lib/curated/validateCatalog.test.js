@@ -17,7 +17,10 @@ describe('curated catalog integrity audit', () => {
     expect(audit.totalRows).toBeGreaterThan(0)
     expect(audit.errorCount).toBe(0)
     expect(audit.ok).toBe(true)
-    expect(audit.needsFullUrlIds.every(id => String(id).startsWith('edu-nonn-'))).toBe(true)
+    expect(audit.needsFullUrlIds.every(id => {
+      const s = String(id)
+      return s.startsWith('edu-nonn-') || s.startsWith('law-nonn-')
+    })).toBe(true)
     expect(CURATION_STAGE_ORDER).toEqual([
       'foundation',
       'lesson-or-video',
@@ -32,6 +35,7 @@ describe('curated catalog integrity audit', () => {
     const report = listNeedsFullUrlReport(audit)
     expect(report.count).toBeGreaterThan(0)
     expect(audit.needsFullUrlIds.some(id => String(id).startsWith('edu-nonn-'))).toBe(true)
+    expect(audit.needsFullUrlIds.some(id => String(id).startsWith('law-nonn-'))).toBe(true)
     expect(report.noteTh).toMatch(/URL เต็ม/)
   })
 

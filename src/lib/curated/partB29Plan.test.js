@@ -34,7 +34,7 @@ describe('partB29Pack selection (fixture catalog)', () => {
 })
 
 describe('generatePartB29Draft', () => {
-  it('schedules Lady Kaekae major + อ.นนท์ education (law still empty)', () => {
+  it('schedules Lady Kaekae major + อ.นนท์ education and law', () => {
     const draft = generatePartB29Draft({
       todayIso: '2026-10-15',
       dailyMinutes: 120,
@@ -46,12 +46,13 @@ describe('generatePartB29Draft', () => {
     expect(resourceTasks.length).toBeGreaterThan(0)
     expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
     expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.EDUCATION)).toBe(true)
+    expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.LAW)).toBe(true)
     expect(resourceTasks.every(t => (
       t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR
       || t.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A
       || t.subjectId === SUBJECT_IDS.EDUCATION
+      || t.subjectId === SUBJECT_IDS.LAW
     ))).toBe(true)
-    // law pack not loaded yet — may leave must coverage incomplete
     expect(draft.packSummary.partBItems).toBeGreaterThan(0)
   })
 

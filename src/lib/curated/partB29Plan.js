@@ -85,8 +85,15 @@ const PREFER_IDS = Object.freeze(new Set([
   'edu-nonn-03',
   'edu-nonn-04',
   'edu-nonn-live-01',
-]))
-/**
+  // Law ข · อ.นนท์ แกนกฎหมายครู + Drive ที่ URL ครบ
+  'law-nonn-redbook-key',
+  'law-nonn-01',
+  'law-nonn-02',
+  'law-nonn-04',
+  'law-nonn-07',
+  'law-nonn-10',
+  'law-nonn-special-34-doc',
+]))/**
  * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
  */
@@ -172,8 +179,21 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'edu-nonn-09',
   'edu-nonn-live-02',
   'edu-nonn-analysis-key',
+  // Law ข · ตะลุยเล่มแดงท้ายชุด + stub / ไลฟ์ที่ไม่ครบ (เกิน cap 6)
+  'law-nonn-17',
+  'law-nonn-18',
+  'law-nonn-19',
+  'law-nonn-20',
+  'law-nonn-21',
+  'law-nonn-22',
+  'law-nonn-23',
+  'law-nonn-24',
+  'law-nonn-special-12-doc',
+  'law-nonn-special-34-key',
+  'law-nonn-live-02',
+  'law-nonn-live-03',
+  'law-nonn-live-04',
 ]))
-
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
@@ -238,9 +258,9 @@ export function buildPartB29CutPolicy() {
       },
       {
         id: 'law-slim',
-        titleTh: 'กฎหมาย — ยังไม่มีแพ็กในคลัง',
-        reasonTh: 'รอชุดกฎหมายครูแยก · แผน 29 วันจะเว้นช่องเมื่อมีแพ็ก',
-        exampleIds: [],
+        titleTh: 'กฎหมาย (อ.นนท์) — เก็บแกน พ.ร.บ. + เฉลยเล่มแดง / เอกสารพิเศษที่ URL ครบ',
+        reasonTh: 'หมวดกฎหมายภาค ข มีแค่ 25 คะแนน · cap ≈6 ตอน · ตัดตะลุยเล่มแดงตอนท้ายและ stub',
+        exampleIds: ['law-nonn-19', 'law-nonn-22', 'law-nonn-special-12-doc'],
       },
       {
         id: 'edu-keep',

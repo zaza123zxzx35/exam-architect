@@ -90,10 +90,10 @@ export default function Today() {
     <div className="mx-auto max-w-3xl space-y-5">
       <section className="card border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30">
         <p className="text-sm font-semibold text-sky-950 dark:text-sky-100">
-          คลังชุดที่ 1–2 พร้อมแล้ว · {CURATED_CATALOG_VERSION}
+          คลังชุดที่ 1–3 พร้อมแล้ว · {CURATED_CATALOG_VERSION}
         </p>
         <p className="mt-1 text-xs text-sky-900/90 dark:text-sky-100/90">
-          <strong>เลดี้เก๋เก๋</strong> อังกฤษ ก+ข · <strong>อ.นนท์</strong> การศึกษา ข
+          <strong>เลดี้เก๋เก๋</strong> อังกฤษ ก+ข · <strong>อ.นนท์</strong> การศึกษา + กฎหมาย ข
           — ไปคลังกดสร้างแผน (ลิงก์ FB ของอ.นนท์ส่วนใหญ่ยังไม่ครบ → Copy URL)
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
