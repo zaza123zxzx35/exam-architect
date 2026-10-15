@@ -9,6 +9,10 @@ import { getPrimaryExam } from '../data/examCalendar'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import { canOpenExternally } from '../lib/curated/urlStatus.js'
+import {
+  CURATED_PLAN_SEED_META_KEY,
+  ensureCuratedPartB29Seed,
+} from '../lib/curated/seedPartB29Plan.js'
 
 function subjectLabel(id) {
   return HUB_SUBJECT_LABELS[id] || id || 'ยังไม่จัดวิชา'
@@ -71,9 +75,33 @@ export default function Today() {
   }
 
   const clearCuratedPlan = () => {
-    setSchedule((prev) => ({
-      ...prev,
-      tasks: (prev.tasks || []).filter((t) => {
+    setSchedule((prev) => {
+      const meta = { ...(prev.meta || {}) }
+      delete meta[CURATED_PLAN_SEED_META_KEY]
+      delete meta.curatedPlanSeedVersion
+      delete meta.curatedPlanSeedTodayIso
+      delete meta.curatedPlanSeedTaskCount
+      delete meta.curatedPlanSeedPartBOk
+      return {
+        ...prev,
+        tasks: (prev.tasks || []).filter((t) => {
+          const id = String(t.id || '')
+          const origin = String(t.origin || '')
+          if (id.startsWith('curated_') || id.startsWith('live_')) return false
+          if (origin === 'curated-unified-plan' || origin === 'curated-part-b-29' || origin === 'live-tutor-schedule') {
+            return false
+          }
+          return true
+        }),
+        meta,
+        updatedAt: new Date().toISOString(),
+      }
+    })
+  }
+
+  const regenCuratedPlan = () => {
+    setSchedule((prev) => {
+      const clearedTasks = (prev.tasks || []).filter((t) => {
         const id = String(t.id || '')
         const origin = String(t.origin || '')
         if (id.startsWith('curated_') || id.startsWith('live_')) return false
@@ -81,25 +109,37 @@ export default function Today() {
           return false
         }
         return true
-      }),
-      updatedAt: new Date().toISOString(),
-    }))
+      })
+      const meta = { ...(prev.meta || {}) }
+      delete meta[CURATED_PLAN_SEED_META_KEY]
+      const base = { ...prev, tasks: clearedTasks, meta }
+      const { schedule: next } = ensureCuratedPartB29Seed(base, {
+        todayIso: todayIso,
+        force: true,
+      })
+      return next
+    })
+    setRescheduleMsg('สร้างแผน 29 วันใหม่แล้ว (ภาค ข ก่อน + ไลฟ์/บล็อก VIP)')
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <section className="card border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30">
-        <p className="text-sm font-semibold text-sky-950 dark:text-sky-100">
-          คลังชุดหลักพร้อมแล้ว · {CURATED_CATALOG_VERSION}
+      <section className="card border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30">
+        <p className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">
+          แผน 29 วันพร้อมแล้ว · {CURATED_CATALOG_VERSION}
         </p>
-        <p className="mt-1 text-xs text-sky-900/90 dark:text-sky-100/90">
-          อังกฤษ · การศึกษา/กฎหมาย · คณิต · ไทย · ข้าราชการที่ดี
-          — ไปคลังกดสร้างแผน (ลิงก์ FB ของอ.นนท์ส่วนใหญ่ยังไม่ครบ → Copy URL)
+        <p className="mt-1 text-xs text-emerald-900/90 dark:text-emerald-100/90">
+          จัดภาค ข ก่อน + ไลฟ์เลดี้เก๋เก๋ + บล็อก VIP ต.ค. (ไทย/คณิต/ข้าราชการที่ดี/กฎหมาย)
+          · งานด้านล่างคือคิววันนี้ · ลิงก์อ.นนท์ที่ URL ไม่ครบให้ Copy
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Link to="/library" className="btn-secondary text-xs">ไปคลังหลักสูตร</Link>
+          <button type="button" className="btn-primary text-xs" onClick={regenCuratedPlan}>
+            สร้าง / รีเฟรชแผน 29 วัน
+          </button>
+          <Link to="/overview" className="btn-secondary text-xs">แผนภาพรวม</Link>
+          <Link to="/library" className="btn-secondary text-xs">คลังหลักสูตร</Link>
           <button type="button" className="btn-secondary text-xs" onClick={clearCuratedPlan}>
-            ล้างงาน curated/ไลฟ์เก่าในเครื่องนี้
+            ล้างงาน curated/ไลฟ์ในเครื่องนี้
           </button>
         </div>
       </section>

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { SUBJECT_IDS } from '../study/taxonomy.js'
-import { LIVE_TUTOR_EVENTS, listLiveTutorEvents, subjectFocusForDate } from '../../data/liveTutorSchedule.js'
+import {
+  LIVE_TUTOR_EVENTS,
+  listLiveTutorEvents,
+  subjectFocusForDate,
+} from '../../data/liveTutorSchedule.js'
 import {
   generateLiveScheduleTasks,
   reorderQueueForDateFocus,
@@ -8,21 +12,25 @@ import {
 } from './liveSchedulePlan.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 
-describe('liveTutorSchedule Lady Kaekae flyer', () => {
-  it('loads VIP flyer events for English ก+ข', () => {
-    expect(LIVE_TUTOR_EVENTS.length).toBeGreaterThan(0)
-    expect(LIVE_TUTOR_EVENTS.every(e => e.sourceTh.includes('ครูเลดี้เก๋เก๋'))).toBe(true)
+describe('liveTutorSchedule VIP + Lady Kaekae', () => {
+  it('loads Lady lives and VIP October content blocks', () => {
+    expect(LIVE_TUTOR_EVENTS.length).toBeGreaterThan(15)
+    expect(LIVE_TUTOR_EVENTS.some(e => e.id.startsWith('lady-live-'))).toBe(true)
+    expect(LIVE_TUTOR_EVENTS.some(e => e.id.startsWith('vip-'))).toBe(true)
+    expect(LIVE_TUTOR_EVENTS.some(e => e.id.startsWith('online-'))).toBe(true)
     const upcoming = listLiveTutorEvents('2026-10-15', { includePast: false })
     expect(upcoming.length).toBeGreaterThan(0)
+    expect(subjectFocusForDate('2026-10-19')?.subjectId).toBe(SUBJECT_IDS.EDUCATION)
     expect(subjectFocusForDate('2026-10-28')?.subjectId).toBe(SUBJECT_IDS.ENGLISH_MAJOR)
   })
 })
 
 describe('liveSchedulePlan helpers', () => {
-  it('generates live tasks from flyer schedule', () => {
+  it('generates live + content-block tasks from flyers', () => {
     const draft = generateLiveScheduleTasks({ todayIso: '2026-10-15', untilIso: '2026-11-14' })
     expect(draft.proposedTasks.length).toBeGreaterThan(0)
     expect(draft.upcomingLiveCount).toBeGreaterThan(0)
+    expect(draft.contentBlockCount).toBeGreaterThan(0)
   })
 
   it('sortCatalogByPriority follows ranked order', () => {
@@ -35,7 +43,7 @@ describe('liveSchedulePlan helpers', () => {
     expect(sortCatalogByPriority(items, ranked).map(i => i.id)).toEqual(['b', 'a', 'c'])
   })
 
-  it('reorderQueueForDateFocus elevates major on flyer nights', () => {
+  it('reorderQueueForDateFocus elevates major on Lady flyer nights', () => {
     const queue = [
       { row: { id: '1', subjectId: SUBJECT_IDS.LAW, examPart: 'ข' }, score: {} },
       { row: { id: '2', subjectId: SUBJECT_IDS.ENGLISH_MAJOR, examPart: 'ข' }, score: {} },

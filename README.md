@@ -63,7 +63,7 @@ npm run build # production bundle
 | Unified curated library (ก+ข) | `/library` — **v15** English + การศึกษา/กฎหมาย + คณิต + ไทย + ข้าราชการที่ดี (`civil-servant-a`); incomplete stubs → `needs_full_url` |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling the whole catalog |
 | Part ข 29-day forced pack | `/library` — major + education + law core; slim Part ก รวมไทย/ข้าราชการที่ดี; add-only merge |
-| Live tutor schedule + Today/Overview | Lady Kaekae VIP flyer lives (Sep–Nov 2026); Today/Overview read curated schedule only |
+| Live tutor schedule + Today/Overview | Lady Kaekae lives + VIP Oct content blocks + online focus table; auto-seed Part ข 29-day plan on first load |
 
 ## Data notes
 
