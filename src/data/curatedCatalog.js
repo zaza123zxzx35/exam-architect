@@ -1,6 +1,6 @@
 /**
  * Curated study catalog for สพฐ. 2569.
- * v15.0 — + ภาษาไทย ก + ข้าราชการที่ดี ก.
+ * v15.1 — fix math YouTube www.www typo; + ภาษาไทย ก + ข้าราชการที่ดี ก.
  *
  * Selection policy:
  * - KEEP English / Education / Law / Math as prior packs
@@ -31,7 +31,7 @@
  * @property {string} [tutorTh]
  */
 
-export const CURATED_CATALOG_VERSION = '15.0-thai-civil-a'
+export const CURATED_CATALOG_VERSION = '15.1-thai-civil-a-ytfix'
 
 /**
  * Packs: เลดี้เก๋เก๋ + อ.นนท์ + คณิต + ภาษาไทย + ข้าราชการที่ดี
@@ -2528,7 +2528,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/_Wa_aMTQvPU",
+    url: "https://www.youtube.com/live/_Wa_aMTQvPU",
     estimatedMinutes: 75,
     priority: 85,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2544,7 +2544,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/ThTzd1MZWR4",
+    url: "https://www.youtube.com/live/ThTzd1MZWR4",
     estimatedMinutes: 75,
     priority: 86,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2560,7 +2560,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/t9tKh2P6o50",
+    url: "https://www.youtube.com/live/t9tKh2P6o50",
     estimatedMinutes: 75,
     priority: 87,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2576,7 +2576,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/OIv1Vl2dF-o",
+    url: "https://www.youtube.com/live/OIv1Vl2dF-o",
     estimatedMinutes: 75,
     priority: 88,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2592,7 +2592,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/iBf4tlnfqpY",
+    url: "https://www.youtube.com/live/iBf4tlnfqpY",
     estimatedMinutes: 75,
     priority: 89,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2608,7 +2608,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/GstuGt6LxKU",
+    url: "https://www.youtube.com/live/GstuGt6LxKU",
     estimatedMinutes: 75,
     priority: 90,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2624,7 +2624,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/dSn2Gfli7ZA",
+    url: "https://www.youtube.com/live/dSn2Gfli7ZA",
     estimatedMinutes: 75,
     priority: 91,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2640,7 +2640,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/xH67KYWS8_A",
+    url: "https://www.youtube.com/live/xH67KYWS8_A",
     estimatedMinutes: 75,
     priority: 92,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
@@ -2656,7 +2656,7 @@ export const curatedResources = [
     kind: "lesson",
     examPart: "ก",
     subjectId: "math",
-    url: "https://www.www.youtube.com/live/5OKBGfV7vL0",
+    url: "https://www.youtube.com/live/5OKBGfV7vL0",
     estimatedMinutes: 75,
     priority: 93,
     notes: "tutor:ไม่ระบุ · pack:must · สังกัด:สพฐ. · ชุดหลักตัวเลขและเหตุผล",
