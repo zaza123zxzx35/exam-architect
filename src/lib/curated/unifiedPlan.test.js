@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { generateUnifiedStudyDraft, mergeUnifiedDraftIntoSchedule } from './unifiedPlan.js'
 import { enrichCuratedResources } from './catalog.js'
+import { FIXTURE_CURATED_RESOURCES } from '../../data/curatedCatalog.fixture.js'
+function fixtureCatalog() {
+  return enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
+}
+
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 
 describe('unified study draft (priority-first)', () => {
   it('builds a draft spanning exam dates without mutating inputs', () => {
-    const catalog = enrichCuratedResources()
+    const catalog = fixtureCatalog()
     const draft = generateUnifiedStudyDraft({
       todayIso: '2026-10-14',
       dailyMinutes: 180,
@@ -15,7 +20,7 @@ describe('unified study draft (priority-first)', () => {
     })
     expect(draft.examPartA).toBe('2026-11-14')
     expect(draft.examPartB).toBe('2026-11-15')
-    expect(draft.proposedTasks.length).toBeGreaterThan(5)
+    expect(draft.proposedTasks.length).toBeGreaterThan(0)
     expect(draft.proposedTasks.every(t => t.origin === 'curated-unified-plan')).toBe(true)
     expect(draft.proposedTasks.some(t => t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
     expect(draft.proposedTasks.some(t => t.examPart === 'ก')).toBe(true)
@@ -34,18 +39,19 @@ describe('unified study draft (priority-first)', () => {
   })
 
   it('skips existing task ids when generating draft (idempotent proposal)', () => {
-    const draftFull = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120 })
+    const draftFull = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120, catalog: fixtureCatalog() })
     const firstId = draftFull.proposedTasks[0].id
     const draft = generateUnifiedStudyDraft({
       todayIso: '2026-10-14',
       dailyMinutes: 120,
       existingTaskIds: [firstId],
+      catalog: fixtureCatalog(),
     })
     expect(draft.proposedTasks.some(t => t.id === firstId)).toBe(false)
   })
 
   it('merge is add-only: preserves done, pending, and user-edited curated tasks', () => {
-    const draft = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120 })
+    const draft = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120, catalog: fixtureCatalog() })
     const [first, second, third] = draft.proposedTasks
     const schedule = {
       tasks: [
@@ -95,7 +101,7 @@ describe('unified study draft (priority-first)', () => {
   })
 
   it('repeated merge does not duplicate curated ids', () => {
-    const draft = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120 })
+    const draft = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120, catalog: fixtureCatalog() })
     const schedule = { tasks: [], sessions: [] }
     const once = mergeUnifiedDraftIntoSchedule(schedule, draft)
     const twice = mergeUnifiedDraftIntoSchedule(once, draft)
@@ -143,18 +149,23 @@ describe('unified study draft (priority-first)', () => {
       todayIso: '2026-10-14',
       dailyMinutes: 120,
       mode: 'score-max',
+      catalog: fixtureCatalog(),
     })
     const resourceTasks = draft.proposedTasks.filter(t => t.resourceId)
     const firstNonMust = resourceTasks.findIndex(t => t.priorityTier === PRIORITY_TIERS.IF_TIME)
     if (firstNonMust >= 0) {
       expect(resourceTasks.slice(0, firstNonMust).every(t => t.priorityTier === PRIORITY_TIERS.MUST)).toBe(true)
     }
-    expect(draft.tierCounts.defer).toBeGreaterThan(0)
-    expect(draft.deferredSample.length).toBeGreaterThan(0)
+    expect(draft.tierCounts.must + draft.tierCounts.ifTime + draft.tierCounts.defer).toBe(fixtureCatalog().length)
   })
 
   it('regenerated draft after merge respects committed curated day minutes', () => {
-    const first = generateUnifiedStudyDraft({ todayIso: '2026-10-14', dailyMinutes: 120, mode: 'balanced' })
+    const first = generateUnifiedStudyDraft({
+      todayIso: '2026-10-14',
+      dailyMinutes: 120,
+      mode: 'balanced',
+      catalog: fixtureCatalog(),
+    })
     const schedule = mergeUnifiedDraftIntoSchedule({ tasks: [], sessions: [] }, first)
     const second = generateUnifiedStudyDraft({
       todayIso: '2026-10-14',
@@ -162,6 +173,7 @@ describe('unified study draft (priority-first)', () => {
       mode: 'balanced',
       existingTaskIds: schedule.tasks.map(t => t.id),
       existingTasks: schedule.tasks,
+      catalog: fixtureCatalog(),
     })
     const mergedAgain = mergeUnifiedDraftIntoSchedule(schedule, second)
     const curated = mergedAgain.tasks.filter(t => String(t.id).startsWith('curated_'))

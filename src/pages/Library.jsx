@@ -219,7 +219,9 @@ export default function Library() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title="คลังหลักสูตรรวม"
-        description={`${catalog.length} รายการเรียงตามความสำคัญ (โหมดด้านล่าง) — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · คณิตอ.แก็บ · ไทยครูพี่ตี๋ · มีตารางไลฟ์ · อังกฤษภาค ก ≠ วิชาเอก`}
+        description={catalog.length
+          ? `${catalog.length} รายการเรียงตามความสำคัญ — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · อังกฤษภาค ก ≠ วิชาเอก`
+          : 'คลังว่าง (เริ่มใหม่) — รอชุดแรก: วิชาเอกอังกฤษ ข + อังกฤษ ก · ครูเลดี้เก๋เก๋'}
         actions={(
           <div className="flex flex-wrap gap-2">
             <Link to="/resources" className="btn-secondary text-xs">คลังเรียน (เดิม)</Link>
@@ -228,11 +230,20 @@ export default function Library() {
         )}
       />
 
-      <StatusBanner tone="warning" title="สถานะ URL">
-        ทั้งหมด {summary.total} · unchecked (ยังไม่ตรวจ) {summary.unchecked}
-        · URL ไม่ครบ {summary.needs_full_url}
-        · verified_accessible {summary.verified_accessible} (ต้องมีหลักฐาน — ยังไม่มี)
-        · ห้ามถือว่า unchecked = เปิดได้จริง
+      <StatusBanner tone="warning" title="สถานะคลัง · เริ่มใหม่">
+        {summary.total === 0 ? (
+          <>
+            เคลียร์คลังปนหลายสำนักแล้ว · ชุดถัดไป: ครูเลดี้เก๋เก๋ (อังกฤษ ก+ข)
+            · รออ่านโพสต์กลุ่ม Facebook (ต้องล็อกอิน) หรือให้คุณวางรายการลิงก์ในแชท
+          </>
+        ) : (
+          <>
+            ทั้งหมด {summary.total} · unchecked {summary.unchecked}
+            · URL ไม่ครบ {summary.needs_full_url}
+            · verified_accessible {summary.verified_accessible}
+            · ห้ามถือว่า unchecked = เปิดได้จริง
+          </>
+        )}
       </StatusBanner>
 
       <StatusBanner tone="info" title={`ขอบเขตสอบทางการ · ตรวจเมื่อ ${review.officialScope?.checkedAt || '—'}`}>

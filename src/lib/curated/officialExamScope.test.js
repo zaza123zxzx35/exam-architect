@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { enrichCuratedResources } from './catalog.js'
+import { FIXTURE_CURATED_RESOURCES } from '../../data/curatedCatalog.fixture.js'
 import { SUBJECT_IDS, subjectIdToExamPart } from '../study/taxonomy.js'
 import {
   OFFICIAL_SCOPE_CHECKED_AT,
@@ -41,7 +42,7 @@ describe('official exam scope (Phase 8.2)', () => {
   })
 
   it('catalog education/law rows match official Part ข (no silent Part ก leftovers)', () => {
-    const catalog = enrichCuratedResources()
+    const catalog = enrichCuratedResources(FIXTURE_CURATED_RESOURCES)
     const edu = catalog.filter(r => r.subjectId === SUBJECT_IDS.EDUCATION)
     const law = catalog.filter(r => r.subjectId === SUBJECT_IDS.LAW)
     expect(edu.length).toBeGreaterThan(0)
