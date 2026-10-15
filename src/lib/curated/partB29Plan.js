@@ -78,8 +78,14 @@ const PREFER_IDS = Object.freeze(new Set([
   'lady-a-004',
   'lady-a-005',
   'lady-a-006',
+  // Education ข · อ.นนท์ foundation + เอกสารวิเคราะห์ (URL ครบ)
+  'edu-nonn-analysis-doc',
+  'edu-nonn-01',
+  'edu-nonn-02',
+  'edu-nonn-03',
+  'edu-nonn-04',
+  'edu-nonn-live-01',
 ]))
-
 /**
  * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
@@ -158,7 +164,16 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'lady-a-075',
   'lady-a-076',
   'lady-a-077',
+  // Education ข · ข้อสอบเล่มแดงท้ายชุด + ไลฟ์ 2 + เฉลย stub (เกิน cap 6)
+  'edu-nonn-05',
+  'edu-nonn-06',
+  'edu-nonn-07',
+  'edu-nonn-08',
+  'edu-nonn-09',
+  'edu-nonn-live-02',
+  'edu-nonn-analysis-key',
 ]))
+
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
@@ -229,9 +244,9 @@ export function buildPartB29CutPolicy() {
       },
       {
         id: 'edu-keep',
-        titleTh: 'วิชาการศึกษา — ยังไม่มีแพ็กในคลัง',
-        reasonTh: 'รอชุดการศึกษาแยก · แผน 29 วันจะเว้นช่องเมื่อมีแพ็ก',
-        exampleIds: [],
+        titleTh: 'วิชาการศึกษา (อ.นนท์) — เก็บเอกสารวิเคราะห์ + ตอน 1–4 + ไลฟ์ 1',
+        reasonTh: 'หมวดการศึกษา 75 คะแนน · cap ≈6 ตอน · FB ส่วนใหญ่ยัง needs_full_url แต่เก็บลำดับพื้นฐานก่อน',
+        exampleIds: ['edu-nonn-05', 'edu-nonn-09', 'edu-nonn-analysis-key'],
       },
       {
         id: 'part-a-slim',

@@ -220,7 +220,7 @@ export default function Library() {
       <PageHeader
         title="คลังหลักสูตรรวม"
         description={catalog.length
-          ? `${catalog.length} รายการ · ครูเลดี้เก๋เก๋ สพฐ.69 (ก ฟ้า / ข ชมพู) · อังกฤษภาค ก ≠ วิชาเอก`
+          ? `${catalog.length} รายการ · เลดี้เก๋เก๋ (อังกฤษ ก+ข) + อ.นนท์ (การศึกษา ข) · อังกฤษภาค ก ≠ วิชาเอก`
           : 'คลังว่าง — รอชุดติวเตอร์ถัดไป'}
         actions={(
           <div className="flex flex-wrap gap-2">
@@ -230,15 +230,15 @@ export default function Library() {
         )}
       />
 
-      <StatusBanner tone="info" title="สถานะคลัง · ชุดที่ 1 ครูเลดี้เก๋เก๋">
+      <StatusBanner tone="info" title="สถานะคลัง · เลดี้เก๋เก๋ + อ.นนท์">
         {summary.total === 0 ? (
           <>
             คลังว่าง — รอแพ็กติวเตอร์ถัดไป
           </>
         ) : (
           <>
-            สพฐ.69 อังกฤษ ก+ข · ทั้งหมด {summary.total} · unchecked {summary.unchecked}
-            · URL ไม่ครบ {summary.needs_full_url}
+            อังกฤษ ก+ข + การศึกษา ข · ทั้งหมด {summary.total} · unchecked {summary.unchecked}
+            · URL ไม่ครบ {summary.needs_full_url} (อ.นนท์ FB ส่วนใหญ่ — Copy URL / ลิงก์ใต้โพสต์)
             · ไม่รวม อปท / กทม / O-NET / ใบประกอบ
             · ห้ามถือว่า unchecked = เปิดได้จริง
           </>

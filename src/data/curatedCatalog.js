@@ -1,12 +1,13 @@
 /**
  * Curated study catalog for สพฐ. 2569.
- * v11.0 — ครูเลดี้เก๋เก๋ English ก+ข (สพฐ. only).
+ * v12.0 — ครูเลดี้เก๋เก๋ English ก+ข + อ.นนท์ วิชาการศึกษา ข.
  *
- * Selection policy (user paste 2026-10-15):
- * - KEEP: สพฐ. แหกโค้ง/หมาหอน ภาค ก + วิชาเอกอังกฤษ ภาค ข
- * - EXCLUDE from this pack: อปท / กทม.68 / O-NET / ใบประกอบวิชาชีพครู
- * - Drive stubs with "..." were never stored (video URLs only)
- * - pack:must ≈ ปี 69 + foundation · pack:if-time ≈ archive สพฐ. · pack:defer ≈ ก.พ./หมาหอนเก่า
+ * Selection policy:
+ * - KEEP English: สพฐ. แหกโค้ง/หมาหอน ก + วิชาเอกอังกฤษ ข (ครูเลดี้เก๋เก๋)
+ * - KEEP Education: อ.นนท์ ตอน 1–9 + วิเคราะห์ + ไลฟ์ 1–2
+ * - EXCLUDE: อปท / กทม / O-NET / ใบประกอบ; alternate education tutor held (playlist truncated)
+ * - Incomplete Facebook/Drive stubs stored verbatim → needs_full_url (never invent segments)
+ * - Full Drive analysis doc kept openable as unchecked
  *
  * URLs are stored exactly as provided. Never invent missing segments.
  */
@@ -31,11 +32,11 @@
  * @property {string} [tutorTh]
  */
 
-export const CURATED_CATALOG_VERSION = '11.0-lady-kaekae-spth69'
+export const CURATED_CATALOG_VERSION = '12.0-lady-kaekae-nonn-edu'
 
 /**
- * ครูเลดี้เก๋เก๋ · สพฐ.69 อังกฤษ ก+ข
- * Source: Facebook group post (user paste).
+ * Packs: ครูเลดี้เก๋เก๋ (อังกฤษ ก+ข) + อ.นนท์ (วิชาการศึกษา ข)
+ * Sources: user paste 2026-10-15.
  *
  * @type {CuratedResource[]}
  */
@@ -1783,6 +1784,214 @@ export const curatedResources = [
     relatedIds: [],
     source: "user-paste-lady-kaekae-spth69",
     tutorTh: "ครูเลดี้เก๋เก๋",
+  },
+  {
+    id: "edu-nonn-analysis-doc",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: null,
+    title: "ชุดพิเศษแถม วิเคราะห์ข้อสอบ (เอกสาร)",
+    kind: "document",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://drive.google.com/file/d/1EQsgY1jDAJejp-sGbLQgqPgV9zGTmKMn/view?usp=sharing",
+    estimatedMinutes: 60,
+    priority: 40,
+    notes: "tutor:อ.นนท์ · pack:must · สังกัด:สพฐ. · URL ครบ (เอกสารวิเคราะห์)",
+    relatedIds: ["edu-nonn-analysis-key"],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-analysis-key",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: null,
+    title: "ชุดพิเศษแถม วิเคราะห์ข้อสอบ (เฉลย)",
+    kind: "answer-key",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://drive.google.com/.../1KTyau8ZxyGyInF4Afxn.../view...",
+    estimatedMinutes: 45,
+    priority: 41,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · ขอลิงก์ Drive เต็ม",
+    relatedIds: ["edu-nonn-analysis-doc"],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-01",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 1,
+    title: "ตอนที่ 1 ปรัชญาเศรษฐกิจพอเพียง + หลักสูตร",
+    kind: "lesson",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1455207623420000",
+    estimatedMinutes: 75,
+    priority: 42,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-02",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 2,
+    title: "ตอนที่ 2 จิตวิทยาการศึกษา",
+    kind: "lesson",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1788982815698122",
+    estimatedMinutes: 75,
+    priority: 43,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-03",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 3,
+    title: "ตอนที่ 3 การพัฒนาผู้เรียน",
+    kind: "lesson",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1661148688989200",
+    estimatedMinutes: 75,
+    priority: 44,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-04",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 4,
+    title: "ตอนที่ 4 สื่อ นวัตกรรม เทคโนโลยีทางการศึกษา",
+    kind: "lesson",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../2505623816603810",
+    estimatedMinutes: 75,
+    priority: 45,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-05",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 5,
+    title: "ตอนที่ 5 ข้อสอบเล่มแดงหน้า 136",
+    kind: "quiz-practice",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1306778651487027",
+    estimatedMinutes: 75,
+    priority: 46,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-06",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 6,
+    title: "ตอนที่ 6 ข้อสอบหน้า 157",
+    kind: "quiz-practice",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1031733029924514",
+    estimatedMinutes: 75,
+    priority: 47,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-07",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 7,
+    title: "ตอนที่ 7 ข้อสอบหน้า 175",
+    kind: "quiz-practice",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../934037642789251",
+    estimatedMinutes: 75,
+    priority: 48,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-08",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 8,
+    title: "ตอนที่ 8 ข้อสอบหน้า 193",
+    kind: "quiz-practice",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1095803386139116",
+    estimatedMinutes: 75,
+    priority: 49,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-09",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 9,
+    title: "ตอนที่ 9 ข้อสอบหน้า 209",
+    kind: "quiz-practice",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1948921549825419",
+    estimatedMinutes: 75,
+    priority: 50,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-live-01",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 10,
+    title: "ไลฟ์ที่ 1 วิเคราะห์ข้อสอบ",
+    kind: "live",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../1109576698329962",
+    estimatedMinutes: 90,
+    priority: 51,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
+  },
+  {
+    id: "edu-nonn-live-02",
+    series: "อ.นนท์ · วิชาการศึกษา ภาค ข (สพฐ.)",
+    episode: 11,
+    title: "ไลฟ์ที่ 2 วิเคราะห์ข้อสอบ",
+    kind: "live",
+    examPart: "ข",
+    subjectId: "education",
+    url: "https://www.facebook.com/.../pcb.../2856992734685330",
+    estimatedMinutes: 90,
+    priority: 52,
+    notes: "tutor:อ.นนท์ · pack:must · needs_full_url · กดลิงก์ใต้โพสต์หรือ Copy URL",
+    relatedIds: [],
+    source: "user-paste-nonn-education",
+    tutorTh: "อ.นนท์",
   },
 ]
 

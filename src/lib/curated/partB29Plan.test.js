@@ -34,7 +34,7 @@ describe('partB29Pack selection (fixture catalog)', () => {
 })
 
 describe('generatePartB29Draft', () => {
-  it('schedules Lady Kaekae english-major from production catalog (edu/law still empty)', () => {
+  it('schedules Lady Kaekae major + อ.นนท์ education (law still empty)', () => {
     const draft = generatePartB29Draft({
       todayIso: '2026-10-15',
       dailyMinutes: 120,
@@ -44,12 +44,15 @@ describe('generatePartB29Draft', () => {
     expect(draft.dayCount).toBeLessThanOrEqual(29)
     const resourceTasks = draft.proposedTasks.filter(t => t.resourceId)
     expect(resourceTasks.length).toBeGreaterThan(0)
-    expect(resourceTasks.every(t => (
-      t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR || t.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A
-    ))).toBe(true)
     expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
-    // education + law packs not loaded yet → partBCoverageOk stays false
-    expect(draft.partBCoverageOk).toBe(false)
+    expect(resourceTasks.some(t => t.subjectId === SUBJECT_IDS.EDUCATION)).toBe(true)
+    expect(resourceTasks.every(t => (
+      t.subjectId === SUBJECT_IDS.ENGLISH_MAJOR
+      || t.subjectId === SUBJECT_IDS.ENGLISH_SKILLS_A
+      || t.subjectId === SUBJECT_IDS.EDUCATION
+    ))).toBe(true)
+    // law pack not loaded yet — may leave must coverage incomplete
+    expect(draft.packSummary.partBItems).toBeGreaterThan(0)
   })
 
   it('schedules fixture Part ข subjects and keeps merge add-only', () => {

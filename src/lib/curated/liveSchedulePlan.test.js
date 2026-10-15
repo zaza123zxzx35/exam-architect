@@ -8,19 +8,21 @@ import {
 } from './liveSchedulePlan.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 
-describe('liveTutorSchedule clean slate', () => {
-  it('has no poster events until the next tutor pack is loaded', () => {
-    expect(LIVE_TUTOR_EVENTS).toHaveLength(0)
-    expect(listLiveTutorEvents('2026-10-15', { includePast: false })).toHaveLength(0)
-    expect(subjectFocusForDate('2026-10-20')).toBeNull()
+describe('liveTutorSchedule Lady Kaekae flyer', () => {
+  it('loads VIP flyer events for English ก+ข', () => {
+    expect(LIVE_TUTOR_EVENTS.length).toBeGreaterThan(0)
+    expect(LIVE_TUTOR_EVENTS.every(e => e.sourceTh.includes('ครูเลดี้เก๋เก๋'))).toBe(true)
+    const upcoming = listLiveTutorEvents('2026-10-15', { includePast: false })
+    expect(upcoming.length).toBeGreaterThan(0)
+    expect(subjectFocusForDate('2026-10-28')?.subjectId).toBe(SUBJECT_IDS.ENGLISH_MAJOR)
   })
 })
 
 describe('liveSchedulePlan helpers', () => {
-  it('generates zero tasks on empty live schedule', () => {
+  it('generates live tasks from flyer schedule', () => {
     const draft = generateLiveScheduleTasks({ todayIso: '2026-10-15', untilIso: '2026-11-14' })
-    expect(draft.proposedTasks).toHaveLength(0)
-    expect(draft.upcomingLiveCount).toBe(0)
+    expect(draft.proposedTasks.length).toBeGreaterThan(0)
+    expect(draft.upcomingLiveCount).toBeGreaterThan(0)
   })
 
   it('sortCatalogByPriority follows ranked order', () => {
@@ -33,11 +35,12 @@ describe('liveSchedulePlan helpers', () => {
     expect(sortCatalogByPriority(items, ranked).map(i => i.id)).toEqual(['b', 'a', 'c'])
   })
 
-  it('reorderQueueForDateFocus is a no-op without focus events', () => {
+  it('reorderQueueForDateFocus elevates major on flyer nights', () => {
     const queue = [
       { row: { id: '1', subjectId: SUBJECT_IDS.LAW, examPart: 'ข' }, score: {} },
-      { row: { id: '2', subjectId: SUBJECT_IDS.EDUCATION, examPart: 'ข' }, score: {} },
+      { row: { id: '2', subjectId: SUBJECT_IDS.ENGLISH_MAJOR, examPart: 'ข' }, score: {} },
     ]
-    expect(reorderQueueForDateFocus('2026-10-20', queue).map(e => e.row.id)).toEqual(['1', '2'])
+    const ordered = reorderQueueForDateFocus('2026-10-28', queue).map(e => e.row.id)
+    expect(ordered[0]).toBe('2')
   })
 })

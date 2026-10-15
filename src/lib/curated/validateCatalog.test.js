@@ -17,7 +17,7 @@ describe('curated catalog integrity audit', () => {
     expect(audit.totalRows).toBeGreaterThan(0)
     expect(audit.errorCount).toBe(0)
     expect(audit.ok).toBe(true)
-    expect(audit.needsFullUrlIds).toHaveLength(0)
+    expect(audit.needsFullUrlIds.every(id => String(id).startsWith('edu-nonn-'))).toBe(true)
     expect(CURATION_STAGE_ORDER).toEqual([
       'foundation',
       'lesson-or-video',
@@ -27,10 +27,11 @@ describe('curated catalog integrity audit', () => {
     ])
   })
 
-  it('reports empty needs_full_url list (video URLs only)', () => {
+  it('lists อ.นนท์ incomplete Facebook/Drive stubs as needs_full_url', () => {
     const audit = auditCuratedCatalog()
     const report = listNeedsFullUrlReport(audit)
-    expect(report.count).toBe(0)
+    expect(report.count).toBeGreaterThan(0)
+    expect(audit.needsFullUrlIds.some(id => String(id).startsWith('edu-nonn-'))).toBe(true)
     expect(report.noteTh).toMatch(/URL เต็ม/)
   })
 
