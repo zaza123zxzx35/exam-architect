@@ -93,8 +93,13 @@ const PREFER_IDS = Object.freeze(new Set([
   'law-nonn-07',
   'law-nonn-10',
   'law-nonn-special-34-doc',
+  // Math ก · YouTube ตัวเลขและเหตุผล Ep.1–5 (slim Part A)
+  'math-num-01',
+  'math-num-02',
+  'math-num-03',
+  'math-num-04',
+  'math-num-05',
 ]))
-
 /**
  * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
@@ -195,7 +200,32 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'law-nonn-live-02',
   'law-nonn-live-03',
   'law-nonn-live-04',
+  // Math ก · อ.แก็บทั้งชุด + YouTube ตอนท้ายเกิน slim cap
+  'math-num-06',
+  'math-num-07',
+  'math-num-08',
+  'math-num-09',
+  'math-gab-01',
+  'math-gab-02',
+  'math-gab-03',
+  'math-gab-04',
+  'math-gab-05',
+  'math-gab-06',
+  'math-gab-07',
+  'math-gab-08',
+  'math-gab-09',
+  'math-gab-10a',
+  'math-gab-10b',
+  'math-gab-11',
+  'math-gab-12',
+  'math-gab-13',
+  'math-gab-14',
+  'math-gab-15',
+  'math-gab-16',
+  'math-gab-17',
+  'math-gab-18',
 ]))
+
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
@@ -272,12 +302,12 @@ export function buildPartB29CutPolicy() {
       },
       {
         id: 'part-a-slim',
-        titleTh: 'ภาค ก — เก็บหมาหอน Ep.1–4 + Ep.9 · ตัด archive / ก.พ. / หมาหอนเก่า',
-        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เหลือช่องว่างจึงเก็บอังกฤษภาค ก ล่าสุดไม่เกิน 4 ตอน',
+        titleTh: 'ภาค ก — หมาหอนอังกฤษ + YouTube คณิต Ep.1–5 · ตัดแก็บ/ตอนท้าย',
+        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เหลือช่องว่างจึงเก็บอังกฤษล่าสุด + คณิตชุดหลักไม่เกิน 5 ตอน',
         exampleIds: [
           'lady-a-025',
-          'lady-a-027',
-          'lady-a-064',
+          'math-gab-15',
+          'math-num-09',
         ],
       },
     ],

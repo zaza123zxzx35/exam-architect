@@ -220,7 +220,7 @@ export default function Library() {
       <PageHeader
         title="คลังหลักสูตรรวม"
         description={catalog.length
-          ? `${catalog.length} รายการ · เลดี้เก๋เก๋ (อังกฤษ) + อ.นนท์ (การศึกษา/กฎหมาย ข) · อังกฤษภาค ก ≠ วิชาเอก`
+          ? `${catalog.length} รายการ · เลดี้เก๋เก๋ + อ.นนท์ + คณิต/เหตุผล (YT+แก็บ) · อังกฤษภาค ก ≠ วิชาเอก`
           : 'คลังว่าง — รอชุดติวเตอร์ถัดไป'}
         actions={(
           <div className="flex flex-wrap gap-2">
@@ -237,8 +237,9 @@ export default function Library() {
           </>
         ) : (
           <>
-            อังกฤษ ก+ข + การศึกษา/กฎหมาย ข · ทั้งหมด {summary.total} · unchecked {summary.unchecked}
+            อังกฤษ + การศึกษา/กฎหมาย + คณิต/เหตุผล · ทั้งหมด {summary.total} · unchecked {summary.unchecked}
             · URL ไม่ครบ {summary.needs_full_url} (อ.นนท์ FB ส่วนใหญ่ — Copy URL / ลิงก์ใต้โพสต์)
+            · คณิต: YouTube หลัก · อ.แก็บเสริม
             · ไม่รวม อปท / กทม / O-NET / ใบประกอบ
             · ห้ามถือว่า unchecked = เปิดได้จริง
           </>

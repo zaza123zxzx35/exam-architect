@@ -9,8 +9,8 @@ import {
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
-  it('ships Lady Kaekae English + อ.นนท์ education/law packs', () => {
-    expect(CURATED_CATALOG_VERSION).toMatch(/lady-kaekae-nonn-edu-law/)
+  it('ships English + อ.นนท์ edu/law + math packs', () => {
+    expect(CURATED_CATALOG_VERSION).toMatch(/math-num-gab/)
     expect(curatedResources.length).toBeGreaterThan(0)
     expect(curatedResources.every(Boolean)).toBe(true)
     const enriched = enrichCuratedResources()
@@ -21,20 +21,25 @@ describe('curated catalog', () => {
     expect(summary.needs_full_url).toBeGreaterThan(0)
   })
 
-  it('keeps taxonomy: skills-a=ก · major/education/law=ข (อ.นนท์)', () => {
+  it('keeps taxonomy and math ก packs (YT must + Gab supplement)', () => {
     const catalog = enrichCuratedResources()
     const partA = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A })
     const partB = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.ENGLISH_MAJOR })
     const edu = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.EDUCATION })
     const law = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.LAW })
+    const math = filterCuratedResources(catalog, { subjectId: SUBJECT_IDS.MATH })
     expect(partA.length).toBeGreaterThan(0)
     expect(partB.length).toBeGreaterThan(0)
     expect(edu.length).toBeGreaterThan(0)
     expect(law.length).toBeGreaterThan(0)
+    expect(math.length).toBe(28)
     expect(partA.every(r => r.examPart === 'ก')).toBe(true)
+    expect(math.every(r => r.examPart === 'ก')).toBe(true)
     expect(partB.every(r => r.examPart === 'ข')).toBe(true)
     expect(edu.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
     expect(law.every(r => r.examPart === 'ข' && r.tutorTh === 'อ.นนท์')).toBe(true)
+    expect(math.filter(r => r.id.startsWith('math-num-')).every(r => /pack:must/.test(r.notes))).toBe(true)
+    expect(math.filter(r => r.id.startsWith('math-gab-')).length).toBe(19)
     expect(recommendCuratedForSubject(SUBJECT_IDS.ENGLISH_MAJOR, catalog, { limit: 3 }).length).toBeGreaterThan(0)
   })
 
