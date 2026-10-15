@@ -382,6 +382,7 @@ export default function Library() {
           · เติม ก {partB29Preview.packSummary.partAItems} ตอน
           · must ข ในแพ็ก {partB29Preview.partBMustScheduled}/{partB29Preview.partBMustInPack}
           {partB29Preview.partBCoverageOk ? ' · ครบ' : ` · ค้าง ${partB29Preview.partBMustLeft}`}
+          · ไลฟ์/บล็อก {partB29Preview.liveSchedule?.taskCount ?? 0}
         </p>
 
         <div className="rounded-lg border border-rose-200/80 bg-rose-50/70 p-3 text-xs text-rose-950 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-100">

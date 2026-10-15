@@ -63,6 +63,7 @@ npm run build # production bundle
 | Unified curated library (ก+ข) | `/library` — 217 user-supplied rows; classify-on-read URL status; add-only `curated_*` merge; catalog integrity audit |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling all 217 |
 | Part ข 29-day forced pack | `/library` — `partB29Plan.js` schedules education + law + english-major first under ≈120 min/day; cuts are budget/official-score caps/duplicates (never “won’t appear”); slim Part ก filler; add-only merge |
+| Live tutor schedule + priority list | Poster lives (ครูเลดี้เก๋เก๋ + VIP เนื้อหา) in `liveTutorSchedule.js`; Library lists 217 by priority/weakness; 29-day plan pins evening lives and aligns daytime clips to VIP subject windows |
 
 ## Data notes
 
