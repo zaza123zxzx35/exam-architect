@@ -1,6 +1,6 @@
 /**
  * Live / content-block schedules.
- * v4.0 — เลดี้เก๋เก๋ English lives + VIP ช่วงติวเนื้อหา Oct + โฟกัสวิชาจากตารางออนไลน์.
+ * v4.1 — เลดี้เก๋เก๋ + VIP Oct + ตารางออนไลน์ 15–23 ต.ค. (ติวเตอร์ตามโปสเตอร์ · คลังยังเลดี้/อ.นนท์).
  */
 
 import { SUBJECT_IDS } from '../lib/study/taxonomy.js'
@@ -444,7 +444,7 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     tags: ['content-block', 'law', 'vip'],
   },
 
-  // —— ตารางออนไลน์ 15–23 ต.ค. (โฟกัสวิชาในคลังเท่านั้น ไม่ผูกติวเตอร์นอกคลัง) ——
+  // —— ตารางออนไลน์ 15–23 ต.ค. (ติวเตอร์ตามโปสเตอร์ · ปุ่มเปิดลิงก์ใช้คลังเลดี้/อ.นนท์ ไม่แต่งลิงก์เข้าไลฟ์) ——
   {
     id: 'online-civil-2026-10-15',
     kind: 'content-block',
@@ -455,12 +455,12 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     estimatedMinutes: 180,
     examPart: 'ก',
     subjectId: SUBJECT_IDS.CIVIL_SERVANT_A,
-    titleTh: 'โฟกัสข้าราชการที่ดี (ช่วงเช้า–บ่าย)',
+    titleTh: 'ภาค ก ข้าราชการที่ดี · ดร.วิรัตน์ (เช้า 11:00 / บ่าย 14:00)',
     seriesTh: 'ตารางติวออนไลน์ ครูผู้ช่วย 2569',
-    sourceTh: 'flyer ตารางติวออนไลน์ 15–23 ต.ค.',
+    sourceTh: 'flyer Update ตารางติวออนไลน์ 15–23 ต.ค.',
     priorityRank: LIVE_PRIORITY.PART_A_CIVIL + 1,
-    reasonTh: 'ช่วงโฟกัสข้าราชการที่ดีตามตารางออนไลน์ — ใช้คลิปในคลัง',
-    tags: ['content-block', 'civil-servant', 'online-table'],
+    reasonTh: 'ตามโปสเตอร์ · ทบทวนด้วยคลิปอ.นนท์/ขงเบ้งในคลัง (ไม่มีลิงก์เข้าห้องดร.วิรัตน์)',
+    tags: ['content-block', 'civil-servant', 'online-table', 'tutor:ดร.วิรัตน์'],
   },
   {
     id: 'online-edu-2026-10-15',
@@ -472,12 +472,12 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     estimatedMinutes: 120,
     examPart: 'ข',
     subjectId: SUBJECT_IDS.EDUCATION,
-    titleTh: 'โฟกัสมาตรฐานการสอน / วิชาการศึกษา (ค่ำ)',
+    titleTh: 'ภาค ข มาตรฐานการสอน · ดร.ธนากร (ค่ำ 20:00)',
     seriesTh: 'ตารางติวออนไลน์ ครูผู้ช่วย 2569',
-    sourceTh: 'flyer ตารางติวออนไลน์ 15–23 ต.ค.',
+    sourceTh: 'flyer Update ตารางติวออนไลน์ 15–23 ต.ค.',
     priorityRank: LIVE_PRIORITY.PART_B_EDUCATION + 1,
-    reasonTh: 'ช่วงโฟกัสการศึกษาตามตารางออนไลน์ — ใช้คลิปอ.นนท์ในคลัง',
-    tags: ['content-block', 'education', 'online-table'],
+    reasonTh: 'ตามโปสเตอร์ · ทบทวนด้วยคลิปอ.นนท์วิชาการศึกษาในคลัง',
+    tags: ['content-block', 'education', 'online-table', 'tutor:ดร.ธนากร'],
   },
   {
     id: 'online-english-2026-10-19',
@@ -489,12 +489,12 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     estimatedMinutes: 120,
     examPart: 'ก',
     subjectId: SUBJECT_IDS.ENGLISH_SKILLS_A,
-    titleTh: 'โฟกัสภาษาอังกฤษภาค ก (ค่ำ)',
+    titleTh: 'ภาค ก ภาษาอังกฤษ · อ.ธนารีย์รัฐ (ค่ำ 20:00)',
     seriesTh: 'ตารางติวออนไลน์ ครูผู้ช่วย 2569',
-    sourceTh: 'flyer ตารางติวออนไลน์ 15–23 ต.ค.',
+    sourceTh: 'flyer Update ตารางติวออนไลน์ 15–23 ต.ค.',
     priorityRank: LIVE_PRIORITY.PART_A_ENGLISH + 1,
-    reasonTh: 'ช่วงโฟกัสอังกฤษตามตารางออนไลน์ — ใช้คลิปเลดี้เก๋เก๋ในคลัง',
-    tags: ['content-block', 'english-a', 'online-table'],
+    reasonTh: 'ตามโปสเตอร์ · ทบทวนด้วยคลิปเลดี้เก๋เก๋ในคลัง (อังกฤษไม่ผูกอ.นนท์)',
+    tags: ['content-block', 'english-a', 'online-table', 'tutor:อ.ธนารีย์รัฐ'],
   },
   {
     id: 'online-law-2026-10-21',
@@ -506,12 +506,12 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     estimatedMinutes: 180,
     examPart: 'ข',
     subjectId: SUBJECT_IDS.LAW,
-    titleTh: 'โฟกัสกฎหมายการศึกษา (เช้า–บ่าย)',
+    titleTh: 'ภาค ข กฎหมายการศึกษา · ดร.วิรัตน์ (เช้า 11:00 / บ่าย 14:00)',
     seriesTh: 'ตารางติวออนไลน์ ครูผู้ช่วย 2569',
-    sourceTh: 'flyer ตารางติวออนไลน์ 15–23 ต.ค.',
+    sourceTh: 'flyer Update ตารางติวออนไลน์ 15–23 ต.ค.',
     priorityRank: LIVE_PRIORITY.PART_B_LAW + 1,
-    reasonTh: 'ช่วงโฟกัสกฎหมายตามตารางออนไลน์ — ใช้คลิปอ.นนท์ในคลัง',
-    tags: ['content-block', 'law', 'online-table'],
+    reasonTh: 'ตามโปสเตอร์ · ทบทวนด้วยคลิปอ.นนท์กฎหมายในคลัง',
+    tags: ['content-block', 'law', 'online-table', 'tutor:ดร.วิรัตน์'],
   },
   {
     id: 'online-math-2026-10-21',
@@ -523,16 +523,16 @@ export const LIVE_TUTOR_EVENTS = Object.freeze([
     estimatedMinutes: 120,
     examPart: 'ก',
     subjectId: SUBJECT_IDS.MATH,
-    titleTh: 'โฟกัสตัวเลขและเหตุผล (ค่ำ)',
+    titleTh: 'ภาค ก ตัวเลขและเหตุผล · อ.ศรัญภรณ์ (ค่ำ 20:00)',
     seriesTh: 'ตารางติวออนไลน์ ครูผู้ช่วย 2569',
-    sourceTh: 'flyer ตารางติวออนไลน์ 15–23 ต.ค.',
+    sourceTh: 'flyer Update ตารางติวออนไลน์ 15–23 ต.ค.',
     priorityRank: LIVE_PRIORITY.PART_A_MATH + 1,
-    reasonTh: 'ช่วงโฟกัสคณิตตามตารางออนไลน์ — ใช้ YouTube/แก็บในคลัง',
-    tags: ['content-block', 'math', 'online-table'],
+    reasonTh: 'ตามโปสเตอร์ · ทบทวนด้วย YouTube/แก็บคณิตในคลัง',
+    tags: ['content-block', 'math', 'online-table', 'tutor:อ.ศรัญภรณ์'],
   },
 ])
 
-export const LIVE_TUTOR_SCHEDULE_VERSION = '4.0-vip-oct-focus'
+export const LIVE_TUTOR_SCHEDULE_VERSION = '4.1-online-tutors-labeled'
 
 /**
  * @param {LiveTutorEvent} event

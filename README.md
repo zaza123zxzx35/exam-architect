@@ -60,10 +60,10 @@ npm run build # production bundle
 | Smart Tutor weakness engine | Done — rule-based `quiz_results` analysis via `src/lib/study/weakness.js`; intent `show_weakness` / “ดูจุดอ่อน”; never writes storage or invents scores |
 | District intelligence | Done — user-local competition records on Dashboard; HRMS on `/info` stays cited national stats only |
 | Master Phase 0–7 release prep | [MASTER_PHASE_0_7_RELEASE.md](./MASTER_PHASE_0_7_RELEASE.md) — local release candidate; **no deploy / no push** until explicit approval |
-| Unified curated library (ก+ข) | `/library` — **v15** English + การศึกษา/กฎหมาย + คณิต + ไทย + ข้าราชการที่ดี (`civil-servant-a`); incomplete stubs → `needs_full_url` |
+| Unified curated library (ก+ข) | `/library` — **v15.3** English + การศึกษา/กฎหมาย + คณิต + ไทย + ข้าราชการที่ดี; อ.นนท์ FB watch จาก `facebook_drive_links_repaired.csv` (201 เปิดได้ / 4 Drive ยังไม่ครบ) |
 | Smart exam prioritization | Score-first planner (`priorityScoring.js`) with must / if-time / defer tiers; modes เน้นคะแนนสูงสุด · สมดุล · ทบทวนจุดอ่อน; no invented frequency stats; does not require scheduling the whole catalog |
 | Part ข 29-day forced pack | `/library` — major + education + law core; slim Part ก รวมไทย/ข้าราชการที่ดี; add-only merge |
-| Live tutor schedule + Today/Overview | Lady Kaekae lives + VIP Oct content blocks + online focus table; auto-seed Part ข 29-day plan on first load |
+| Live tutor schedule + Today/Overview | Lady Kaekae lives + VIP Oct content blocks + online table (ติวเตอร์ตามโปสเตอร์); auto-seed Part ข 29-day plan on first load |
 
 ## Data notes
 

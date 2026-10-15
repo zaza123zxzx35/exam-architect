@@ -10,14 +10,16 @@ import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
   it('ships v15 packs including Thai + civil-servant-a', () => {
-    expect(CURATED_CATALOG_VERSION).toMatch(/thai-civil/)
+    expect(CURATED_CATALOG_VERSION).toMatch(/fb-watch-csv|thai-civil/)
     expect(curatedResources.length).toBeGreaterThan(0)
     expect(curatedResources.every(Boolean)).toBe(true)
     const enriched = enrichCuratedResources()
     expect(enriched.length).toBe(curatedResources.length)
     const summary = summarizeCuratedUrlStatuses(enriched)
     expect(summary.total).toBe(curatedResources.length)
-    expect(summary.needs_full_url).toBeGreaterThan(0)
+    // Only incomplete Drive stubs remain after facebook_drive_links_repaired.csv
+    expect(summary.needs_full_url).toBe(4)
+    expect(summary.unchecked).toBe(curatedResources.length - 4)
   })
 
   it('keeps Part ก/ข taxonomy across all packs', () => {

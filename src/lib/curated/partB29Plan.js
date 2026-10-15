@@ -322,7 +322,7 @@ export function buildPartB29CutPolicy() {
       {
         id: 'edu-keep',
         titleTh: 'วิชาการศึกษา (อ.นนท์) — เก็บเอกสารวิเคราะห์ + ตอน 1–4 + ไลฟ์ 1',
-        reasonTh: 'หมวดการศึกษา 75 คะแนน · cap ≈6 ตอน · FB ส่วนใหญ่ยัง needs_full_url แต่เก็บลำดับพื้นฐานก่อน',
+        reasonTh: 'หมวดการศึกษา 75 คะแนน · cap ≈6 ตอน · FB watch จาก CSV แล้ว · Drive วิเคราะห์ยัง needs_full_url',
         exampleIds: ['edu-nonn-05', 'edu-nonn-09', 'edu-nonn-analysis-key'],
       },
       {

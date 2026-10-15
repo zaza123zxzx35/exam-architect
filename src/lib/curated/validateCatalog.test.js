@@ -30,13 +30,16 @@ describe('curated catalog integrity audit', () => {
     ])
   })
 
-  it('lists อ.นนท์ incomplete Facebook/Drive stubs as needs_full_url', () => {
+  it('lists only อ.นนท์ incomplete Drive stubs as needs_full_url (FB watch repaired)', () => {
     const audit = auditCuratedCatalog()
     const report = listNeedsFullUrlReport(audit)
-    expect(report.count).toBeGreaterThan(0)
-    expect(audit.needsFullUrlIds.some(id => String(id).startsWith('edu-nonn-'))).toBe(true)
-    expect(audit.needsFullUrlIds.some(id => String(id).startsWith('law-nonn-'))).toBe(true)
-    expect(audit.needsFullUrlIds.some(id => String(id).startsWith('civil-nonn-'))).toBe(true)
+    expect(report.count).toBe(4)
+    expect(audit.needsFullUrlIds).toEqual([
+      'edu-nonn-analysis-key',
+      'law-nonn-special-12-doc',
+      'law-nonn-special-34-key',
+      'civil-nonn-redbook-key',
+    ])
     expect(report.noteTh).toMatch(/URL เต็ม/)
   })
 
