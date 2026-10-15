@@ -93,7 +93,9 @@ const PREFER_IDS = Object.freeze(new Set([
   'law-nonn-07',
   'law-nonn-10',
   'law-nonn-special-34-doc',
-]))/**
+]))
+
+/**
  * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
  */
