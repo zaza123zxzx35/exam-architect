@@ -31,8 +31,14 @@ export default function VictoryPlanCard({ compact = false }) {
 
   const openForcePreview = () => {
     // Preview only — never mutate schedule here.
-    setPreview(buildForceRegenPreview(schedule))
-    setDialogOpen(true)
+    try {
+      const nextPreview = buildForceRegenPreview(schedule)
+      setPreview(nextPreview)
+      setDialogOpen(true)
+      setMsg('เปิดหน้าต่างยืนยันแล้ว — กดยืนยันเพื่อจัดแผน 100/100')
+    } catch (err) {
+      setMsg(`เปิดหน้าต่างยืนยันไม่ได้: ${err?.message || 'unknown error'}`)
+    }
   }
 
   const cancelForcePreview = () => {

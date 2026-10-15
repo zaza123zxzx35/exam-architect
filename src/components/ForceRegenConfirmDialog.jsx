@@ -1,8 +1,13 @@
+import { useEffect, useId, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { StatusBanner } from './ui'
 
 /**
  * Confirm dialog before force-regenerating แผนพาบรรจุ 100.
  * Opening / canceling must not mutate the schedule (caller responsibility).
+ *
+ * Portaled to document.body so parent overflow/transform cannot clip it.
+ * Backdrop dismiss is armed after mount to avoid the opening click closing it.
  *
  * @param {{
  *   open: boolean,
@@ -25,27 +30,49 @@ export default function ForceRegenConfirmDialog({
   onConfirm,
   onCancel,
 }) {
-  if (!open || !preview) return null
+  const titleId = useId()
+  const [allowDismiss, setAllowDismiss] = useState(false)
 
-  return (
+  useEffect(() => {
+    if (!open || !preview) {
+      setAllowDismiss(false)
+      return undefined
+    }
+    setAllowDismiss(false)
+    const timer = window.setTimeout(() => setAllowDismiss(true), 250)
+    return () => window.clearTimeout(timer)
+  }, [open, preview])
+
+  useEffect(() => {
+    if (!open || !preview) return undefined
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open, preview])
+
+  if (!open || !preview || typeof document === 'undefined') return null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-4 sm:items-center"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[1px]"
       role="presentation"
       onClick={() => {
-        if (!busy) onCancel()
+        if (allowDismiss && !busy) onCancel()
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && !busy) onCancel()
+        if (e.key === 'Escape' && allowDismiss && !busy) onCancel()
       }}
     >
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="force-regen-title"
-        className="card max-h-[85vh] w-full max-w-lg overflow-y-auto border-amber-200 shadow-xl dark:border-amber-900"
+        aria-labelledby={titleId}
+        className="card max-h-[85vh] w-full max-w-lg overflow-y-auto border-2 border-amber-300 shadow-2xl dark:border-amber-700"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="force-regen-title" className="text-base font-bold text-slate-900 dark:text-white">
+        <h2 id={titleId} className="text-base font-bold text-slate-900 dark:text-white">
           ยืนยันก่อนจัดแผน 100/100
         </h2>
         <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
@@ -95,12 +122,14 @@ export default function ForceRegenConfirmDialog({
             type="button"
             className="btn-primary text-xs"
             disabled={busy}
+            autoFocus
             onClick={onConfirm}
           >
             {busy ? 'กำลังจัดแผน…' : 'ยืนยันจัดแผน 100/100'}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

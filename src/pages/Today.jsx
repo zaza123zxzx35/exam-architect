@@ -106,8 +106,13 @@ export default function Today() {
 
   const openClearManagedPreview = () => {
     // Preview only — schedule must stay unchanged until confirm.
-    setClearPreview(buildClearManagedPreview(schedule))
-    setClearDialogOpen(true)
+    try {
+      setClearPreview(buildClearManagedPreview(schedule))
+      setClearDialogOpen(true)
+      setRescheduleMsg('เปิดหน้าต่างยืนยันแล้ว — กดยืนยันเพื่อล้าง curated/ไลฟ์')
+    } catch (err) {
+      setRescheduleMsg(`เปิดหน้าต่างยืนยันไม่ได้: ${err?.message || 'unknown error'}`)
+    }
   }
 
   const cancelClearManagedPreview = () => {
@@ -140,8 +145,13 @@ export default function Today() {
 
   const openForceRegenPreview = () => {
     // Preview only — schedule must stay unchanged until confirm.
-    setForcePreview(buildForceRegenPreview(schedule))
-    setForceDialogOpen(true)
+    try {
+      setForcePreview(buildForceRegenPreview(schedule))
+      setForceDialogOpen(true)
+      setRescheduleMsg('เปิดหน้าต่างยืนยันแล้ว — กดยืนยันเพื่อจัดแผน 100/100')
+    } catch (err) {
+      setRescheduleMsg(`เปิดหน้าต่างยืนยันไม่ได้: ${err?.message || 'unknown error'}`)
+    }
   }
 
   const cancelForceRegenPreview = () => {
