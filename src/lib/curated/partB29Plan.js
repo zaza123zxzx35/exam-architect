@@ -48,8 +48,8 @@ export const PART_B_29_CAPS = Object.freeze({
   [SUBJECT_IDS.EDUCATION]: { maxItems: 6, maxMinutes: 360, examPart: 'ข' },
   [SUBJECT_IDS.LAW]: { maxItems: 6, maxMinutes: 330, examPart: 'ข' },
   [SUBJECT_IDS.ENGLISH_SKILLS_A]: { maxItems: 4, maxMinutes: 300, examPart: 'ก' },
-  [SUBJECT_IDS.MATH]: { maxItems: 3, maxMinutes: 180, examPart: 'ก' },
-  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: { maxItems: 8, maxMinutes: 280, examPart: 'ก' },
+  [SUBJECT_IDS.MATH]: { maxItems: 5, maxMinutes: 300, examPart: 'ก' },
+  [SUBJECT_IDS.GENERAL_KNOWLEDGE_A]: { maxItems: 6, maxMinutes: 270, examPart: 'ก' },
 })
 
 /**
@@ -89,21 +89,23 @@ const PREFER_IDS = Object.freeze(new Set([
   'eng-skills-share-002',
   'eng-skills-share-003',
   'eng-skills-share-004',
-  'math-spth69-01',
-  'math-spth69-02',
-  'math-spth69-03',
-  'thai-doc-principles',
-  'thai-doc-reading',
-  'thai-doc-usage',
-  'thai-yt-drill-1',
-  'thai-yt-drill-2',
-  'thai-yt-idiom',
-  'thai-yt-spelling',
-  'thai-reading-set-01',
+  // Math · อ.แก็บติวเตอร์ (early episodes)
+  'math-gab-01',
+  'math-gab-02',
+  'math-gab-03',
+  'math-gab-04',
+  'math-gab-05',
+  // Thai · ครูพี่ตี๋ (early episodes)
+  'thai-tee-01',
+  'thai-tee-02',
+  'thai-tee-03',
+  'thai-tee-04',
+  'thai-tee-05',
+  'thai-tee-06',
 ]))
 
 /**
- * Explicit deprioritize (duplicates, bare FB links, long live when docs exist, late reading).
+ * Explicit deprioritize (duplicates, bare FB links, late episodes beyond Part A slim caps).
  * Still kept in library — only excluded from this 29-day forced pack.
  */
 const DEPRIORITIZE_IDS = Object.freeze(new Set([
@@ -129,22 +131,27 @@ const DEPRIORITIZE_IDS = Object.freeze(new Set([
   'law-civil-03',
   // Skills A: hype ep beyond first four practice
   'eng-skills-share-005',
-  // Thai: long lives + late reading sets (budget)
-  'thai-live-01',
-  'thai-live-02',
-  'thai-live-03',
-  'thai-live-04',
-  'thai-live-05',
-  'thai-live-06',
-  'thai-live-07',
-  'thai-live-08',
-  'thai-reading-set-03',
-  'thai-reading-set-04',
-  'thai-reading-set-05',
-  'thai-reading-set-06',
-  'thai-reading-set-07',
-  'thai-yt-loanwords',
-  'thai-yt-royal',
+  // Math late episodes (beyond slim Part A pack)
+  'math-gab-10a',
+  'math-gab-10b',
+  'math-gab-11',
+  'math-gab-12',
+  'math-gab-13',
+  'math-gab-14',
+  'math-gab-15',
+  'math-gab-16',
+  'math-gab-17',
+  'math-gab-18',
+  // Thai late episodes
+  'thai-tee-09',
+  'thai-tee-10',
+  'thai-tee-11',
+  'thai-tee-12',
+  'thai-tee-13',
+  'thai-tee-14',
+  'thai-tee-15',
+  'thai-tee-16',
+  'thai-tee-17',
 ]))
 
 function isoDate(d) {
@@ -223,13 +230,11 @@ export function buildPartB29CutPolicy() {
       },
       {
         id: 'part-a-slim',
-        titleTh: 'ภาค ก — ตัดไลฟ์ยาวภาษาไทย / ชุดอ่านท้าย / เก็งอังกฤษเกินงบ',
-        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เหลือช่องว่างจึงเก็บเอกสารไทยสั้น + อังกฤษภาค ก 4 ตอนแรก + คณิต 3 ตอน',
+        titleTh: 'ภาค ก — เก็บตอนต้นคณิตอ.แก็บ / ไทยครูพี่ตี๋ · ตัดตอนท้ายและเก็งอังกฤษเกินงบ',
+        reasonTh: 'บังคับภาค ข ก่อน · ภาค ก เหลือช่องว่างจึงเก็บคณิต EP.1–5 + ไทย EP.1–6 + อังกฤษภาค ก 4 ตอนแรก',
         exampleIds: [
-          'thai-live-01',
-          'thai-live-02',
-          'thai-live-03',
-          'thai-reading-set-06',
+          'math-gab-15',
+          'thai-tee-15',
           'eng-skills-share-005',
         ],
       },

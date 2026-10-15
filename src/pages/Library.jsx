@@ -219,7 +219,7 @@ export default function Library() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title="คลังหลักสูตรรวม"
-        description="217 รายการเรียงตามความสำคัญ (โหมดด้านล่าง) — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · มีตารางไลฟ์จากโปสเตอร์ · อังกฤษภาค ก ≠ วิชาเอก"
+        description={`${catalog.length} รายการเรียงตามความสำคัญ (โหมดด้านล่าง) — จุดอ่อนก่อนเมื่อเลือกทบทวนจุดอ่อน · คณิตอ.แก็บ · ไทยครูพี่ตี๋ · มีตารางไลฟ์ · อังกฤษภาค ก ≠ วิชาเอก`}
         actions={(
           <div className="flex flex-wrap gap-2">
             <Link to="/resources" className="btn-secondary text-xs">คลังเรียน (เดิม)</Link>

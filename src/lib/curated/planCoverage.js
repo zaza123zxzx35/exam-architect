@@ -128,7 +128,7 @@ export function auditPlanCoverage(catalog = enrichCuratedResources(), options = 
       availableStudy: minutesAvailableStudy,
       scheduledEst: minutesScheduledEst,
       shortfallEst,
-      unitNoteTh: 'นาทีเป็นค่าประมาณ — shortfall นับจากกลุ่มต้องเก็บคะแนน ไม่ใช่ทั้งคลัง 217',
+      unitNoteTh: 'นาทีเป็นค่าประมาณ — shortfall นับจากกลุ่มต้องเก็บคะแนน ไม่ใช่ทั้งคลังหลักสูตร',
     },
     unscheduledIds: unscheduledRows.map(r => r.id),
     atRiskSubjects,

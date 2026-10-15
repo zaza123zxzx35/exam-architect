@@ -104,7 +104,10 @@ describe('generatePartB29Draft', () => {
     expect(draft.bySubject[SUBJECT_IDS.EDUCATION].scheduled).toBeGreaterThanOrEqual(4)
     expect(draft.bySubject[SUBJECT_IDS.LAW].scheduled).toBeGreaterThanOrEqual(4)
     // Part ก is slim — not the full must dump
-    expect(draft.bySubject[SUBJECT_IDS.GENERAL_KNOWLEDGE_A].scheduled).toBeLessThanOrEqual(20)
+    expect(draft.bySubject[SUBJECT_IDS.GENERAL_KNOWLEDGE_A].scheduled).toBeLessThanOrEqual(12)
+    expect(draft.bySubject[SUBJECT_IDS.MATH].packKept).toBeLessThanOrEqual(5)
+    expect(draft.proposedTasks.some(t => String(t.resourceId || '').startsWith('math-gab-'))).toBe(true)
+    expect(draft.proposedTasks.some(t => String(t.resourceId || '').startsWith('thai-tee-'))).toBe(true)
     expect(draft.liveSchedule.taskCount).toBeGreaterThan(0)
     expect(draft.liveSchedule.liveCount).toBeGreaterThan(0)
     expect(draft.proposedTasks.some(t => t.origin === 'live-tutor-schedule')).toBe(true)

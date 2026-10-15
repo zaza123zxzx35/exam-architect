@@ -4,14 +4,15 @@ import { curatedResources } from '../../data/curatedCatalog.js'
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('catalog review report', () => {
-  it('lists 67 needs_full_url slots with empty user URL fields and 150 unchecked', () => {
+  it('summarizes URL slots honestly after Gab/Tee catalog swap', () => {
     const report = buildCatalogReviewReport()
-    expect(report.summary.total).toBe(217)
-    expect(report.summary.needs_full_url).toBe(67)
-    expect(report.summary.unchecked).toBe(150)
+    expect(report.summary.total).toBe(curatedResources.length)
+    expect(report.summary.total).toBe(210)
+    expect(report.summary.needs_full_url).toBe(55)
+    expect(report.summary.unchecked).toBe(155)
     expect(report.summary.verified_accessible).toBe(0)
-    expect(report.needsFullUrlSlots).toHaveLength(67)
-    expect(report.uncheckedSlots).toHaveLength(150)
+    expect(report.needsFullUrlSlots).toHaveLength(55)
+    expect(report.uncheckedSlots).toHaveLength(155)
     expect(report.needsFullUrlSlots.every(s => s.fullUrlFromUser === '')).toBe(true)
     expect(report.needsFullUrlSlots.every(s => s.stubUrl.includes('...') || s.status === 'needs_full_url')).toBe(true)
     expect(report.needsFullUrlSlots.every(s => s.missingTh)).toBe(true)
@@ -21,15 +22,22 @@ describe('catalog review report', () => {
     expect(report.sharedUrlGroups.every(g => g.suspicionOnly === true)).toBe(true)
   })
 
-  it('does not invent URLs for stubs and lists math stubs needing full URL', () => {
+  it('uses full Facebook share URLs for อ.แก็บ math (no stub invent)', () => {
     const report = buildCatalogReviewReport(curatedResources)
-    const stub = report.needsFullUrlSlots.find(s => s.id === 'math-spth69-01')
-    expect(stub).toBeTruthy()
-    expect(stub.stubUrl).toContain('...')
-    expect(stub.fullUrlFromUser).toBe('')
-    expect(report.mathStubsNeedingFullUrl.length).toBeGreaterThan(0)
-    expect(report.mathStubsNeedingFullUrl.every(s => s.id.startsWith('math-'))).toBe(true)
-    expect(report.mathStubsNeedingFullUrl.every(s => s.stubUrl.includes('...'))).toBe(true)
+    expect(report.needsFullUrlSlots.find(s => s.id === 'math-spth69-01')).toBeFalsy()
+    const gab = curatedResources.filter(r => r.subjectId === SUBJECT_IDS.MATH)
+    expect(gab).toHaveLength(19)
+    expect(gab.every(r => r.series.includes('อ.แก็บ'))).toBe(true)
+    expect(gab.every(r => /facebook\.com\/share\/v\//.test(r.url))).toBe(true)
+    expect(gab.every(r => !r.url.includes('...'))).toBe(true)
+    expect(report.mathStubsNeedingFullUrl).toHaveLength(0)
+  })
+
+  it('uses ครูพี่ตี๋ series for Thai / general-knowledge-a', () => {
+    const thai = curatedResources.filter(r => r.subjectId === SUBJECT_IDS.GENERAL_KNOWLEDGE_A)
+    expect(thai).toHaveLength(17)
+    expect(thai.every(r => r.series.includes('ครูพี่ตี๋'))).toBe(true)
+    expect(thai.every(r => /facebook\.com\/share\/v\//.test(r.url))).toBe(true)
   })
 
   it('exposes official scope evidence: education/law are Part ข', () => {

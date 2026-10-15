@@ -13,11 +13,11 @@ import { URL_STATUS } from './urlStatus.js'
 describe('curated catalog integrity audit', () => {
   it('audits all seed rows with no hard errors and stable inventory size', () => {
     const audit = auditCuratedCatalog()
-    expect(audit.totalRows).toBe(217)
+    expect(audit.totalRows).toBe(210)
     expect(audit.totalRows).toBe(curatedResources.length)
     expect(audit.errorCount).toBe(0)
     expect(audit.ok).toBe(true)
-    expect(audit.needsFullUrlIds.length).toBe(67)
+    expect(audit.needsFullUrlIds.length).toBe(55)
     expect(CURATION_STAGE_ORDER).toEqual([
       'foundation',
       'lesson-or-video',
@@ -30,8 +30,9 @@ describe('curated catalog integrity audit', () => {
   it('reports needs_full_url list for user follow-up without deleting rows', () => {
     const audit = auditCuratedCatalog()
     const report = listNeedsFullUrlReport(audit)
-    expect(report.count).toBe(67)
-    expect(report.ids).toContain('math-spth69-01')
+    expect(report.count).toBe(55)
+    expect(report.ids).not.toContain('math-spth69-01')
+    expect(report.ids.some(id => id.startsWith('edu-') || id.startsWith('law-'))).toBe(true)
     expect(report.noteTh).toMatch(/URL เต็ม/)
   })
 

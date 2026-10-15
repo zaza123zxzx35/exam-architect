@@ -10,15 +10,17 @@ import { SUBJECT_IDS } from '../study/taxonomy.js'
 
 describe('curated catalog', () => {
   it('loads user-curated inventory with stable ids and no invented URLs for stubs', () => {
-    expect(curatedResources.length).toBe(217)
+    expect(curatedResources.length).toBe(210)
     const ids = new Set(curatedResources.map(r => r.id))
     expect(ids.size).toBe(curatedResources.length)
     const stubs = curatedResources.filter(r => r.url.includes('...'))
-    expect(stubs.length).toBe(67)
+    expect(stubs.length).toBe(55)
     const enriched = enrichCuratedResources()
-    expect(enriched.filter(r => r.urlStatus === 'needs_full_url').length).toBe(67)
-    expect(enriched.filter(r => r.urlStatus === 'unchecked').length).toBe(150)
+    expect(enriched.filter(r => r.urlStatus === 'needs_full_url').length).toBe(55)
+    expect(enriched.filter(r => r.urlStatus === 'unchecked').length).toBe(155)
     expect(enriched.filter(r => r.urlStatus === 'verified_accessible').length).toBe(0)
+    expect(curatedResources.filter(r => r.id.startsWith('math-gab-'))).toHaveLength(19)
+    expect(curatedResources.filter(r => r.id.startsWith('thai-tee-'))).toHaveLength(17)
   })
 
   it('keeps english-skills-a separate from english-major', () => {

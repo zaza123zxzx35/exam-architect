@@ -99,7 +99,7 @@ describe('priority scoring', () => {
     expect(haekAlone.reasonCodes).toContain('hype-title-ignored')
   })
 
-  it('keeps at least one must-score item per official-scope subject (math not wiped by incomplete URL)', () => {
+  it('keeps at least one must-score item per official-scope subject (math = อ.แก็บ share URLs)', () => {
     const catalog = enrichCuratedResources()
     const ranked = rankCuratedCatalog(catalog, { mode: 'score-max' })
     const mustSubjectsA = new Set(
@@ -116,9 +116,8 @@ describe('priority scoring', () => {
     expect(mustSubjectsB.has(SUBJECT_IDS.ENGLISH_MAJOR)).toBe(true)
     const mathMust = ranked.filter(e => e.row.subjectId === 'math' && e.score.tier === PRIORITY_TIERS.MUST)
     expect(mathMust.length).toBeGreaterThanOrEqual(1)
-    expect(mathMust.some(e => e.score.reasonCodes.includes('must-with-incomplete-url-warning')
-      || e.score.reasonCodes.includes('penalized-incomplete-url')
-      || e.score.reasonCodes.includes('subject-coverage-floor'))).toBe(true)
+    expect(mathMust.every(e => String(e.row.id).startsWith('math-gab-'))).toBe(true)
+    expect(mathMust.every(e => !e.score.reasonCodes.includes('penalized-incomplete-url'))).toBe(true)
   })
 
   it('keeps english-skills-a and english-major on separate exam parts in ranking', () => {
