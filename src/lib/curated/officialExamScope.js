@@ -179,6 +179,70 @@ export function getOfficialScopeForSubject(subjectId) {
   return SUBJECT_OFFICIAL_SCOPE[subjectId] || null
 }
 
+/** Total written-exam points (ภาค ก + ภาค ข) from official curriculum buckets. */
+export const OFFICIAL_EXAM_TOTAL_SCORE = OFFICIAL_CURRICULUM_BUCKETS.reduce(
+  (sum, b) => sum + Number(b.maxScore || 0),
+  0,
+)
+
+/**
+ * Sum bucket scores for one exam part (or all parts when omitted).
+ * @param {'ก'|'ข'|'ค'|undefined} [examPart]
+ */
+export function sumOfficialBucketScores(examPart) {
+  return OFFICIAL_CURRICULUM_BUCKETS
+    .filter((b) => !examPart || b.examPart === examPart)
+    .reduce((sum, b) => sum + Number(b.maxScore || 0), 0)
+}
+
+/**
+ * Map a catalog subjectId to an official score bucket.
+ * Unmapped / unknown → awaiting confirmation (never invent a subject).
+ * @param {string} subjectId
+ * @returns {{
+ *   status: 'mapped' | 'awaiting_subject_mapping',
+ *   bucket: object | null,
+ *   maxScore?: number,
+ *   percentOfTotal?: number,
+ *   sharedBucket?: boolean,
+ *   prioritySignal?: number,
+ *   reasonTh: string,
+ * }}
+ */
+export function resolveSubjectScoreBucket(subjectId) {
+  const id = String(subjectId || '')
+  if (!id || id === SUBJECT_IDS.UNKNOWN) {
+    return {
+      status: 'awaiting_subject_mapping',
+      bucket: null,
+      reasonTh: 'รอยืนยันหมวดวิชา — ยังไม่ระบุวิชาในคลัง',
+    }
+  }
+  const bucket = OFFICIAL_CURRICULUM_BUCKETS.find((b) => (b.mapsToSubjectIds || []).includes(id))
+  if (!bucket) {
+    return {
+      status: 'awaiting_subject_mapping',
+      bucket: null,
+      reasonTh: 'รอยืนยันหมวดวิชา — ชื่อวิชายังไม่จับคู่กับหมวดคะแนนทางการ',
+    }
+  }
+  const total = OFFICIAL_EXAM_TOTAL_SCORE || 400
+  const percentOfTotal = Math.round((bucket.maxScore / total) * 10000) / 100
+  const sharedBucket = (bucket.mapsToSubjectIds || []).length > 1
+  return {
+    status: 'mapped',
+    bucket,
+    maxScore: bucket.maxScore,
+    percentOfTotal,
+    sharedBucket,
+    // Soft 0–1 signal for ranking only — not a per-lesson / per-course score.
+    prioritySignal: bucket.maxScore / total,
+    reasonTh: sharedBucket
+      ? `หมวด ${bucket.titleTh} ${bucket.maxScore} คะแนน (${percentOfTotal}% ของ ${total}) — แชร์กับวิชาอื่นในหมวด · แนวทางลำดับ ไม่ใช่คะแนนรายคอร์ส`
+      : `หมวด ${bucket.titleTh} ${bucket.maxScore} คะแนน (${percentOfTotal}% ของ ${total}) · แนวทางลำดับ ไม่ใช่คะแนนรายคอร์ส`,
+  }
+}
+
 /**
  * Compare catalog row examPart against official scope (does not mutate).
  * @param {{ subjectId?: string, examPart?: string, id?: string }} row

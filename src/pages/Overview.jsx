@@ -109,9 +109,9 @@ export default function Overview() {
                 if (day.complete) color = 'bg-emerald-500'
                 else if (day.done > 0) color = 'bg-amber-400'
                 return (
-                  <Link
+                  <a
                     key={day.dateIso}
-                    to="/today"
+                    href={day.dateIso === todayIso ? '/' : `#day-${day.dateIso}`}
                     title={`${day.dateIso}: ${day.done}/${day.total}`}
                     className={`h-3 w-3 rounded-sm transition hover:scale-125 ${color}`}
                     aria-label={`${day.dateIso} ${day.done} จาก ${day.total}`}
@@ -136,7 +136,7 @@ export default function Overview() {
             {upcoming.map(day => {
               const pending = day.tasks.filter(t => t.status !== 'done').slice(0, 3)
               return (
-                <li key={day.dateIso} className="space-y-2 py-3 text-sm">
+                <li id={`day-${day.dateIso}`} key={day.dateIso} className="space-y-2 py-3 text-sm scroll-mt-24">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-primary-900 dark:text-primary-100">

@@ -7,6 +7,7 @@
 import { SUBJECT_IDS } from '../study/taxonomy.js'
 import { URL_STATUS, isVerifiedAccessibleStatus } from './urlStatus.js'
 import { curationStageForKind } from './validateCatalog.js'
+import { resolveSubjectScoreBucket } from './officialExamScope.js'
 
 /** @typedef {'score-max' | 'balanced' | 'weakness-focus'} PriorityMode */
 
@@ -183,14 +184,29 @@ export function scoreHistoricalFrequency(row) {
 }
 
 /**
- * Official per-question weights are not in repo.
+ * Category-level score guidance from official curriculum buckets (fallback).
+ * Never invents per-lesson / per-course points from category totals.
  */
 export function scoreScoreWeight(row) {
+  const guidance = resolveSubjectScoreBucket(row?.subjectId)
+  if (guidance.status !== 'mapped') {
+    return {
+      value: 'unknown',
+      evidence: 'unknown',
+      noteTh: guidance.reasonTh || 'รอยืนยันหมวดวิชา',
+      reasonCodes: ['score-weight-awaiting-mapping', `subject:${row?.subjectId || 'unknown'}`],
+    }
+  }
   return {
-    value: 'unknown',
-    evidence: 'unknown',
-    noteTh: 'ยังไม่มีน้ำหนักคะแนนรายหัวข้อที่ยืนยันได้ในระบบ',
-    reasonCodes: ['score-weight-unknown', `subject:${row.subjectId}`],
+    value: guidance.prioritySignal,
+    evidence: 'official-curriculum-bucket',
+    noteTh: guidance.reasonTh,
+    reasonCodes: [
+      'score-weight-category-guidance',
+      `bucket-score:${guidance.maxScore}`,
+      `subject:${row.subjectId}`,
+      ...(guidance.sharedBucket ? ['shared-score-bucket'] : []),
+    ],
   }
 }
 

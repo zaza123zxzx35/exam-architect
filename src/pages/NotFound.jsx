@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 
 const KNOWN = [
-  { to: '/', label: 'ภาพรวม' },
-  { to: '/today', label: 'วันนี้' },
+  { to: '/', label: 'วันนี้' },
+  { to: '/dashboard', label: 'ภาพรวมสถิติ' },
   { to: '/overview', label: 'แผนภาพรวม' },
+  { to: '/audit', label: 'ตรวจรายการซ้ำ' },
   { to: '/history', label: 'ย้อนดูวัน' },
   { to: '/library', label: 'คลังหลักสูตรรวม' },
   { to: '/resources', label: 'คลังเรียน' },

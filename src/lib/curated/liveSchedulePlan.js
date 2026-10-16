@@ -18,10 +18,93 @@ import { attachCatalogLinkToLiveTask } from './taskOpenAction.js'
 
 export const LIVE_SCHEDULE_ORIGIN = 'live-tutor-schedule'
 
+/** Reason code when planned clock is protected from flyer overwrite (Strategy D). */
+export const CLOCK_LOCKED_REASON_CODE = 'clock-locked-protect'
+
 function parseMinutes(t) {
   if (!t || !/^\d{1,2}:\d{2}$/.test(String(t))) return null
   const [h, m] = String(t).split(':').map(Number)
   return h * 60 + m
+}
+
+function normClock(t) {
+  if (t == null || t === '') return null
+  const s = String(t)
+  return /^\d{1,2}:\d{2}$/.test(s) ? s : null
+}
+
+/**
+ * Clock-specific lock — separate from userEdited (title/status edits).
+ * Future UI that changes live planned clocks should call this.
+ * @param {object} task
+ * @param {{ startTime?: string|null, endTime?: string|null, title?: string }} [patch]
+ */
+export function markLiveTaskClockLocked(task, patch = {}) {
+  if (!task || typeof task !== 'object') return task
+  if (patch.startTime !== undefined) task.startTime = patch.startTime
+  if (patch.endTime !== undefined) task.endTime = patch.endTime
+  if (patch.title !== undefined) task.title = patch.title
+  task.clockLocked = true
+  task.reasonCodes = [...new Set([...(task.reasonCodes || []), CLOCK_LOCKED_REASON_CODE])]
+  return task
+}
+
+/**
+ * Decide whether planned start/end may adopt flyer clocks.
+ * Missing userEdited alone never authorizes overwrite — use clockLocked + source snapshot drift.
+ *
+ * @param {object} existing
+ * @param {{ startTime?: string|null, endTime?: string|null }} flyer
+ * @returns {{
+ *   protectPlanned: boolean,
+ *   reason: 'clockLocked'|'userEdited'|'drift'|'legacy-no-source'|'track'|string,
+ *   shouldStampClockLocked: boolean,
+ * }}
+ */
+export function decideLivePlannedClockSync(existing, flyer) {
+  const flyerStart = normClock(flyer?.startTime)
+  const flyerEnd = normClock(flyer?.endTime)
+  const plannedStart = normClock(existing?.startTime)
+  const plannedEnd = normClock(existing?.endTime)
+  const priorSourceStart = normClock(existing?.sourceStartTime)
+  const priorSourceEnd = normClock(existing?.sourceEndTime)
+  const hasPriorSource = priorSourceStart != null || priorSourceEnd != null
+
+  if (existing?.clockLocked === true) {
+    return { protectPlanned: true, reason: 'clockLocked', shouldStampClockLocked: false }
+  }
+  // Historical rows may have used userEdited for clock moves — keep protecting planned clocks.
+  if (existing?.userEdited === true) {
+    return { protectPlanned: true, reason: 'userEdited', shouldStampClockLocked: false }
+  }
+
+  if (hasPriorSource) {
+    const drifted = (
+      (plannedStart != null && priorSourceStart != null && plannedStart !== priorSourceStart)
+      || (plannedEnd != null && priorSourceEnd != null && plannedEnd !== priorSourceEnd)
+    )
+    if (drifted) {
+      return { protectPlanned: true, reason: 'drift', shouldStampClockLocked: true }
+    }
+    return { protectPlanned: false, reason: 'track', shouldStampClockLocked: false }
+  }
+
+  // Legacy row: no source snapshot. Do not assume flyer is accepted planned time.
+  const flyerHasClock = flyerStart != null || flyerEnd != null
+  const plannedHasClock = plannedStart != null || plannedEnd != null
+  if (flyerHasClock && plannedHasClock) {
+    const mismatch = (
+      (flyerStart != null && plannedStart != null && plannedStart !== flyerStart)
+      || (flyerEnd != null && plannedEnd != null && plannedEnd !== flyerEnd)
+      || (flyerStart != null && plannedStart == null)
+      || (flyerEnd != null && plannedEnd == null)
+    )
+    if (mismatch) {
+      return { protectPlanned: true, reason: 'legacy-no-source', shouldStampClockLocked: true }
+    }
+  }
+
+  return { protectPlanned: false, reason: 'track', shouldStampClockLocked: false }
 }
 
 function rangesOverlap(aStart, aEnd, bStart, bEnd) {
@@ -33,20 +116,97 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < be && bStart < ae
 }
 
+/** Exact markers written by pre-P0 `resolveLadyLiveConflicts` (commit before 628499a). */
+export const LEGACY_LADY_DEMOTE_TITLE_PREFIX = 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · '
+export const LEGACY_LADY_DEMOTE_REASON_SNIPPET = 'เลื่อนเป็นทบทวนกลางวันตามแผน 100'
+export const LEGACY_LADY_DEMOTE_REASON_CODE = 'victory-lady-wins'
+
 /**
- * Lady live wins: demote overlapping VIP/online content-blocks to daytime review.
+ * Classify a 09:00–11:00 + demotedFrom* shell without guessing from the clock alone.
+ *
+ * Pre-P0 system demotion always wrote the full bundle:
+ * conflictResolved, demotedFrom*, 09:00–11:00, title prefix, reason snippet, reasonCode.
+ *
+ * @returns {'none'|'system_legacy'|'user_protected'|'ambiguous'|'review_held'}
+ */
+export function classifySilentLadyDemotion(block) {
+  if (!block || block.liveKind !== 'content-block') return 'none'
+  if (!block.demotedFromStartTime || !block.demotedFromEndTime) return 'none'
+  if (block.startTime !== '09:00' || block.endTime !== '11:00') return 'none'
+
+  // Already held for manual review — do not thrash on re-resolve.
+  if (block.legacyDemotionReviewNeeded && !block.conflictResolved) return 'review_held'
+
+  if (!block.conflictResolved) return 'none'
+  if (block.userEdited === true || block.clockLocked === true) return 'user_protected'
+
+  const hasCode = (block.reasonCodes || []).includes(LEGACY_LADY_DEMOTE_REASON_CODE)
+  const hasTitle = String(block.title || '').startsWith(LEGACY_LADY_DEMOTE_TITLE_PREFIX)
+  const hasReason = String(block.reasonTh || '').includes(LEGACY_LADY_DEMOTE_REASON_SNIPPET)
+
+  // Require the full system fingerprint — clock alone is not proof.
+  if (hasCode && hasTitle && hasReason) return 'system_legacy'
+  return 'ambiguous'
+}
+
+function markLegacyDemotionForReview(block, classification) {
+  block.legacyDemotionReviewNeeded = true
+  block.conflictResolved = false
+  // Keep demotedFrom* and current clock for manual inspection — do not invent times.
+  const note = classification === 'user_protected'
+    ? 'พบ marker demote เก่าแต่มี userEdited/clockLocked — คงเวลาที่ผู้ใช้ตั้งไว้ · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
+    : 'พบ marker demote เก่าแบบกำกวม (ไม่มีลายนิ้วมือระบบครบ) — คงเวลาปัจจุบัน · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
+  if (!String(block.reasonTh || '').includes('ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ')) {
+    block.reasonTh = [block.reasonTh, note].filter(Boolean).join(' · ')
+  }
+  block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'legacy-demotion-review'])]
+}
+
+/**
+ * Compatibility: restore only when pre-P0 system demotion fingerprint is complete.
+ * Ambiguous / userEdited cases keep the current clock and are flagged for review.
+ * @param {object} block
+ * @returns {boolean} true only when source clock was restored
+ */
+export function restoreSilentLadyDemotion(block) {
+  const kind = classifySilentLadyDemotion(block)
+  if (kind === 'system_legacy') {
+    block.startTime = block.demotedFromStartTime
+    block.endTime = block.demotedFromEndTime
+    delete block.demotedFromStartTime
+    delete block.demotedFromEndTime
+    block.conflictResolved = false
+    delete block.legacyDemotionReviewNeeded
+    const th = String(block.title || '')
+    if (th.startsWith(LEGACY_LADY_DEMOTE_TITLE_PREFIX)) {
+      block.title = `โฟกัสเนื้อหา · ${th.slice(LEGACY_LADY_DEMOTE_TITLE_PREFIX.length)}`
+    }
+    return true
+  }
+  if (kind === 'user_protected' || kind === 'ambiguous') {
+    markLegacyDemotionForReview(block, kind)
+    return false
+  }
+  return false
+}
+
+/**
+ * Flag content-blocks that overlap Lady live clocks.
+ * P0: never overwrite source start/end (no silent move to 09:00–11:00).
+ * Reports conflict for user decision; keeps both timed items.
  * @param {Array<object>} tasks
  */
 export function resolveLadyLiveConflicts(tasks) {
   const byDate = new Map()
   for (const t of tasks) {
+    restoreSilentLadyDemotion(t)
     const d = String(t?.plannedDate || '')
     if (!d) continue
     if (!byDate.has(d)) byDate.set(d, [])
     byDate.get(d).push(t)
   }
 
-  const demotedIds = new Set()
+  const conflictIds = new Set()
   for (const [, dayTasks] of byDate) {
     const lives = dayTasks.filter(
       (t) => t.liveKind === 'live' && String(t.liveEventId || '').startsWith('lady-'),
@@ -57,27 +217,46 @@ export function resolveLadyLiveConflicts(tasks) {
       const bs = parseMinutes(block.startTime)
       const be = parseMinutes(block.endTime)
       if (bs == null || be == null) continue
-      const hits = lives.some((live) => rangesOverlap(
+      const hitLives = lives.filter((live) => rangesOverlap(
         parseMinutes(live.startTime),
         parseMinutes(live.endTime),
         bs,
         be,
       ))
-      if (!hits) continue
-      demotedIds.add(block.id)
-      block.title = `ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ${String(block.title || '').replace(/^โฟกัสเนื้อหา · /, '')}`
-      block.startTime = '09:00'
-      block.endTime = '11:00'
-      block.reasonTh = [
-        block.reasonTh,
-        'ชนไลฟ์เลดี้เก๋เก๋ — เลื่อนเป็นทบทวนกลางวันตามแผน 100',
-      ].filter(Boolean).join(' · ')
-      block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'victory-lady-wins'])]
-      block.priorityTier = PRIORITY_TIERS.IF_TIME
-      block.conflictResolved = true
+      if (!hitLives.length) continue
+      conflictIds.add(block.id)
+      // Source snapshot = flyer/authoritative clock only.
+      // Never stamp source* from a planned clock that may have drifted (Strategy D).
+      const hasTrustedSource = normClock(block.sourceStartTime) != null || normClock(block.sourceEndTime) != null
+      if (!hasTrustedSource && block.clockLocked !== true) {
+        // Bootstrap only when still tracking (no lock) and no prior source snapshot.
+        block.sourceStartTime = block.startTime
+        block.sourceEndTime = block.endTime
+      }
+      block.conflictWithLiveEventIds = hitLives
+        .map((live) => String(live.liveEventId || live.id || ''))
+        .filter(Boolean)
+      block.scheduleConflictPending = true
+      block.conflictResolved = false
+      // Clear any leftover silent-demotion markers without inventing a new slot.
+      delete block.demotedFromStartTime
+      delete block.demotedFromEndTime
+      const sourceLabelStart = normClock(block.sourceStartTime) || block.startTime || '?'
+      const sourceLabelEnd = normClock(block.sourceEndTime) || block.endTime || '?'
+      const conflictNote = `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — คงเวลาต้นทาง ${sourceLabelStart}–${sourceLabelEnd} · รอยืนยันว่าจะเข้าสดรายการใด ยังไม่เลื่อนอัตโนมัติ`
+      if (!String(block.reasonTh || '').includes('รอยืนยันว่าจะเข้าสดรายการใด')) {
+        block.reasonTh = [block.reasonTh, conflictNote].filter(Boolean).join(' · ')
+      }
+      block.reasonCodes = [...new Set([
+        ...(block.reasonCodes || []).filter((c) => c !== 'victory-lady-wins'),
+        'schedule-conflict-pending',
+      ])]
+      block.priorityTier = block.priorityTier || PRIORITY_TIERS.IF_TIME
     }
   }
-  return { tasks, demotedIds: [...demotedIds] }
+  const ids = [...conflictIds]
+  // demotedIds kept as alias for older callers — now means "flagged conflicts", not moved.
+  return { tasks, conflictIds: ids, demotedIds: ids }
 }
 
 const SUBJECT_LABEL_EXTRA = Object.freeze({
@@ -164,6 +343,9 @@ export function generateLiveScheduleTasks(options = {}) {
         durationIsEstimate: true,
         startTime: event.startTime || null,
         endTime: event.endTime || null,
+        // Authoritative flyer snapshot (may later diverge from planned start/end).
+        sourceStartTime: event.startTime || null,
+        sourceEndTime: event.endTime || null,
         priorityTier: event.priorityRank <= 30
           ? PRIORITY_TIERS.MUST
           : event.priorityRank <= 60
@@ -188,8 +370,8 @@ export function generateLiveScheduleTasks(options = {}) {
     }
   }
 
-  // Lady live wins over overlapping VIP/online evening content-blocks.
-  const { tasks: resolvedTasks, demotedIds } = resolveLadyLiveConflicts(proposedTasks)
+  // Flag VIP/online blocks that overlap Lady live — keep source clocks (P0).
+  const { tasks: resolvedTasks, conflictIds } = resolveLadyLiveConflicts(proposedTasks)
   resolvedTasks.sort((a, b) => {
     // List/schedule order: priority first, then date, then start time.
     const pa = Number(a.priorityScore)
@@ -205,14 +387,16 @@ export function generateLiveScheduleTasks(options = {}) {
     todayIso,
     untilIso,
     proposedTasks: resolvedTasks,
-    conflictsDemoted: demotedIds,
+    conflictsPending: conflictIds,
+    /** @deprecated alias of conflictsPending — blocks are flagged, not time-shifted */
+    conflictsDemoted: conflictIds,
     upcomingLiveCount: resolvedTasks.filter(t => t.liveKind === 'live').length,
     contentBlockCount: resolvedTasks.filter(t => t.liveKind === 'content-block').length,
     notesTh: [
       'ตารางไลฟ์จากโปสเตอร์ที่คุณส่ง — เรียงตามน้ำหนักคะแนนหลักสูตร ไม่ใช่สถิติข้อสอบเก่า',
       'วิชาเอกภาค ข มาก่อน · การศึกษา · กฎหมาย · แล้วค่อยภาค ก',
       'ข้าราชการที่ดี = ภาค ก 50 คะแนน (ไม่ปนกับกฎหมายภาค ข)',
-      'ไลฟ์เลดี้เก๋เก๋ชนะเมื่อชนเวลา VIP/ออนไลน์ — บล็อกที่ชนถูกเลื่อนเป็นทบทวนกลางวัน',
+      'เมื่อ VIP/ออนไลน์ชนไลฟ์เลดี้ — คงเวลาต้นทางทั้งคู่ · รายงานรอยืนยัน ห้ามเลื่อนเงียบ ๆ',
       'ไลฟ์เป็นช่วงเย็น — ไม่แย่งงบติวกลางวันของคลังหลักสูตร แต่ปักหมุดในตาราง',
     ],
   }

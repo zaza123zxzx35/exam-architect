@@ -18,23 +18,27 @@ import {
   Library,
   Sparkles,
   Bot,
+  SearchCheck,
+  TriangleAlert,
 } from 'lucide-react'
 import { useThemeCtx } from '../hooks/useThemeCtx'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { getPrimaryExam } from '../data/examCalendar'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'ภาพรวม' },
-  { to: '/today', icon: ListTodo, label: 'วันนี้' },
+  { to: '/', icon: ListTodo, label: 'วันนี้' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'ภาพรวมสถิติ' },
   { to: '/overview', icon: Map, label: 'แผนภาพรวม' },
   { to: '/history', icon: History, label: 'ย้อนดูวัน' },
+  { to: '/library', icon: BookOpen, label: 'วิชา / คลังหลักสูตร' },
+  { to: '/audit', icon: SearchCheck, label: 'ตรวจรายการซ้ำ' },
+  { to: '/review', icon: TriangleAlert, label: 'ทบทวนข้อผิด' },
   { to: '/timetable', icon: CalendarDays, label: 'ตารางติว' },
   { to: '/planner', icon: Sparkles, label: 'Smart Planner' },
   { to: '/assistant', icon: Bot, label: 'ผู้ช่วยติว' },
   { to: '/info', icon: BarChart3, label: 'ข้อมูลและสถิติ' },
   { to: '/plan', icon: CalendarCheck, label: 'แผนการอ่าน' },
   { to: '/resources', icon: Library, label: 'คลังเรียน' },
-  { to: '/library', icon: BookOpen, label: 'คลังหลักสูตรรวม' },
   { to: '/quiz', icon: FileQuestion, label: 'แบบทดสอบ' },
   { to: '/notes', icon: NotebookPen, label: 'โน้ต' },
   { to: '/videos', icon: PlayCircle, label: 'วิดีโอ' },
@@ -55,8 +59,12 @@ export default function Layout({ children }) {
   const { theme, toggleTheme } = useThemeCtx()
   const countdown = useExamCountdown()
   const [now, setNow] = useState(() => new Date())
-  const activeItem = navItems.find(item => item.to === location.pathname) || null
-  const pageTitle = activeItem?.label || (location.pathname === '/' ? 'ภาพรวม' : 'ไม่พบหน้า')
+  const activeItem = navItems.find((item) => (
+    item.to === '/'
+      ? (location.pathname === '/' || location.pathname === '/today')
+      : item.to === location.pathname
+  )) || null
+  const pageTitle = activeItem?.label || (location.pathname === '/' ? 'วันนี้' : 'ไม่พบหน้า')
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000)
@@ -64,7 +72,9 @@ export default function Layout({ children }) {
   }, [])
 
   const navLink = (item, compact = false) => {
-    const active = location.pathname === item.to
+    const active = item.to === '/'
+      ? (location.pathname === '/' || location.pathname === '/today')
+      : location.pathname === item.to
     return (
       <Link
         key={item.to}

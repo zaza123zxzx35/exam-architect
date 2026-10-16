@@ -149,7 +149,7 @@ function mergeHtmlTasks(existingTasks, seededTasks) {
 function sanitizeTask(raw, index) {
   if (!raw || typeof raw !== 'object') return null
   const id = raw.id ? String(raw.id) : `recovered_task_${index}`
-  const status = ['pending', 'done', 'deferred', 'cancelled'].includes(raw.status)
+  const status = ['pending', 'done', 'deferred', 'cancelled', 'in_progress', 'doing'].includes(raw.status)
     ? raw.status
     : 'pending'
   // Prefer schema durationMinutes; fall back to curated estimatedMinutes (same meaning).
@@ -183,6 +183,8 @@ function sanitizeTask(raw, index) {
   }
   // Preserve curated / user-edit markers without a full schema bump.
   if (raw.userEdited) task.userEdited = true
+  // Clock-specific lock (Strategy D) — separate from userEdited.
+  if (raw.clockLocked === true) task.clockLocked = true
   if (raw.resourceId != null) task.resourceId = String(raw.resourceId)
   if (raw.urlStatus != null) task.urlStatus = String(raw.urlStatus)
   if (raw.examPart != null) task.examPart = String(raw.examPart)
@@ -192,6 +194,47 @@ function sanitizeTask(raw, index) {
   } else if (task.durationIsEstimate) {
     task.estimatedMinutes = durationMinutes
   }
+
+  // Preserve flyer live clocks + conflict flags (P0). Never invent — only keep evidence fields.
+  if (raw.startTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.startTime))) {
+    task.startTime = String(raw.startTime)
+  }
+  if (raw.endTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.endTime))) {
+    task.endTime = String(raw.endTime)
+  }
+  if (raw.liveKind != null) task.liveKind = String(raw.liveKind)
+  if (raw.liveEventId != null) task.liveEventId = String(raw.liveEventId)
+  if (raw.seriesTh != null) task.seriesTh = String(raw.seriesTh)
+  if (raw.sourceTh != null) task.sourceTh = String(raw.sourceTh)
+  if (raw.planPack != null) task.planPack = String(raw.planPack)
+  if (raw.priorityTier != null) task.priorityTier = String(raw.priorityTier)
+  if (Number.isFinite(Number(raw.priorityScore))) task.priorityScore = Number(raw.priorityScore)
+  if (raw.priorityMode != null) task.priorityMode = String(raw.priorityMode)
+  if (raw.reasonTh != null) task.reasonTh = String(raw.reasonTh)
+  if (Array.isArray(raw.reasonCodes)) task.reasonCodes = raw.reasonCodes.map(String)
+  if (raw.scheduleConflictPending) task.scheduleConflictPending = true
+  if (raw.conflictResolved) task.conflictResolved = true
+  if (raw.legacyDemotionReviewNeeded) task.legacyDemotionReviewNeeded = true
+  if (Array.isArray(raw.conflictWithLiveEventIds)) {
+    task.conflictWithLiveEventIds = raw.conflictWithLiveEventIds.map(String)
+  }
+  if (raw.sourceStartTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.sourceStartTime))) {
+    task.sourceStartTime = String(raw.sourceStartTime)
+  }
+  if (raw.sourceEndTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.sourceEndTime))) {
+    task.sourceEndTime = String(raw.sourceEndTime)
+  }
+  if (raw.demotedFromStartTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.demotedFromStartTime))) {
+    task.demotedFromStartTime = String(raw.demotedFromStartTime)
+  }
+  if (raw.demotedFromEndTime != null && /^\d{1,2}:\d{2}$/.test(String(raw.demotedFromEndTime))) {
+    task.demotedFromEndTime = String(raw.demotedFromEndTime)
+  }
+  if (raw.replayConfirmed === true) task.replayConfirmed = true
+  if (raw.allowsReplay === true) task.allowsReplay = true
+  if (raw.safeUrl != null) task.safeUrl = String(raw.safeUrl)
+  if (raw.originalUrl != null) task.originalUrl = String(raw.originalUrl)
+
   return task
 }
 

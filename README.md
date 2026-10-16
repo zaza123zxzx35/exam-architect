@@ -25,6 +25,18 @@ npm run dev
 Dev server defaults to [http://127.0.0.1:43123](http://127.0.0.1:43123).  
 Local AI endpoint: `POST /api/assistant` (same handler as Vercel). Without `OPENAI_API_KEY`, the assistant falls back to the rule-based engine.
 
+### Core flows (MASTER elevation)
+
+| Route | Purpose |
+|---|---|
+| `/today` | วันนี้ต้องติวอะไร — ไลฟ์จริงแยกจากอ่านเอง · ลำดับ 1→N · เหตุผล |
+| `/library` | วิชา / คลังหลักสูตร · กรอง · ตารางไลฟ์ต้นทาง |
+| `/audit` | ตรวจรายการซ้ำ · URL ไม่ครบ · ข้อสงสัย ก/ข |
+| `/review` | ทบทวนข้อผิดจากผลควิซ + งานทบทวนในแผน |
+| `/overview` | ความคืบหน้ารายวันของแผนที่ผสาน |
+
+รายละเอียดตรวจจริง: [MASTER_ELEVATION_REPORT.md](./MASTER_ELEVATION_REPORT.md)
+
 ```bash
 npm test      # unit tests (OpenAI calls are mocked)
 npm run lint  # oxlint

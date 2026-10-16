@@ -84,8 +84,9 @@ export default function Dashboard() {
             <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">เตรียมสอบอย่างมีแผน<br className="hidden sm:block" />และเห็นความคืบหน้าชัดเจน</h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-slate-200 sm:text-base">รวมตารางอ่าน แบบทดสอบ โน้ต และสถิติไว้ในที่เดียว ใช้ข้อมูลต้นทางประกอบการตัดสินใจ และตรวจประกาศทางการก่อนสมัครทุกครั้ง</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/plan" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-primary-900 shadow-sm transition hover:-translate-y-0.5 hover:bg-primary-50">ดูแผนการอ่าน <ArrowRight className="h-4 w-4" /></Link>
-              <Link to="/quiz" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"><FileCheck2 className="h-4 w-4" />ฝึกทำข้อสอบ</Link>
+              <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-primary-900 shadow-sm transition hover:-translate-y-0.5 hover:bg-primary-50">กลับไปตารางวันนี้ <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/audit" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"><ListChecks className="h-4 w-4" />ตรวจรายการซ้ำ</Link>
+              <Link to="/review" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"><FileCheck2 className="h-4 w-4" />ทบทวนข้อผิด</Link>
             </div>
           </div>
           <div className="min-w-[220px] rounded-2xl border border-white/15 bg-white/[0.08] p-5 backdrop-blur-sm lg:min-w-[250px]">

@@ -152,6 +152,70 @@ describe('schedule migration', () => {
     expect(task.urlStatus).toBe('needs_full_url')
   })
 
+  it('preserves flyer live clocks and conflict flags through sanitize (P0)', () => {
+    const { schedule } = sanitizeSchedule({
+      schemaVersion: 1,
+      tasks: [{
+        id: 'live_vip-civil-2026-10-07_2026-10-07',
+        title: 'โฟกัสเนื้อหา · VIP',
+        status: 'pending',
+        plannedDate: '2026-10-07',
+        estimatedMinutes: 150,
+        origin: 'live-tutor-schedule',
+        startTime: '20:00',
+        endTime: '22:30',
+        liveKind: 'content-block',
+        liveEventId: 'vip-civil-2026-10-07',
+        scheduleConflictPending: true,
+        conflictResolved: false,
+        conflictWithLiveEventIds: ['lady-live-a-haek-2026-10-07'],
+        sourceStartTime: '20:00',
+        sourceEndTime: '22:30',
+        reasonTh: 'ชนไลฟ์เลดี้ · รอยืนยัน',
+        reasonCodes: ['schedule-conflict-pending'],
+        priorityTier: 'if-time',
+        priorityScore: 0.4,
+      }],
+      sessions: [],
+      notes: {},
+    })
+    const task = schedule.tasks.find((t) => t.id === 'live_vip-civil-2026-10-07_2026-10-07')
+    expect(task.startTime).toBe('20:00')
+    expect(task.endTime).toBe('22:30')
+    expect(task.liveKind).toBe('content-block')
+    expect(task.liveEventId).toBe('vip-civil-2026-10-07')
+    expect(task.scheduleConflictPending).toBe(true)
+    expect(task.conflictWithLiveEventIds).toEqual(['lady-live-a-haek-2026-10-07'])
+    expect(task.sourceStartTime).toBe('20:00')
+    expect(task.reasonTh).toMatch(/รอยืนยัน/)
+  })
+
+  it('preserves clockLocked through sanitize (Strategy D)', () => {
+    const { schedule } = sanitizeSchedule({
+      schemaVersion: 1,
+      tasks: [{
+        id: 'live_locked',
+        title: 'VIP',
+        status: 'pending',
+        plannedDate: '2026-10-07',
+        startTime: '14:00',
+        endTime: '16:00',
+        sourceStartTime: '20:00',
+        sourceEndTime: '22:30',
+        clockLocked: true,
+        liveKind: 'content-block',
+        liveEventId: 'vip-civil-2026-10-07',
+        origin: 'live-tutor-schedule',
+      }],
+      sessions: [],
+      notes: {},
+    })
+    const task = schedule.tasks.find((t) => t.id === 'live_locked')
+    expect(task.clockLocked).toBe(true)
+    expect(task.startTime).toBe('14:00')
+    expect(task.sourceStartTime).toBe('20:00')
+  })
+
   it('preserves victory clear/seed meta through sanitize and saveSchedule', () => {
     const input = {
       schemaVersion: 1,

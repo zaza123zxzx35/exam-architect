@@ -17,6 +17,8 @@ const Overview = lazy(() => import('./pages/Overview'))
 const History = lazy(() => import('./pages/History'))
 const Resources = lazy(() => import('./pages/Resources'))
 const Library = lazy(() => import('./pages/Library'))
+const Audit = lazy(() => import('./pages/Audit'))
+const Review = lazy(() => import('./pages/Review'))
 const SmartPlanner = lazy(() => import('./pages/SmartPlanner'))
 const Assistant = lazy(() => import('./pages/Assistant'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -43,12 +45,15 @@ export default function App() {
             <ErrorBoundary>
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<Today />} />
                   <Route path="/today" element={<Today />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/overview" element={<Overview />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/resources" element={<Resources />} />
                   <Route path="/library" element={<Library />} />
+                  <Route path="/audit" element={<Audit />} />
+                  <Route path="/review" element={<Review />} />
                   <Route path="/planner" element={<SmartPlanner />} />
                   <Route path="/assistant" element={<Assistant />} />
                   <Route path="/timetable" element={<Timetable />} />

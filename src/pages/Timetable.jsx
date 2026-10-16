@@ -18,6 +18,11 @@ import {
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { timetableDaysFromSessions } from '../lib/schedule/model.js'
 import { safeResourceUrl } from '../lib/planner/safeLink.js'
+import {
+  ladyAfternoonFallbackCopy,
+  ladyEveningReviewCopy,
+  ladyVodSlotCopy,
+} from '../lib/curated/timetableReplayCopy.js'
 
 const LADY_POST_PINNED_URL = 'https://www.facebook.com/groups/152029819565529/posts/1531391668295997/'
 const LADY_ANNOUNCEMENTS_URL = 'https://www.facebook.com/groups/152029819565529/announcements'
@@ -228,11 +233,23 @@ function defaultSlotsForWeekday(weekday, iso) {
       slots.push({ id: nextId(), time: '13.30 - 15.00', zone: 'บ่าย', title: 'P3: ตรวจประกาศอัตรารับสมัคร (ถ้ามี)', note: 'เปรียบเทียบเฉพาะคุณสมบัติและจำนวนอัตราที่หน่วยงานประกาศอย่างเป็นทางการ', done: false })
     } else if (iso >= '2026-10-20' && iso <= '2026-10-23') {
       slots.push({ id: nextId(), time: '13.30 - 14.30', zone: 'บ่าย', title: 'P5: ภาค ค ประวัติ+ผลงาน 1 ชม. (มีคนช่วยทำ)', note: 'Portfolio + ใบประกาศนียบัตรจัดหมวด', done: false })
-      if (ladyVod) slots.push({ id: nextId(), time: '14.45 - 15.45', zone: 'บ่าย', title: `${ladyVod.cat} ${ladyVod.title}`, note: '1 ชม. VOD เลยนะ — ถ้าไม่หมด คืนต่อ', done: false, _link: ladyVod.link, _linkExternal: true })
+      if (ladyVod) {
+        const vodCopy = ladyVodSlotCopy(ladyVod, {
+          durationNote: 'คิวคลิปในแผน · 1 ชม. — ถ้าไม่หมด คืนต่อ · มีลิงก์แต่ยังไม่ยืนยัน replay',
+        })
+        slots.push({ id: nextId(), time: '14.45 - 15.45', zone: 'บ่าย', ...vodCopy, done: false })
+      }
     } else if (ladyVod) {
-      slots.push({ id: nextId(), time: '13.30 - 15.00', zone: 'บ่าย', title: `${ladyVod.cat} ${ladyVod.title}`, note: '1.5 ชม. MAX ห้าม 5-6 ชม. — ถ้ายาวจบก่อนเล่นอย่างเดียว ข้ามส่วนที่ซ้ำ! 📂 กดตรงนี้ ไปตรงคลิปเลย ไม่ต้องค้นหาในกลุ่ม', done: false, _link: ladyVod.link, _linkExternal: true })
+      const vodCopy = ladyVodSlotCopy(ladyVod, {
+        durationNote: 'คิวคลิปในแผน · 1.5 ชม. MAX — ถ้ายาวจบก่อนเล่นอย่างเดียว ข้ามส่วนที่ซ้ำ · มีลิงก์แต่ยังไม่ยืนยัน replay',
+      })
+      slots.push({ id: nextId(), time: '13.30 - 15.00', zone: 'บ่าย', ...vodCopy, done: false })
     } else {
-      slots.push({ id: nextId(), time: '13.30 - 15.00', zone: 'บ่าย', title: ladyInfo.hasLive ? 'P2: เลดี้เก๋ — ดูย้อนหลัง 1 EP (วิชาเอกอังกฤษ Grammar/Reading)' : 'P2: เลดี้เก๋ — ดูย้อนหลัง 1 EP (ถ้ามีเวลา)', note: ladyInfo.hasLive ? 'คืนนี้มี LIVE เลดี้ 21.00+ ดังนั้นช่วงบ่ายดูย้อนหลัง 1 EP (1.5 ชม. MAX ห้าม 5-6 ชม.)' : 'เน้นเฉพาะจุดอ่อนของตัวเอง', done: false, _link: ladyInfo.hasLive ? LADY_ANNOUNCEMENTS_URL : undefined, _linkExternal: !!ladyInfo.hasLive })
+      const fallback = ladyAfternoonFallbackCopy({
+        hasLive: ladyInfo.hasLive,
+        announcementsUrl: LADY_ANNOUNCEMENTS_URL,
+      })
+      slots.push({ id: nextId(), time: '13.30 - 15.00', zone: 'บ่าย', ...fallback, done: false })
     }
   } else if (iso === '2026-10-09') {
     slots.push({ id: nextId(), time: '13.30 - 14.30', zone: 'กลางวัน', title: `P3: อ่านนำหน้า ${anonTopic} (ก่อนติวสดคืนนี้ อ.นนท์ 20.00)`, note: 'วันศุกร์ 9 ต.ค. = สอนครั้งสุดท้าย! ช่วงกลางวันอ่านนำหน้าเบาๆ 1 ชม.', done: false })
@@ -241,7 +258,12 @@ function defaultSlotsForWeekday(weekday, iso) {
 
   if (schoolOpen && iso !== '2026-10-09') {
     const ladyVodOpen = getLadyVodForToday(iso)
-    if (ladyVodOpen) slots.push({ id: nextId(), time: '13.30 - 14.30', zone: 'กลางวัน', title: `${ladyVodOpen.cat} ${ladyVodOpen.title}`, note: 'คาบว่างกลางวัน! 1 ชม. VOD เท่านั้น — ถ้ายาวจบก่อนเล่นอย่างเดียว ข้ามส่วนที่ซ้ำ! 📂 กดตรงนี้ ไปตรงคลิปเลย', done: false, _link: ladyVodOpen.link, _linkExternal: true })
+    if (ladyVodOpen) {
+      const vodCopy = ladyVodSlotCopy(ladyVodOpen, {
+        durationNote: 'คาบว่างกลางวัน · คิวคลิปในแผน 1 ชม. — ถ้ายาวจบก่อนเล่นอย่างเดียว ข้ามส่วนที่ซ้ำ · มีลิงก์แต่ยังไม่ยืนยัน replay',
+      })
+      slots.push({ id: nextId(), time: '13.30 - 14.30', zone: 'กลางวัน', ...vodCopy, done: false })
+    }
     slots.push({ id: nextId(), time: '17.15 - 18.15', zone: 'คืน', title: `P3: อ่านนำหน้า ${anonTopic} (ก่อนติวสดคืนนี้)`, note: `อ่าน 1-2 หัวข้อเบื้องต้น — เวลาติวสดจะจดไว้ได้เร็วขึ้น (2 พ.ย. เปิดเทอม 2 แล้วนะ!)`, done: false })
   }
 
@@ -279,17 +301,17 @@ function defaultSlotsForWeekday(weekday, iso) {
   } else if (!isMockOrRest) {
     if (focus.owner === 'lady') {
       const ladyVod = getLadyVodForToday(iso)
+      const evening = ladyEveningReviewCopy({
+        topic: anonTopic,
+        clip: ladyVod || null,
+        announcementsUrl: LADY_ANNOUNCEMENTS_URL,
+      })
       slots.push({
         id: nextId(),
         time: '20.00 - 22.00',
         zone: 'คืน',
-        title: ladyVod
-          ? `🔴 [เลดี้เก๋เก๋] ${ladyVod.cat} ${ladyVod.title}`
-          : `🔴 [เลดี้เก๋เก๋] ทบทวน/ย้อนหลัง · ${anonTopic}`,
-        note: 'ภาษาอังกฤษภาค ก/ข เป็นของครูเลดี้เก๋เก๋เท่านั้น — ไม่ใช่อ.นนท์',
+        ...evening,
         done: false,
-        _link: ladyVod?.link || LADY_ANNOUNCEMENTS_URL,
-        _linkExternal: true,
       })
     } else if (focus.owner === 'self') {
       slots.push({

@@ -94,8 +94,8 @@ export const VICTORY_LEVERS = Object.freeze([
     id: 'conflict_clear',
     weight: 10,
     kind: 'plan',
-    titleTh: 'ไม่มีชนเวลากับไลฟ์เลดี้ (VIP/ออนไลน์ถูกเลื่อนเป็นทบทวนกลางวัน)',
-    beliefTh: 'เลือกศึกให้ถูก — ไลฟ์สดมาก่อน คลิปตามทีหลัง',
+    titleTh: 'ชนเวลาไลฟ์เลดี้ถูกรายงานครบ (คงเวลาต้นทาง · รอยืนยัน)',
+    beliefTh: 'เลือกศึกให้ถูก — รายงานชนเวลา ห้ามเลื่อนเงียบ ๆ',
   },
   {
     id: 'weekly_mocks',
@@ -384,7 +384,8 @@ export function scoreVictoryReadiness(schedule, options = {}) {
   const driveEffort = tasks.filter((t) => t.planPack === 'victory-drive')
   const driveDone = driveEffort.filter((t) => t.status === 'done').length
     + Number(effort.driveSubstitutesDone || 0)
-  const unresolvedConflict = tasks.some(
+  // P0: overlaps may remain on the clock — "clear" means every overlap is flagged.
+  const overlappingBlocks = tasks.filter(
     (t) => t.liveKind === 'content-block'
       && t.startTime
       && ladyLives.some((live) => (
@@ -396,6 +397,9 @@ export function scoreVictoryReadiness(schedule, options = {}) {
           parseMinutes(t.endTime),
         )
       )),
+  )
+  const unresolvedConflict = overlappingBlocks.some(
+    (t) => !t.scheduleConflictPending && !(t.conflictWithLiveEventIds || []).length,
   )
 
   // Streak of completed days with any victory/curated work
@@ -486,7 +490,7 @@ function detailForLever(id, s) {
     case 'civil_core':
       return `ข้าราชการที่ดี ${s.civilCount}`
     case 'conflict_clear':
-      return s.unresolvedConflict ? 'ยังชนเวลาไลฟ์' : 'เคลียร์แล้ว'
+      return s.unresolvedConflict ? 'ยังมีชนเวลาที่ยังไม่รายงาน' : 'รายงานชนเวลาครบ (คงต้นทาง)'
     case 'weekly_mocks':
       return `จุดตรวจ ${s.mocks}`
     case 'drive_effort':
@@ -511,7 +515,12 @@ export function generateVictoryDraft(options = {}) {
   draft = forceThaiMathIntoDraft(draft, { todayIso })
 
   const resolved = resolveLadyLiveConflicts(draft.proposedTasks || [])
-  draft = { ...draft, proposedTasks: resolved.tasks, conflictsDemoted: resolved.demotedIds }
+  draft = {
+    ...draft,
+    proposedTasks: resolved.tasks,
+    conflictsPending: resolved.conflictIds,
+    conflictsDemoted: resolved.demotedIds,
+  }
 
   const existing = new Set([
     ...(options.existingTaskIds || []).map(String),
@@ -531,6 +540,7 @@ export function generateVictoryDraft(options = {}) {
     proposedTasks,
     victory: {
       version: VICTORY_PLAN_VERSION,
+      conflictsPending: resolved.conflictIds,
       conflictsDemoted: resolved.demotedIds,
       mockCount: mocks.length,
       driveEffortCount: driveTasks.length,
@@ -539,7 +549,7 @@ export function generateVictoryDraft(options = {}) {
     },
     notesTh: [
       ...(draft.notesTh || []),
-      'แผนพาบรรจุ 100: บังคับไทย+คณิต · ไลฟ์เลดี้ชนะเมื่อชนเวลา · mock รายสัปดาห์ · ทบทวนทดแทน Drive',
+      'แผนพาบรรจุ 100: บังคับไทย+คณิต · รายงานชนเวลาไลฟ์โดยคงต้นทาง · mock รายสัปดาห์ · ทบทวนทดแทน Drive',
     ],
   }
 }
