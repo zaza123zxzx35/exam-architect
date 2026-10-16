@@ -57,20 +57,25 @@ export function resolveLadyLiveConflicts(tasks) {
       const bs = parseMinutes(block.startTime)
       const be = parseMinutes(block.endTime)
       if (bs == null || be == null) continue
-      const hits = lives.some((live) => rangesOverlap(
+      const hitLives = lives.filter((live) => rangesOverlap(
         parseMinutes(live.startTime),
         parseMinutes(live.endTime),
         bs,
         be,
       ))
-      if (!hits) continue
+      if (!hitLives.length) continue
       demotedIds.add(block.id)
+      block.demotedFromStartTime = block.startTime
+      block.demotedFromEndTime = block.endTime
+      block.conflictWithLiveEventIds = hitLives
+        .map((live) => String(live.liveEventId || live.id || ''))
+        .filter(Boolean)
       block.title = `ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ${String(block.title || '').replace(/^โฟกัสเนื้อหา · /, '')}`
       block.startTime = '09:00'
       block.endTime = '11:00'
       block.reasonTh = [
         block.reasonTh,
-        'ชนไลฟ์เลดี้เก๋เก๋ — เลื่อนเป็นทบทวนกลางวันตามแผน 100',
+        `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — เลื่อนเป็นทบทวนกลางวันตามแผน 100`,
       ].filter(Boolean).join(' · ')
       block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'victory-lady-wins'])]
       block.priorityTier = PRIORITY_TIERS.IF_TIME

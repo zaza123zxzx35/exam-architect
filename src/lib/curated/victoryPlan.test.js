@@ -42,8 +42,12 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
     ]
     const { demotedIds, tasks: out } = resolveLadyLiveConflicts(tasks)
     expect(demotedIds).toContain('live_vip')
-    expect(out.find((t) => t.id === 'live_vip')?.startTime).toBe('09:00')
-    expect(out.find((t) => t.id === 'live_vip')?.title).toMatch(/ทบทวนกลางวัน/)
+    const vip = out.find((t) => t.id === 'live_vip')
+    expect(vip?.startTime).toBe('09:00')
+    expect(vip?.title).toMatch(/ทบทวนกลางวัน/)
+    expect(vip?.demotedFromStartTime).toBe('20:00')
+    expect(vip?.demotedFromEndTime).toBe('22:30')
+    expect(vip?.conflictWithLiveEventIds).toEqual(['lady-live-a-haek-2026-10-07'])
   })
 
   it('seeds a schedule that scores 100/100 with belief', () => {

@@ -140,20 +140,31 @@ export function adviseLiveConflicts(dayTasks) {
     }
   }
 
-  // After lady-wins demotion, evening overlap is gone — still surface advice for demoted blocks.
+  // After lady-wins demotion, evening overlap is gone — still surface advice
+  // paired with the live event(s) that actually overlapped (not any live that night).
   const lives = (dayTasks || []).filter((t) => t.liveKind === 'live')
   for (const task of dayTasks || []) {
     if (!task.conflictResolved) continue
-    const live = [...lives].sort((a, b) => attendScore(a) - attendScore(b))[0]
+    const hitIds = new Set((task.conflictWithLiveEventIds || []).map(String))
+    const matched = hitIds.size
+      ? lives.filter((l) => hitIds.has(String(l.liveEventId || '')) || hitIds.has(String(l.id || '')))
+      : []
+    const candidates = matched.length ? matched : lives.filter((l) => String(l.liveEventId || '').startsWith('lady-'))
+    const live = [...candidates].sort((a, b) => attendScore(a) - attendScore(b))[0]
     if (!live) continue
     const key = [live.id, task.id].sort().join('|')
     if (usedPairs.has(key)) continue
     usedPairs.add(key)
+    const from = task.demotedFromStartTime && task.demotedFromEndTime
+      ? `${task.demotedFromStartTime}–${task.demotedFromEndTime}`
+      : null
     decisions.push({
       type: 'resolved',
       attendLive: summarize(live),
       watchLater: summarize(task),
-      overlapTh: 'ชนเวลาไลฟ์เดิม (เลื่อนเป็นทบทวนกลางวันแล้ว)',
+      overlapTh: from
+        ? `ช่วงต้นทาง ${from} ชนไลฟ์ ${live.startTime || '?'}–${live.endTime || '?'} (เลื่อนเป็นทบทวนกลางวันแล้ว)`
+        : 'ชนเวลาไลฟ์เดิม (เลื่อนเป็นทบทวนกลางวันแล้ว)',
       reasonTh: reasonAttendTh(live, task),
       watchLaterHintTh: hasReplayLink(task)
         ? 'เรียน/ทบทวนในช่วงกลางวันที่ระบบจัดให้ หรือเปิดลิงก์ย้อนหลังเมื่อพร้อม'
