@@ -1,19 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock } from 'lucide-react'
+import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock, ListOrdered, Radio } from 'lucide-react'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { bangkokTodayIso } from '../data/htmlPlannerData'
 import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { getPrimaryExam } from '../data/examCalendar'
-import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
-import { classifyTask } from '../lib/study/taxonomy.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import {
   buildClearManagedPreview,
   commitClearManagedTasks,
   commitForceVictoryPlan,
 } from '../lib/curated/seedPartB29Plan.js'
+import { buildDailyAgenda } from '../lib/curated/dailyAgenda.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
 import ForceRegenConfirmDialog from '../components/ForceRegenConfirmDialog.jsx'
@@ -22,24 +21,10 @@ import {
   buildForceRegenPreview,
 } from '../lib/curated/victoryPlan.js'
 
-function resolveTaskSubject(task) {
-  if (task?.subjectId && HUB_SUBJECT_LABELS[task.subjectId]) {
-    return { subjectId: task.subjectId, examPart: task.examPart, tutorTh: task.tutorTh }
-  }
-  const classified = classifyTask({
-    title: task?.title,
-    text: task?.title,
-    subjectId: task?.subjectId,
-  })
-  return {
-    subjectId: classified.subjectId !== 'unknown' ? classified.subjectId : task?.subjectId,
-    examPart: task?.examPart || (classified.examPart !== 'unknown' ? classified.examPart : undefined),
-    tutorTh: task?.tutorTh,
-  }
-}
-
-function subjectLabel(id) {
-  return HUB_SUBJECT_LABELS[id] || id || 'ยังไม่จัดวิชา'
+function statusLabelTh(status) {
+  if (status === 'done') return 'เสร็จแล้ว'
+  if (status === 'in_progress') return 'กำลังเรียน'
+  return 'ยังไม่ได้เริ่ม'
 }
 
 export default function Today() {
@@ -54,19 +39,13 @@ export default function Today() {
   const [clearBusy, setClearBusy] = useState(false)
   const todayIso = bangkokTodayIso()
 
-  const todayTasks = useMemo(() => {
-    return (schedule.tasks || [])
-      .filter(t => t && t.plannedDate === todayIso)
-      .sort((a, b) => {
-        const ta = String(a.startTime || '')
-        const tb = String(b.startTime || '')
-        if (ta !== tb) return ta.localeCompare(tb)
-        return String(a.title || '').localeCompare(String(b.title || ''), 'th')
-      })
-  }, [schedule.tasks, todayIso])
-
-  const doneCount = todayTasks.filter(t => t.status === 'done').length
-  const total = todayTasks.length
+  const agenda = useMemo(
+    () => buildDailyAgenda({ schedule, todayIso }),
+    [schedule, todayIso],
+  )
+  const todayTasks = agenda.items
+  const doneCount = agenda.counts.done
+  const total = agenda.counts.total
   const pct = total ? Math.round((doneCount / total) * 100) : 0
   const overdueCount = (schedule.tasks || []).filter(
     t => (t.status === 'pending' || t.status === 'deferred') && t.plannedDate && t.plannedDate < todayIso,
@@ -89,6 +68,19 @@ export default function Today() {
       tasks: (prev.tasks || []).map((t) => (
         ids.has(String(t.id)) ? { ...t, status: done ? 'done' : 'pending' } : t
       )),
+    }))
+  }
+
+  const cycleStatus = (taskId) => {
+    setSchedule((prev) => ({
+      ...prev,
+      tasks: (prev.tasks || []).map((t) => {
+        if (String(t.id) !== String(taskId)) return t
+        const s = String(t.status || 'pending')
+        if (s === 'pending' || s === 'deferred') return { ...t, status: 'in_progress' }
+        if (s === 'in_progress' || s === 'doing') return { ...t, status: 'done' }
+        return { ...t, status: 'pending' }
+      }),
     }))
   }
 
@@ -260,15 +252,18 @@ export default function Today() {
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
-              <CalendarDays className="h-5 w-5 text-primary-700" /> วันนี้ติวอะไร?
+              <CalendarDays className="h-5 w-5 text-primary-700" /> วันนี้ต้องติวอะไร?
             </h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {formatThaiPlanDate(todayIso)} · จากตารางที่ผสานแล้วเท่านั้น (ไม่ปนแผน HTML เก่า)
+              {formatThaiPlanDate(todayIso)} · ไลฟ์จริงแยกจากงานอ่านแนะนำ · ไม่สร้างเวลานัดเอง
             </p>
           </div>
           {total > 0 && (
             <div className="text-right text-xs text-slate-500">
               {doneCount}/{total} งาน · {pct}%
+              <div className="mt-0.5 text-[10px] text-slate-400">
+                ไลฟ์ {agenda.counts.lives} · อ่านเอง {agenda.counts.selfStudy}
+              </div>
             </div>
           )}
         </div>
@@ -279,16 +274,54 @@ export default function Today() {
           </div>
         )}
 
+        {agenda.sourceLives.length > 0 && (
+          <div className="border-b border-rose-100 bg-rose-50/70 px-5 py-3 dark:border-rose-950 dark:bg-rose-950/20">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-rose-950 dark:text-rose-100">
+              <Radio className="h-4 w-4" /> ไลฟ์สดต้นทางวันนี้ ({agenda.sourceLives.length})
+            </h3>
+            <ul className="mt-2 space-y-1.5 text-xs text-rose-900/90 dark:text-rose-100/90">
+              {agenda.sourceLives.map((ev) => (
+                <li key={ev.id}>
+                  <span className="font-semibold">
+                    {ev.startTime ? `${ev.startTime}${ev.endTime ? `–${ev.endTime}` : ''} น.` : 'เวลาตามโปสเตอร์'}
+                  </span>
+                  {' · '}{ev.titleTh}
+                  <span className="text-rose-800/70 dark:text-rose-200/70"> · {ev.sourceTh}</span>
+                </li>
+              ))}
+            </ul>
+            {agenda.counts.lives === 0 ? (
+              <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-200">
+                มีไลฟ์ต้นทางแต่ยังไม่ผสานเข้าแผน — กด「สร้าง / รีเฟรชแผน 100」
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {agenda.sections.prep.length > 0 && (
+          <div className="border-b border-slate-100 px-5 py-3 dark:border-slate-800">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">เตรียมก่อนไลฟ์</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-300">
+              {agenda.sections.prep.map((p) => (
+                <li key={p.liveId}>{p.prepTh}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="px-4 py-2 sm:px-5">
           {total === 0 ? (
             <div className="space-y-3 py-10 text-center text-sm text-slate-500">
-              <p>ยังไม่มีงานวันนี้ — คลังถูกเคลียร์เพื่อเริ่มใหม่</p>
-              <p className="text-xs">
-                ขั้นตอนถัดไป: ล็อกอิน Facebook ในเบราว์เซอร์เอเจนต์ หรือคัดลอกรายการจากโพสต์ครูเลดี้เก๋เก๋มาใส่แชท
-              </p>
-              <Link to="/library" className="inline-flex font-semibold text-primary-800 hover:underline dark:text-primary-200">
-                เปิดคลังหลักสูตร
-              </Link>
+              <p>ยังไม่มีงานวันนี้ในแผนที่ผสานแล้ว</p>
+              <p className="text-xs">กด「สร้าง / รีเฟรชแผน 100」หรือเปิดคลังหลักสูตร</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link to="/library" className="inline-flex font-semibold text-primary-800 hover:underline dark:text-primary-200">
+                  เปิดคลังหลักสูตร
+                </Link>
+                <Link to="/audit" className="inline-flex font-semibold text-primary-800 hover:underline dark:text-primary-200">
+                  ตรวจรายการซ้ำ
+                </Link>
+              </div>
             </div>
           ) : pct === 100 ? (
             <div className="py-8 text-center">
@@ -296,41 +329,85 @@ export default function Today() {
               <p className="mt-1 text-sm text-slate-500">พักได้ หรือเปิดแผนภาพรวมดูวันถัดไป</p>
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {todayTasks.map((task) => {
-                const done = task.status === 'done'
-                const resolved = resolveTaskSubject(task)
-                const partLabel = HUB_EXAM_PART_LABELS[resolved.examPart] || resolved.examPart || ''
-                return (
-                  <li key={task.id} className="flex flex-wrap items-start gap-3 py-3">
-                    <button
-                      type="button"
-                      className={`mt-0.5 h-5 w-5 shrink-0 rounded border ${done ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'}`}
-                      aria-label={done ? 'ทำเครื่องหมายยังไม่เสร็จ' : 'ทำเครื่องหมายเสร็จ'}
-                      onClick={() => toggleCurated(task.id)}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-sm font-semibold ${done ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>
-                        {task.startTime ? `${task.startTime}${task.endTime ? `–${task.endTime}` : ''} · ` : ''}
-                        {task.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {[partLabel, subjectLabel(resolved.subjectId), resolved.tutorTh || task.seriesTh]
-                          .filter(Boolean)
-                          .join(' · ')}
-                        {task.estimatedMinutes ? ` · ≈ ${task.estimatedMinutes} นาที` : ''}
-                      </p>
-                      {task.reasonTh ? (
-                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{task.reasonTh}</p>
-                      ) : null}
-                    </div>
-                    <TaskOpenButtons task={task} />
-                  </li>
-                )
-              })}
-            </ul>
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <ListOrdered className="h-3.5 w-3.5" /> ลำดับแนะนำ 1 → {total}
+              </div>
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                {todayTasks.map((item) => {
+                  const done = item.status === 'done'
+                  const task = item.task
+                  return (
+                    <li key={item.id} className="flex flex-wrap items-start gap-3 py-3">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-900 dark:bg-primary-900/50 dark:text-primary-100">
+                          {item.order}
+                        </span>
+                        <button
+                          type="button"
+                          className={`h-5 w-5 shrink-0 rounded border ${done ? 'border-emerald-500 bg-emerald-500' : item.status === 'in_progress' ? 'border-amber-500 bg-amber-400' : 'border-slate-300'}`}
+                          aria-label={`สถานะ: ${statusLabelTh(item.status)} — กดเพื่อสลับ`}
+                          title={statusLabelTh(item.status)}
+                          onClick={() => cycleStatus(item.id)}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm font-semibold ${done ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>
+                          {item.isRealLive ? (
+                            <span className="mr-1.5 inline-flex rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-950 dark:text-rose-200">ไลฟ์จริง</span>
+                          ) : (
+                            <span className="mr-1.5 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">อ่านเอง</span>
+                          )}
+                          {item.startTime ? `${item.startTime}${item.endTime ? `–${item.endTime}` : ''} · ` : ''}
+                          {item.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {[item.partLabelTh, item.subjectLabelTh, item.seriesTh]
+                            .filter(Boolean)
+                            .join(' · ')}
+                          {item.estimatedMinutes ? ` · ≈ ${item.estimatedMinutes} นาที` : ''}
+                          {' · '}{statusLabelTh(item.status)}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                          เหตุผลลำดับ: {item.orderReasonTh}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <TaskOpenButtons task={task} />
+                        <button
+                          type="button"
+                          className="text-[10px] text-slate-500 underline"
+                          onClick={() => toggleCurated(item.id)}
+                        >
+                          {done ? 'ยกเลิกเสร็จ' : 'ทำเครื่องหมายเสร็จ'}
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           )}
         </div>
+
+        {agenda.sections.postReview.length > 0 && total > 0 && (
+          <div className="border-t border-slate-100 px-5 py-3 dark:border-slate-800">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">ทบทวนหลังเรียน</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-300">
+              {agenda.sections.postReview.map((r) => (
+                <li key={r.afterId}>
+                  <span className="font-medium">{r.titleTh}</span> — {r.actionTh}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {agenda.notesTh?.length ? (
+          <ul className="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-500 dark:border-slate-800">
+            {agenda.notesTh.map((n) => <li key={n}>· {n}</li>)}
+          </ul>
+        ) : null}
 
         {total > 0 && (
           <div className="flex flex-wrap gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-800">
@@ -346,6 +423,8 @@ export default function Today() {
               </button>
             )}
             <Link to="/overview" className="btn-secondary text-sm">ดูภาพรวมแผน</Link>
+            <Link to="/audit" className="btn-secondary text-sm">ตรวจรายการซ้ำ</Link>
+            <Link to="/review" className="btn-secondary text-sm">ทบทวนข้อผิด</Link>
           </div>
         )}
       </section>

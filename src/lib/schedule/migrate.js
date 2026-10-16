@@ -149,7 +149,7 @@ function mergeHtmlTasks(existingTasks, seededTasks) {
 function sanitizeTask(raw, index) {
   if (!raw || typeof raw !== 'object') return null
   const id = raw.id ? String(raw.id) : `recovered_task_${index}`
-  const status = ['pending', 'done', 'deferred', 'cancelled'].includes(raw.status)
+  const status = ['pending', 'done', 'deferred', 'cancelled', 'in_progress', 'doing'].includes(raw.status)
     ? raw.status
     : 'pending'
   // Prefer schema durationMinutes; fall back to curated estimatedMinutes (same meaning).
