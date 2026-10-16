@@ -323,13 +323,14 @@ export default function Today() {
                 </Link>
               </div>
             </div>
-          ) : pct === 100 ? (
-            <div className="py-8 text-center">
-              <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">เสร็จทั้งหมดแล้ว!</div>
-              <p className="mt-1 text-sm text-slate-500">พักได้ หรือเปิดแผนภาพรวมดูวันถัดไป</p>
-            </div>
           ) : (
             <div className="space-y-4 py-2">
+              {pct === 100 ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-center dark:border-emerald-900 dark:bg-emerald-950/30">
+                  <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">เสร็จทั้งหมดแล้ว!</div>
+                  <p className="mt-0.5 text-xs text-slate-500">รายการด้านล่างยังกดเปลี่ยนสถานะได้ · หรือเปิดแผนภาพรวมดูวันถัดไป</p>
+                </div>
+              ) : null}
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 <ListOrdered className="h-3.5 w-3.5" /> ลำดับแนะนำ 1 → {total}
               </div>
@@ -358,6 +359,11 @@ export default function Today() {
                           ) : (
                             <span className="mr-1.5 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">อ่านเอง</span>
                           )}
+                          {item.clockLabelTh ? (
+                            <span className={`mr-1.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${item.clockPhase === 'live_now' ? 'bg-rose-600 text-white' : item.clockPhase === 'soon' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'}`}>
+                              {item.clockLabelTh}
+                            </span>
+                          ) : null}
                           {item.startTime ? `${item.startTime}${item.endTime ? `–${item.endTime}` : ''} · ` : ''}
                           {item.title}
                         </p>

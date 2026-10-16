@@ -12,5 +12,8 @@ describe('catalog review report', () => {
     expect(report.mathStubsNeedingFullUrl).toHaveLength(0)
     expect(report.officialScope.educationOfficialPart).toBe('ข')
     expect(report.officialScope.lawOfficialPart).toBe('ข')
+    expect(report.confirmedSameSeriesUrlCollisions.some((g) => (
+      g.ids.includes('law-nonn-22') && g.ids.includes('law-nonn-24')
+    ))).toBe(true)
   })
 })

@@ -15,7 +15,7 @@ function subjectLabel(id) {
 
 export default function Audit() {
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState('shared')
+  const [tab, setTab] = useState('collisions')
 
   const review = useMemo(() => buildCatalogReviewReport(), [])
   const audit = useMemo(() => auditCuratedCatalog(), [])
@@ -39,6 +39,10 @@ export default function Audit() {
       ...rows.map((r) => r.series),
     ])
   })
+
+  const collisions = (review.confirmedSameSeriesUrlCollisions || []).filter((g) => (
+    filterText([...g.ids, g.series, ...(g.titles || [])])
+  ))
 
   const crossPart = (review.crossPartEnglishShareSuspicions || []).filter((g) => filterText(g.ids))
 
@@ -65,7 +69,8 @@ export default function Audit() {
       />
 
       <StatusBanner tone={audit.ok ? 'info' : 'warning'} title={audit.ok ? 'ไม่พบ error โครงสร้าง' : 'พบ error ในคลัง'}>
-        แชร์ URL {review.sharedUrlGroups?.length || 0} กลุ่ม
+        ชน URL ในชุด {review.confirmedSameSeriesUrlCollisions?.length || 0}
+        · แชร์ URL {review.sharedUrlGroups?.length || 0} กลุ่ม
         · ข้อสงสัย ก/ข อังกฤษ {review.crossPartEnglishShareSuspicions?.length || 0}
         · ชื่อตอนซ้ำ {review.possibleDuplicateTitles?.length || 0}
         · URL ไม่ครบ {review.needsFullUrlSlots?.length || 0}
@@ -86,6 +91,7 @@ export default function Audit() {
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="ประเภทปัญหา">
         {[
+          { id: 'collisions', label: `ชน URL ในชุด (${collisions.length})` },
           { id: 'shared', label: `URL ร่วม (${shared.length})` },
           { id: 'cross', label: `สงสัย ก/ข (${crossPart.length})` },
           { id: 'titles', label: `ชื่อคล้าย (${titleDupes.length})` },
@@ -104,6 +110,30 @@ export default function Audit() {
           </button>
         ))}
       </div>
+
+      {tab === 'collisions' && (
+        <section className="card space-y-3">
+          <h2 className="flex items-center gap-2 text-lg font-bold"><AlertTriangle className="h-5 w-5 text-rose-600" /> URL เดียวกัน · คนละตอนในชุดเดียวกัน</h2>
+          <p className="text-xs text-slate-500">สัญญาณแรงที่สุดจาก audit — ยังไม่ลบ/รวมอัตโนมัติ ต้องยืนยันว่าตอนไหนลิงก์ผิด</p>
+          {collisions.length === 0 ? (
+            <p className="text-sm text-slate-500">ไม่พบกลุ่มตามคำค้น</p>
+          ) : collisions.map((g) => (
+            <article key={g.ids.join('-')} className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 dark:border-rose-900 dark:bg-rose-950/20">
+              <p className="text-sm font-semibold">{g.series}</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {g.ids.map((id, i) => (
+                  <li key={id}>
+                    <code className="text-xs">{id}</code>
+                    {' · ep '}{g.episodes?.[i] ?? '—'}
+                    {' · '}{g.titles?.[i] || '—'}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-rose-900 dark:text-rose-100">{g.actionTh}</p>
+            </article>
+          ))}
+        </section>
+      )}
 
       {tab === 'shared' && (
         <section className="card space-y-3">

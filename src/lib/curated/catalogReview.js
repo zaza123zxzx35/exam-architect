@@ -126,6 +126,31 @@ export function buildCatalogReviewReport(resources) {
       suspicionOnly: true,
       actionTh: 'อย่ารวมอัตโนมัติ — ให้ผู้ใช้ยืนยันว่าใช้ลิงก์ร่วมกันโดยตั้งใจหรือแยกตอน',
     })),
+    /**
+     * Same subject+series, different episodes, identical URL — strongest collision signal.
+     * Still no auto-merge; surface for user confirmation.
+     */
+    confirmedSameSeriesUrlCollisions: audit.sharedUrls
+      .map((g) => {
+        const rows = g.ids.map((id) => byId.get(id)).filter(Boolean)
+        if (rows.length < 2) return null
+        const series = new Set(rows.map((r) => r.series))
+        const subjects = new Set(rows.map((r) => r.subjectId))
+        const episodes = new Set(rows.map((r) => String(r.episode)))
+        if (series.size !== 1 || subjects.size !== 1) return null
+        if (episodes.size < 2) return null
+        return {
+          ids: rows.map((r) => r.id),
+          series: [...series][0],
+          subjectId: [...subjects][0],
+          episodes: rows.map((r) => r.episode),
+          titles: rows.map((r) => r.title),
+          confirmedSameUrl: true,
+          suspicionOnly: false,
+          actionTh: 'URL เดียวกันคนละตอนในชุดเดียวกัน — ตรวจว่าตอนไหนลิงก์ผิด หรือตั้งใจแชร์ไฟล์เดียว; ห้ามลบอัตโนมัติ',
+        }
+      })
+      .filter(Boolean),
     crossPartEnglishShareSuspicions,
     possibleDuplicateTitles: audit.possibleDuplicates.map(d => ({
       titleKey: d.titleKey,

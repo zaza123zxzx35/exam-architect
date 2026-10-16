@@ -12,10 +12,61 @@ import { PRIORITY_TIERS } from './priorityScoring.js'
 import { PART_B_29_ORIGIN } from './partB29Plan.js'
 import { VICTORY_PLAN_ORIGIN } from './victoryPlan.js'
 
-export const DAILY_AGENDA_VERSION = '1.0-master-today'
+export const DAILY_AGENDA_VERSION = '1.1-master-today'
 
 /** @typedef {'live' | 'content-block' | 'logistics' | 'study' | 'review' | 'mock' | 'other'} AgendaKind */
 /** @typedef {'not_started' | 'in_progress' | 'done'} AgendaStatus */
+/** @typedef {'live_now' | 'soon' | 'ended' | 'scheduled' | 'no_clock'} LiveClockPhase */
+
+function parseMinutes(t) {
+  if (!t || !/^\d{1,2}:\d{2}$/.test(String(t))) return null
+  const [h, m] = String(t).split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  return h * 60 + m
+}
+
+/**
+ * Wall-clock phase for a real live slot (Bangkok local).
+ * Uses source start/end only — never invents times.
+ * @param {{ startTime?: string|null, endTime?: string|null, plannedDate?: string }} item
+ * @param {{ now?: Date, todayIso?: string }} [options]
+ * @returns {LiveClockPhase}
+ */
+export function liveClockPhase(item, options = {}) {
+  const start = parseMinutes(item?.startTime)
+  if (start == null) return 'no_clock'
+  const todayIso = options.todayIso || bangkokTodayIso()
+  if (item?.plannedDate && item.plannedDate !== todayIso) {
+    return item.plannedDate < todayIso ? 'ended' : 'scheduled'
+  }
+  const now = options.now || new Date()
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+  const hh = Number(parts.find((p) => p.type === 'hour')?.value)
+  const mm = Number(parts.find((p) => p.type === 'minute')?.value)
+  const nowMin = hh * 60 + mm
+  let end = parseMinutes(item?.endTime)
+  if (end == null) end = start + 90
+  if (end <= start) end += 24 * 60
+  let cursor = nowMin
+  if (cursor < start - 12 * 60 && end > 24 * 60) cursor += 24 * 60
+  if (cursor >= start && cursor < end) return 'live_now'
+  if (cursor < start && start - cursor <= 60) return 'soon'
+  if (cursor >= end) return 'ended'
+  return 'scheduled'
+}
+
+export function liveClockLabelTh(phase) {
+  if (phase === 'live_now') return 'กำลังไลฟ์'
+  if (phase === 'soon') return 'ใกล้เริ่ม (≤60 นาที)'
+  if (phase === 'ended') return 'จบแล้ว'
+  if (phase === 'scheduled') return 'รอเวลา'
+  return ''
+}
 
 /**
  * @param {unknown} status
@@ -229,11 +280,19 @@ export function buildDailyAgenda(options = {}) {
     return e.date <= todayIso && end >= todayIso
   })
 
-  const ordered = items.map((item, index) => ({
-    ...item,
-    order: index + 1,
-    orderReasonTh: buildOrderReasonTh(item, index),
-  }))
+  const now = options.now || new Date()
+  const ordered = items.map((item, index) => {
+    const clockPhase = item.kind === 'live'
+      ? liveClockPhase(item, { now, todayIso })
+      : 'no_clock'
+    return {
+      ...item,
+      order: index + 1,
+      orderReasonTh: buildOrderReasonTh(item, index),
+      clockPhase,
+      clockLabelTh: liveClockLabelTh(clockPhase),
+    }
+  })
 
   const lives = ordered.filter((i) => i.kind === 'live')
   const selfStudy = ordered.filter((i) => i.kind !== 'live')

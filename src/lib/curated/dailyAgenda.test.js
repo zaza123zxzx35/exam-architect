@@ -4,6 +4,7 @@ import {
   compareAgendaItems,
   classifyAgendaKind,
   mapTaskStatus,
+  liveClockPhase,
   DAILY_AGENDA_VERSION,
 } from './dailyAgenda.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
@@ -104,6 +105,22 @@ describe('dailyAgenda', () => {
     expect(agenda.sections.prep.length).toBe(1)
     expect(agenda.sections.postReview.length).toBeGreaterThan(0)
     expect(agenda.sourceLives.some((e) => e.id.includes('2026-10-28'))).toBe(true)
+  })
+
+  it('labels live clock phases from source times only', () => {
+    expect(liveClockPhase({ startTime: null })).toBe('no_clock')
+    expect(liveClockPhase(
+      { startTime: '19:00', endTime: '21:00', plannedDate: '2026-10-28' },
+      { todayIso: '2026-10-28', now: new Date('2026-10-28T19:30:00+07:00') },
+    )).toBe('live_now')
+    expect(liveClockPhase(
+      { startTime: '21:00', endTime: '22:30', plannedDate: '2026-10-28' },
+      { todayIso: '2026-10-28', now: new Date('2026-10-28T20:30:00+07:00') },
+    )).toBe('soon')
+    expect(liveClockPhase(
+      { startTime: '19:00', endTime: '21:00', plannedDate: '2026-10-28' },
+      { todayIso: '2026-10-28', now: new Date('2026-10-28T22:00:00+07:00') },
+    )).toBe('ended')
   })
 
   it('does not invent live clock times for content-only days', () => {
