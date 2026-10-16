@@ -486,11 +486,22 @@ export default function Today() {
             <button type="button" className="btn-secondary text-sm" onClick={() => markAll(false)}>
               <RotateCcw className="h-4 w-4" /> รีเซ็ตวันนี้
             </button>
+            {overdueCount > 0 && (
+              <button type="button" className="btn-secondary text-sm" onClick={handleReschedule}>
+                <CalendarClock className="h-4 w-4" /> เลื่อนงานค้าง ({overdueCount})
+              </button>
+            )}
             <Link to="/overview" className="btn-secondary text-sm">แผนภาพรวม</Link>
             <Link to="/audit" className="btn-secondary text-sm">ตรวจซ้ำ</Link>
           </div>
         )}
       </section>
+
+      {rescheduleMsg ? (
+        <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200" role="status">
+          {rescheduleMsg}
+        </p>
+      ) : null}
 
       <details className="card text-sm">
         <summary className="cursor-pointer font-semibold text-slate-800 dark:text-slate-100">
@@ -517,7 +528,6 @@ export default function Today() {
               {countdown.isPast ? 0 : countdown.days} วัน
             </div>
           </div>
-          {rescheduleMsg ? <p className="text-xs text-emerald-800 dark:text-emerald-200" role="status">{rescheduleMsg}</p> : null}
         </div>
       </details>
 
