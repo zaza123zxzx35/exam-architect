@@ -34,19 +34,46 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
 }
 
 /**
- * Lady live wins: demote overlapping VIP/online content-blocks to daytime review.
+ * Compatibility: undo silent 09:00–11:00 overwrite from older builds.
+ * Restores source clock when the known auto-demotion pattern is present.
+ * Does not invent times — only copies demotedFrom* back onto start/end.
+ * @param {object} block
+ * @returns {boolean}
+ */
+export function restoreSilentLadyDemotion(block) {
+  if (!block || block.liveKind !== 'content-block') return false
+  if (!block.conflictResolved) return false
+  if (!block.demotedFromStartTime || !block.demotedFromEndTime) return false
+  if (block.startTime !== '09:00' || block.endTime !== '11:00') return false
+  block.startTime = block.demotedFromStartTime
+  block.endTime = block.demotedFromEndTime
+  delete block.demotedFromStartTime
+  delete block.demotedFromEndTime
+  block.conflictResolved = false
+  const th = String(block.title || '')
+  if (th.startsWith('ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ')) {
+    block.title = `โฟกัสเนื้อหา · ${th.replace(/^ทบทวนกลางวัน \(หลบไลฟ์เลดี้\) · /, '')}`
+  }
+  return true
+}
+
+/**
+ * Flag content-blocks that overlap Lady live clocks.
+ * P0: never overwrite source start/end (no silent move to 09:00–11:00).
+ * Reports conflict for user decision; keeps both timed items.
  * @param {Array<object>} tasks
  */
 export function resolveLadyLiveConflicts(tasks) {
   const byDate = new Map()
   for (const t of tasks) {
+    restoreSilentLadyDemotion(t)
     const d = String(t?.plannedDate || '')
     if (!d) continue
     if (!byDate.has(d)) byDate.set(d, [])
     byDate.get(d).push(t)
   }
 
-  const demotedIds = new Set()
+  const conflictIds = new Set()
   for (const [, dayTasks] of byDate) {
     const lives = dayTasks.filter(
       (t) => t.liveKind === 'live' && String(t.liveEventId || '').startsWith('lady-'),
@@ -64,25 +91,32 @@ export function resolveLadyLiveConflicts(tasks) {
         be,
       ))
       if (!hitLives.length) continue
-      demotedIds.add(block.id)
-      block.demotedFromStartTime = block.startTime
-      block.demotedFromEndTime = block.endTime
+      conflictIds.add(block.id)
+      // Preserve source clock explicitly (additive fields — no schema break).
+      block.sourceStartTime = block.startTime
+      block.sourceEndTime = block.endTime
       block.conflictWithLiveEventIds = hitLives
         .map((live) => String(live.liveEventId || live.id || ''))
         .filter(Boolean)
-      block.title = `ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ${String(block.title || '').replace(/^โฟกัสเนื้อหา · /, '')}`
-      block.startTime = '09:00'
-      block.endTime = '11:00'
-      block.reasonTh = [
-        block.reasonTh,
-        `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — เลื่อนเป็นทบทวนกลางวันตามแผน 100`,
-      ].filter(Boolean).join(' · ')
-      block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'victory-lady-wins'])]
-      block.priorityTier = PRIORITY_TIERS.IF_TIME
-      block.conflictResolved = true
+      block.scheduleConflictPending = true
+      block.conflictResolved = false
+      // Clear any leftover silent-demotion markers without inventing a new slot.
+      delete block.demotedFromStartTime
+      delete block.demotedFromEndTime
+      const conflictNote = `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — คงเวลาต้นทาง ${block.startTime}–${block.endTime} · รอยืนยันว่าจะเข้าสดรายการใด ยังไม่เลื่อนอัตโนมัติ`
+      if (!String(block.reasonTh || '').includes('รอยืนยันว่าจะเข้าสดรายการใด')) {
+        block.reasonTh = [block.reasonTh, conflictNote].filter(Boolean).join(' · ')
+      }
+      block.reasonCodes = [...new Set([
+        ...(block.reasonCodes || []).filter((c) => c !== 'victory-lady-wins'),
+        'schedule-conflict-pending',
+      ])]
+      block.priorityTier = block.priorityTier || PRIORITY_TIERS.IF_TIME
     }
   }
-  return { tasks, demotedIds: [...demotedIds] }
+  const ids = [...conflictIds]
+  // demotedIds kept as alias for older callers — now means "flagged conflicts", not moved.
+  return { tasks, conflictIds: ids, demotedIds: ids }
 }
 
 const SUBJECT_LABEL_EXTRA = Object.freeze({
@@ -193,8 +227,8 @@ export function generateLiveScheduleTasks(options = {}) {
     }
   }
 
-  // Lady live wins over overlapping VIP/online evening content-blocks.
-  const { tasks: resolvedTasks, demotedIds } = resolveLadyLiveConflicts(proposedTasks)
+  // Flag VIP/online blocks that overlap Lady live — keep source clocks (P0).
+  const { tasks: resolvedTasks, conflictIds } = resolveLadyLiveConflicts(proposedTasks)
   resolvedTasks.sort((a, b) => {
     // List/schedule order: priority first, then date, then start time.
     const pa = Number(a.priorityScore)
@@ -210,14 +244,16 @@ export function generateLiveScheduleTasks(options = {}) {
     todayIso,
     untilIso,
     proposedTasks: resolvedTasks,
-    conflictsDemoted: demotedIds,
+    conflictsPending: conflictIds,
+    /** @deprecated alias of conflictsPending — blocks are flagged, not time-shifted */
+    conflictsDemoted: conflictIds,
     upcomingLiveCount: resolvedTasks.filter(t => t.liveKind === 'live').length,
     contentBlockCount: resolvedTasks.filter(t => t.liveKind === 'content-block').length,
     notesTh: [
       'ตารางไลฟ์จากโปสเตอร์ที่คุณส่ง — เรียงตามน้ำหนักคะแนนหลักสูตร ไม่ใช่สถิติข้อสอบเก่า',
       'วิชาเอกภาค ข มาก่อน · การศึกษา · กฎหมาย · แล้วค่อยภาค ก',
       'ข้าราชการที่ดี = ภาค ก 50 คะแนน (ไม่ปนกับกฎหมายภาค ข)',
-      'ไลฟ์เลดี้เก๋เก๋ชนะเมื่อชนเวลา VIP/ออนไลน์ — บล็อกที่ชนถูกเลื่อนเป็นทบทวนกลางวัน',
+      'เมื่อ VIP/ออนไลน์ชนไลฟ์เลดี้ — คงเวลาต้นทางทั้งคู่ · รายงานรอยืนยัน ห้ามเลื่อนเงียบ ๆ',
       'ไลฟ์เป็นช่วงเย็น — ไม่แย่งงบติวกลางวันของคลังหลักสูตร แต่ปักหมุดในตาราง',
     ],
   }

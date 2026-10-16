@@ -8,8 +8,10 @@ import {
 import {
   generateLiveScheduleTasks,
   reorderQueueForDateFocus,
+  resolveLadyLiveConflicts,
   sortCatalogByPriority,
 } from './liveSchedulePlan.js'
+import { buildDayTimeline, DEFAULT_COACH_PREFS } from './dayTimeline.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 
 describe('liveTutorSchedule VIP + Lady Kaekae', () => {
@@ -55,5 +57,41 @@ describe('liveSchedulePlan helpers', () => {
     ]
     const ordered = reorderQueueForDateFocus('2026-10-28', queue).map(e => e.row.id)
     expect(ordered[0]).toBe('2')
+  })
+
+  it('P0 regression: Oct 7 keeps VIP source clock and flags conflict', () => {
+    const draft = generateLiveScheduleTasks({ todayIso: '2026-10-07', untilIso: '2026-10-07' })
+    const day = draft.proposedTasks.filter((t) => t.plannedDate === '2026-10-07')
+    const vip = day.find((t) => t.liveEventId === 'vip-civil-2026-10-07')
+    const haek = day.find((t) => t.liveEventId === 'lady-live-a-haek-2026-10-07')
+    expect(haek?.startTime).toBe('21:00')
+    expect(vip?.startTime).toBe('20:00')
+    expect(vip?.endTime).toBe('22:30')
+    expect(vip?.scheduleConflictPending).toBe(true)
+    expect(draft.conflictsPending).toContain(vip.id)
+    const tl = buildDayTimeline({ tasks: day, prefs: DEFAULT_COACH_PREFS })
+    const vipBlock = tl.blocks.find((b) => b.taskId === vip.id)
+    expect(vipBlock?.startTime).toBe('20:00')
+    expect(vipBlock?.endTime).toBe('22:30')
+  })
+
+  it('P0 regression: Oct 16 preserves online clocks without conflict flags', () => {
+    const draft = generateLiveScheduleTasks({ todayIso: '2026-10-16', untilIso: '2026-10-16' })
+    const day = draft.proposedTasks.filter((t) => t.plannedDate === '2026-10-16')
+    expect(day.find((t) => t.liveEventId === 'online-civil-2026-10-15')?.startTime).toBe('11:00')
+    expect(day.find((t) => t.liveEventId === 'online-edu-2026-10-15')?.startTime).toBe('20:00')
+    expect(day.every((t) => !t.scheduleConflictPending)).toBe(true)
+  })
+
+  it('P0 regression: Oct 21 keeps อ.ศรัญภรณ์ 20:00–22:00 while flagging lady overlap', () => {
+    const draft = generateLiveScheduleTasks({ todayIso: '2026-10-21', untilIso: '2026-10-21' })
+    const day = draft.proposedTasks.filter((t) => t.plannedDate === '2026-10-21')
+    const math = day.find((t) => t.liveEventId === 'online-math-2026-10-21')
+    expect(math?.startTime).toBe('20:00')
+    expect(math?.endTime).toBe('22:00')
+    expect(math?.scheduleConflictPending).toBe(true)
+    expect(math?.title).not.toMatch(/ทบทวนกลางวัน/)
+    const { conflictIds } = resolveLadyLiveConflicts(day)
+    expect(conflictIds).toContain(math.id)
   })
 })

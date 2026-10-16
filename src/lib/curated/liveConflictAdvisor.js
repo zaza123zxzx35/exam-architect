@@ -1,14 +1,17 @@
 /**
  * Advise which overlapping timed sessions to attend live vs watch later.
- * Evidence-based: LIVE_PRIORITY ranks, done status, replay URL availability,
- * lady-live conflict demotion already applied upstream.
+ * Evidence-based: LIVE_PRIORITY ranks, done status, confirmed replay only.
  * Never invents schools/times/URLs.
+ * P0: do not claim replay from a bare resourceUrl; do not assume silent demotion.
  */
 
 import { LIVE_PRIORITY } from '../../data/liveTutorSchedule.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
+import { URL_STATUS } from './urlStatus.js'
 
-export const LIVE_CONFLICT_ADVISOR_VERSION = '1.0-evidence'
+export const LIVE_CONFLICT_ADVISOR_VERSION = '1.1-replay-evidence'
+
+/** @typedef {'confirmed' | 'unconfirmed_link' | 'none'} ReplayEvidenceStatus */
 
 function parseMinutes(t) {
   if (!t || !/^\d{1,2}:\d{2}$/.test(String(t))) return null
@@ -36,9 +39,23 @@ function isDone(task) {
   return String(task.status) === 'done'
 }
 
-function hasReplayLink(task) {
+function catalogLinkPresent(task) {
   const url = String(task.resourceUrl || task.safeUrl || task.originalUrl || '').trim()
   return Boolean(url) && !url.includes('...')
+}
+
+/**
+ * Replay is confirmed only with explicit evidence — never from URL presence alone.
+ * @param {object} task
+ * @returns {ReplayEvidenceStatus}
+ */
+export function replayEvidenceStatus(task) {
+  if (task?.replayConfirmed === true) return 'confirmed'
+  if (task?.allowsReplay === true && task?.urlStatus === URL_STATUS.VERIFIED_ACCESSIBLE) {
+    return 'confirmed'
+  }
+  if (catalogLinkPresent(task)) return 'unconfirmed_link'
+  return 'none'
 }
 
 function isLadyLive(task) {
@@ -59,12 +76,12 @@ function attendScore(task) {
   if (task.priorityTier === PRIORITY_TIERS.DEFER) score += 15
   const pr = Number(task.priorityScore)
   if (Number.isFinite(pr)) score -= pr * 10
-  // Infer from liveEventId / reason codes if priorityRank embedded in id path — use priorityScore only
   if (isDone(task)) score += 25
-  if (task.conflictResolved) score += 20 // already demoted daytime review
-  // Prefer attending when no replay link available
-  if (task.liveKind === 'live' && !hasReplayLink(task)) score -= 5
-  if (task.liveKind === 'content-block' && hasReplayLink(task)) score += 5
+  // Pending schedule conflict: prefer attending the live side when scoring pairs
+  if (task.scheduleConflictPending) score += 15
+  if (task.conflictResolved) score += 20 // legacy silent demotion, if still present
+  if (task.liveKind === 'live' && replayEvidenceStatus(task) === 'none') score -= 5
+  if (task.liveKind === 'content-block' && replayEvidenceStatus(task) === 'confirmed') score += 5
   return score
 }
 
@@ -76,14 +93,32 @@ function reasonAttendTh(winner, loser) {
   if (isLadyLive(winner)) bits.push('ไลฟ์เลดี้เก๋เก๋ถูกปักเป็นลำดับสูงในแผน')
   if (winner.priorityTier === PRIORITY_TIERS.MUST) bits.push('ชั้นต้องเก็บคะแนน')
   if (isDone(loser)) bits.push('อีกฝ่ายทำเครื่องหมายเรียนแล้ว')
-  if (!hasReplayLink(winner) && hasReplayLink(loser)) {
-    bits.push('ฝั่งที่แนะนำเข้าสดยังไม่มีลิงก์ย้อนหลังในระบบ — เก็บอีกฝั่งดูทีหลังได้ถ้ามีลิงก์')
-  } else if (hasReplayLink(loser)) {
-    bits.push('ฝั่งที่เลื่อนมีลิงก์ในคลังให้ดูย้อนหลังได้')
+  const loserReplay = replayEvidenceStatus(loser)
+  const winnerReplay = replayEvidenceStatus(winner)
+  if (winnerReplay === 'none' && loserReplay === 'confirmed') {
+    bits.push('ฝั่งที่แนะนำเข้าสดยังไม่มีหลักฐานดูย้อนหลัง — อีกฝั่งยืนยัน replay แล้ว')
+  } else if (loserReplay === 'confirmed') {
+    bits.push('ฝั่งที่เสนอเก็บไว้มีหลักฐานว่าดูย้อนหลังได้')
+  } else if (loserReplay === 'unconfirmed_link') {
+    bits.push('ฝั่งที่เสนอเก็บไว้มีลิงก์ในคลัง แต่ยังไม่ยืนยันว่าเปิดดูย้อนหลังได้')
   }
-  if (loser.conflictResolved) bits.push('ระบบเลื่อนบล็อกที่ชนไลฟ์ไปกลางวันแล้ว')
+  if (loser.scheduleConflictPending) {
+    bits.push('ระบบคงเวลาต้นทางทั้งคู่ไว้ — รอยืนยันว่าจะเข้าสดรายการใด')
+  }
+  if (loser.conflictResolved) bits.push('รายการนี้เคยถูกเลื่อนกลางวันในเวอร์ชันเก่า')
   if (!bits.length) bits.push('เลือกจากลำดับความสำคัญและประเภทงานที่มีในข้อมูล')
   return bits.join(' · ')
+}
+
+function watchLaterHintTh(task) {
+  const status = replayEvidenceStatus(task)
+  if (status === 'confirmed') {
+    return 'มีหลักฐานว่าดูย้อนหลังได้ — เก็บไว้หลังจบไลฟ์หรือวันถัดไปได้'
+  }
+  if (status === 'unconfirmed_link') {
+    return 'มีลิงก์ในคลังแต่ยังไม่ยืนยันว่าเปิดดูย้อนหลังได้ — คงรายการไว้ · รอยืนยัน replay'
+  }
+  return 'ยังไม่มีหลักฐานดูย้อนหลังในระบบ — คงรายการไว้ในแผน · ห้ามถือว่าข้ามได้'
 }
 
 /**
@@ -133,15 +168,15 @@ export function adviseLiveConflicts(dayTasks) {
         watchLater: summarize(loser),
         overlapTh: overlapLabel(winner, loser),
         reasonTh: reasonAttendTh(winner, loser),
-        watchLaterHintTh: hasReplayLink(loser)
-          ? 'มีลิงก์ในงานนี้ — ดูย้อนหลังหลังจบไลฟ์หรือวันถัดไป'
-          : 'ยังไม่มีลิงก์ย้อนหลังในระบบสำหรับงานนี้ — เก็บไว้ในแผนแล้วเปิดจากคลังเมื่อมี',
+        watchLaterHintTh: watchLaterHintTh(loser),
+        awaitingUserDecision: Boolean(
+          loser.scheduleConflictPending || winner.scheduleConflictPending,
+        ),
       })
     }
   }
 
-  // After lady-wins demotion, evening overlap is gone — still surface advice
-  // paired with the live event(s) that actually overlapped (not any live that night).
+  // Legacy: tasks still carrying conflictResolved from older silent demotion.
   const lives = (dayTasks || []).filter((t) => t.liveKind === 'live')
   for (const task of dayTasks || []) {
     if (!task.conflictResolved) continue
@@ -157,18 +192,19 @@ export function adviseLiveConflicts(dayTasks) {
     usedPairs.add(key)
     const from = task.demotedFromStartTime && task.demotedFromEndTime
       ? `${task.demotedFromStartTime}–${task.demotedFromEndTime}`
-      : null
+      : (task.sourceStartTime && task.sourceEndTime
+        ? `${task.sourceStartTime}–${task.sourceEndTime}`
+        : null)
     decisions.push({
       type: 'resolved',
       attendLive: summarize(live),
       watchLater: summarize(task),
       overlapTh: from
-        ? `ช่วงต้นทาง ${from} ชนไลฟ์ ${live.startTime || '?'}–${live.endTime || '?'} (เลื่อนเป็นทบทวนกลางวันแล้ว)`
-        : 'ชนเวลาไลฟ์เดิม (เลื่อนเป็นทบทวนกลางวันแล้ว)',
+        ? `ช่วงต้นทาง ${from} ชนไลฟ์ ${live.startTime || '?'}–${live.endTime || '?'} (เวอร์ชันเก่าเคยเลื่อนกลางวัน)`
+        : 'ชนเวลาไลฟ์เดิม (เวอร์ชันเก่าเคยเลื่อนกลางวัน)',
       reasonTh: reasonAttendTh(live, task),
-      watchLaterHintTh: hasReplayLink(task)
-        ? 'เรียน/ทบทวนในช่วงกลางวันที่ระบบจัดให้ หรือเปิดลิงก์ย้อนหลังเมื่อพร้อม'
-        : 'ยังไม่มีลิงก์ย้อนหลังในระบบ — ใช้ช่วงกลางวันที่จัดไว้ทบทวนจากคลัง',
+      watchLaterHintTh: watchLaterHintTh(task),
+      awaitingUserDecision: true,
     })
   }
 
@@ -179,25 +215,32 @@ export function adviseLiveConflicts(dayTasks) {
     notesTh: [
       'เปรียบเทียบเฉพาะงานที่มีเวลาเริ่มจากข้อมูลต้นทาง',
       'ไม่ใช้กฎว่าต้องเลือกสำนักเดิมหรือคลิปยาวกว่าเสมอ',
+      'ห้ามสรุปว่าดูย้อนหลังได้จากมี resourceUrl อย่างเดียว — ต้องมีหลักฐาน replay',
       `ลำดับอ้างอิง LIVE_PRIORITY (เอก=${LIVE_PRIORITY.PART_B_MAJOR} …) ผ่านคะแนนในแผน`,
     ],
   }
 }
 
 function summarize(task) {
+  const replayStatus = replayEvidenceStatus(task)
   return {
     id: task.id,
     title: task.title,
     startTime: task.startTime || null,
     endTime: task.endTime || null,
+    sourceStartTime: task.sourceStartTime || task.demotedFromStartTime || null,
+    sourceEndTime: task.sourceEndTime || task.demotedFromEndTime || null,
     liveKind: task.liveKind || null,
     liveEventId: task.liveEventId || null,
     subjectId: task.subjectId || null,
     examPart: task.examPart || null,
     status: task.status || 'pending',
-    hasReplayLink: hasReplayLink(task),
+    replayStatus,
+    /** true only when replay is evidence-confirmed */
+    hasReplayLink: replayStatus === 'confirmed',
     estimatedMinutes: Number(task.estimatedMinutes) || null,
     conflictResolved: Boolean(task.conflictResolved),
+    scheduleConflictPending: Boolean(task.scheduleConflictPending),
   }
 }
 

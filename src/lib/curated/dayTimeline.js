@@ -65,7 +65,7 @@ export function coachPriorityFor(task, ctx = {}) {
   if (ctx.attendIds?.has(id) || (task.liveKind === 'live' && !ctx.watchLaterIds?.has(id))) {
     if (task.liveKind === 'live') return 1
   }
-  if (ctx.watchLaterIds?.has(id) || task.conflictResolved) return 3
+  if (ctx.watchLaterIds?.has(id) || task.conflictResolved || task.scheduleConflictPending) return 3
   if (task.liveKind === 'live') return 1
   if (task.priorityTier === PRIORITY_TIERS.MUST) return 2
   if (task.planPack === 'victory-mock' || task.planPack === 'victory-drive') return 4
@@ -159,11 +159,13 @@ export function buildDayTimeline(options = {}) {
       durationMinutes: end - start,
       priority,
       priorityLabelTh: coachPriorityLabelTh(priority),
-      roleTh: watchLaterIds.has(task.id)
-        ? 'ดูย้อนหลัง (ชนเวลา)'
-        : task.liveKind === 'live'
-          ? 'เข้าเรียนสด'
-          : 'เรียนตามเวลาต้นทาง',
+      roleTh: task.scheduleConflictPending
+        ? 'ชนเวลาต้นทาง — รอยืนยันเข้าสด/เก็บไว้'
+        : watchLaterIds.has(task.id)
+          ? 'เสนอเก็บไว้ (ชนเวลา · รอยืนยัน)'
+          : task.liveKind === 'live'
+            ? 'เข้าเรียนสด'
+            : 'เรียนตามเวลาต้นทาง',
       isBreak: false,
       isLunch: false,
       task,
@@ -234,11 +236,16 @@ export function buildDayTimeline(options = {}) {
     return endMin
   }
 
-  // Flexible study: no startTime, or watch-later content needing a daytime slot
+  // Flexible study: no startTime only.
+  // P0: scheduleConflictPending keeps source clock anchored — do not re-slot as daytime.
   const flexible = tasks
     .filter((t) => {
-      if (parseMinutes(t.startTime) != null && !watchLaterIds.has(String(t.id)) && !t.conflictResolved) {
-        return false // already anchored
+      if (parseMinutes(t.startTime) != null && !t.conflictResolved) {
+        return false // already anchored (incl. pending conflicts with source times)
+      }
+      // Legacy silent demotion (conflictResolved + daytime slot): allow flexible only if no startTime
+      if (parseMinutes(t.startTime) != null && t.conflictResolved) {
+        return false
       }
       if (t.liveKind === 'live' && !watchLaterIds.has(String(t.id))) return false
       return true
@@ -282,9 +289,11 @@ export function buildDayTimeline(options = {}) {
           durationMinutes: item.dur,
           priority: item.priority,
           priorityLabelTh: coachPriorityLabelTh(item.priority),
-          roleTh: watchLaterIds.has(String(item.task.id)) || item.task.conflictResolved
-            ? 'ดูย้อนหลัง / ทบทวน'
-            : 'เรียนตามแผน',
+          roleTh: item.task.scheduleConflictPending
+            ? 'ชนเวลา — รอยืนยัน'
+            : watchLaterIds.has(String(item.task.id)) || item.task.conflictResolved
+              ? 'เก็บไว้ในแผน (ยังไม่ยืนยัน replay)'
+              : 'เรียนตามแผน',
           isBreak: false,
           isLunch: false,
           task: item.task,

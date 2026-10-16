@@ -312,8 +312,11 @@ export default function Today() {
             <ul className="mt-2 space-y-3 text-xs text-amber-950 dark:text-amber-50">
               {liveAttend.map((d) => (
                 <li key={`${d.attendLive.id}-${d.watchLater.id}`} className="rounded-lg border border-amber-200/80 bg-white/60 p-2 dark:border-amber-900 dark:bg-slate-900/40">
-                  <p><strong>เข้าเรียนสด:</strong> {d.attendLive.startTime}–{d.attendLive.endTime} · {d.attendLive.title}</p>
-                  <p className="mt-1"><strong>ดูย้อนหลัง:</strong> {d.watchLater.startTime}–{d.watchLater.endTime} · {d.watchLater.title}</p>
+                  <p><strong>แนะนำเข้าเรียนสด:</strong> {d.attendLive.startTime}–{d.attendLive.endTime} · {d.attendLive.title}</p>
+                  <p className="mt-1"><strong>รายการที่ชน (คงเวลาต้นทาง):</strong> {d.watchLater.startTime}–{d.watchLater.endTime} · {d.watchLater.title}</p>
+                  {d.awaitingUserDecision ? (
+                    <p className="mt-1 font-medium text-rose-800 dark:text-rose-200">รอยืนยันจากคุณ — ระบบยังไม่เลื่อนเวลาต้นทาง</p>
+                  ) : null}
                   <p className="mt-1 text-amber-900/90 dark:text-amber-100/90">เหตุผล: {d.reasonTh}</p>
                   <p className="mt-0.5 text-slate-600 dark:text-slate-300">{d.watchLaterHintTh}</p>
                 </li>

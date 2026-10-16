@@ -17,7 +17,7 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
     expect(VICTORY_LEVERS.reduce((s, l) => s + l.weight, 0)).toBe(100)
   })
 
-  it('resolves Lady live vs overlapping content-block', () => {
+  it('flags Lady live vs overlapping content-block without moving source clock', () => {
     const tasks = [
       {
         id: 'live_lady',
@@ -40,14 +40,53 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
         reasonCodes: ['vip'],
       },
     ]
-    const { demotedIds, tasks: out } = resolveLadyLiveConflicts(tasks)
+    const { demotedIds, conflictIds, tasks: out } = resolveLadyLiveConflicts(tasks)
+    expect(conflictIds).toContain('live_vip')
     expect(demotedIds).toContain('live_vip')
     const vip = out.find((t) => t.id === 'live_vip')
-    expect(vip?.startTime).toBe('09:00')
-    expect(vip?.title).toMatch(/ทบทวนกลางวัน/)
-    expect(vip?.demotedFromStartTime).toBe('20:00')
-    expect(vip?.demotedFromEndTime).toBe('22:30')
+    expect(vip?.startTime).toBe('20:00')
+    expect(vip?.endTime).toBe('22:30')
+    expect(vip?.sourceStartTime).toBe('20:00')
+    expect(vip?.sourceEndTime).toBe('22:30')
+    expect(vip?.scheduleConflictPending).toBe(true)
+    expect(vip?.conflictResolved).toBe(false)
+    expect(vip?.title).toBe('โฟกัสเนื้อหา · VIP')
+    expect(vip?.demotedFromStartTime).toBeUndefined()
     expect(vip?.conflictWithLiveEventIds).toEqual(['lady-live-a-haek-2026-10-07'])
+  })
+
+  it('restores legacy silent 09:00–11:00 demotion back to source clock', () => {
+    const tasks = [
+      {
+        id: 'live_lady',
+        plannedDate: '2026-10-07',
+        liveKind: 'live',
+        liveEventId: 'lady-live-a-haek-2026-10-07',
+        startTime: '21:00',
+        endTime: '22:30',
+        title: 'ไลฟ์เลดี้',
+      },
+      {
+        id: 'live_vip',
+        plannedDate: '2026-10-07',
+        liveKind: 'content-block',
+        liveEventId: 'vip-civil-2026-10-07',
+        startTime: '09:00',
+        endTime: '11:00',
+        demotedFromStartTime: '20:00',
+        demotedFromEndTime: '22:30',
+        conflictResolved: true,
+        title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP',
+        reasonTh: 'vip',
+        reasonCodes: ['vip', 'victory-lady-wins'],
+      },
+    ]
+    const { tasks: out } = resolveLadyLiveConflicts(tasks)
+    const vip = out.find((t) => t.id === 'live_vip')
+    expect(vip?.startTime).toBe('20:00')
+    expect(vip?.endTime).toBe('22:30')
+    expect(vip?.scheduleConflictPending).toBe(true)
+    expect(vip?.conflictResolved).toBe(false)
   })
 
   it('seeds a schedule that scores 100/100 with belief', () => {
