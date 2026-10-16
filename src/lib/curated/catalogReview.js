@@ -86,19 +86,28 @@ export function buildCatalogReviewReport(resources) {
         && subjects.has(SUBJECT_IDS.ENGLISH_MAJOR)
       const mixesParts = parts.has('ก') && parts.has('ข')
       if (!mixesSkillsAndMajor && !mixesParts) return null
+      const idSet = new Set(g.ids.map(String))
+      const ladyAb = [...idSet].some((id) => id.startsWith('lady-a-'))
+        && [...idSet].some((id) => id.startsWith('lady-b-'))
       return {
         ids: g.ids,
         subjects: [...subjects],
         examParts: [...parts],
         suspicionOnly: true,
         confirmedSameSource: false,
-        actionTh: 'ข้อสงสัยเท่านั้น — อย่ารวมอัตโนมัติ จนกว่าผู้ใช้ยืนยันว่าเป็นแหล่งเดียวกัน',
+        contentDuplicateConfirmed: false,
+        verificationStatus: 'awaiting_confirmation',
+        verificationLabelTh: 'รอยืนยัน',
+        ladyAbPending: ladyAb,
+        actionTh: ladyAb
+          ? 'lady-a / lady-b ใช้ URL ร่วม — รอยืนยันว่าเป็นเนื้อหาเดียวกันหรือคนละภาค · ไม่ใช่หลักฐานว่าซ้ำจริง · ห้ามลบ/รวม/ข้ามบท'
+          : 'ข้อสงสัยเท่านั้น — อย่ารวมอัตโนมัติ จนกว่าผู้ใช้ยืนยันว่าเป็นแหล่งเดียวกัน',
       }
     })
     .filter(Boolean)
 
   return {
-    version: '8.2-review',
+    version: '8.3-awaiting-confirmation',
     checkedAt: OFFICIAL_SCOPE_CHECKED_AT,
     summary: {
       total: summary.total,
@@ -106,6 +115,7 @@ export function buildCatalogReviewReport(resources) {
       unchecked: summary.unchecked,
       verified_accessible: summary.verified_accessible,
       openable_legacy: summary.openable,
+      awaiting_confirmation_shared_urls: audit.sharedUrls.length,
     },
     officialScope: {
       checkedAt: officialScope.checkedAt,
@@ -120,15 +130,30 @@ export function buildCatalogReviewReport(resources) {
     needsFullUrlSlots,
     uncheckedSlots,
     mathStubsNeedingFullUrl: mathStubs,
-    sharedUrlGroups: audit.sharedUrls.map(g => ({
-      ids: g.ids,
-      intentionalSharePossible: g.intentionalSharePossible,
-      suspicionOnly: true,
-      actionTh: 'อย่ารวมอัตโนมัติ — ให้ผู้ใช้ยืนยันว่าใช้ลิงก์ร่วมกันโดยตั้งใจหรือแยกตอน',
-    })),
+    sharedUrlGroups: audit.sharedUrls.map(g => {
+      const idSet = new Set(g.ids.map(String))
+      const ladyAb = [...idSet].some((id) => id.startsWith('lady-a-'))
+        && [...idSet].some((id) => id.startsWith('lady-b-'))
+      const lawHeld = idSet.has('law-nonn-22') && idSet.has('law-nonn-24')
+      return {
+        ids: g.ids,
+        intentionalSharePossible: g.intentionalSharePossible,
+        suspicionOnly: true,
+        contentDuplicateConfirmed: false,
+        verificationStatus: 'awaiting_confirmation',
+        verificationLabelTh: 'รอยืนยัน',
+        ladyAbPending: ladyAb,
+        ownerHeldLawPair: lawHeld,
+        actionTh: ladyAb
+          ? 'URL ซ้ำระหว่าง lady-a และ lady-b — รอยืนยัน · ไม่ใช่ยืนยันว่าเนื้อหาซ้ำ · คงทั้งสองรายการ'
+          : lawHeld
+            ? 'law-nonn-22 / 24 ใช้ URL เดียวกัน — รอตรวจสอบ · ห้ามสลับหรือเลือกลิงก์เอง'
+            : 'URL ซ้ำ — รอยืนยันว่าใช้ร่วมโดยตั้งใจหรือคนละตอน · อย่ารวมอัตโนมัติ · ห้ามข้ามบทจาก URL ซ้ำอย่างเดียว',
+      }
+    }),
     /**
      * Same subject+series, different episodes, identical URL — strongest collision signal.
-     * Still no auto-merge; surface for user confirmation.
+     * Still no auto-merge; surface for user confirmation. Not proof of duplicate content.
      */
     confirmedSameSeriesUrlCollisions: audit.sharedUrls
       .map((g) => {
@@ -139,6 +164,8 @@ export function buildCatalogReviewReport(resources) {
         const episodes = new Set(rows.map((r) => String(r.episode)))
         if (series.size !== 1 || subjects.size !== 1) return null
         if (episodes.size < 2) return null
+        const idSet = new Set(rows.map((r) => r.id))
+        const lawHeld = idSet.has('law-nonn-22') && idSet.has('law-nonn-24')
         return {
           ids: rows.map((r) => r.id),
           series: [...series][0],
@@ -146,8 +173,14 @@ export function buildCatalogReviewReport(resources) {
           episodes: rows.map((r) => r.episode),
           titles: rows.map((r) => r.title),
           confirmedSameUrl: true,
-          suspicionOnly: false,
-          actionTh: 'URL เดียวกันคนละตอนในชุดเดียวกัน — ตรวจว่าตอนไหนลิงก์ผิด หรือตั้งใจแชร์ไฟล์เดียว; ห้ามลบอัตโนมัติ',
+          contentDuplicateConfirmed: false,
+          suspicionOnly: true,
+          verificationStatus: 'awaiting_confirmation',
+          verificationLabelTh: 'รอยืนยัน',
+          ownerHeldLawPair: lawHeld,
+          actionTh: lawHeld
+            ? 'law-nonn-22 และ law-nonn-24 ใช้ URL เดียวกัน — คงข้อมูลเดิมทั้งคู่ · รอตรวจสอบ · ห้ามสลับ URL หรือเลือกตอนใดตอนหนึ่งเอง'
+            : 'URL เดียวกันคนละตอนในชุดเดียวกัน — รอยืนยันว่าตอนไหนลิงก์ผิดหรือแชร์ไฟล์เดียว · ห้ามลบอัตโนมัติ · ห้ามข้ามบทจากสัญญาณนี้เพียงอย่างเดียว',
         }
       })
       .filter(Boolean),
@@ -155,7 +188,10 @@ export function buildCatalogReviewReport(resources) {
     possibleDuplicateTitles: audit.possibleDuplicates.map(d => ({
       titleKey: d.titleKey,
       ids: d.ids,
-      actionTh: 'อย่ารวมอัตโนมัติ — ตรวจด้วยมือว่าเป็นตอนซ้ำหรือชื่อคล้ายกัน',
+      verificationStatus: 'awaiting_confirmation',
+      verificationLabelTh: 'รอยืนยัน',
+      contentDuplicateConfirmed: false,
+      actionTh: 'อย่ารวมอัตโนมัติ — ตรวจด้วยมือว่าเป็นตอนซ้ำหรือชื่อคล้ายกัน · ห้ามข้ามบทจากชื่อคล้ายอย่างเดียว',
     })),
     policyTh: [
       'ไม่สร้าง URL จาก stub ที่ถูกตัดทอน',
@@ -164,6 +200,8 @@ export function buildCatalogReviewReport(resources) {
       'คัดลอก URL แยกจากการเปิด URL',
       'ไม่ลบรายการออกจากคลังเพียงเพราะ URL ยังไม่ยืนยัน',
       'หัวข้อสำคัญที่ลิงก์ไม่พร้อมต้องแสดงคำเตือน — ห้ามตัดออกเงียบ ๆ',
+      'URL ซ้ำ = รอยืนยันเท่านั้น — ไม่ใช่หลักฐานว่าเนื้อหาซ้ำจริง และห้ามแนะนำข้ามบทจากเหตุนี้เพียงอย่างเดียว',
+      'lady-a / lady-b และ law-nonn-22 / 24 คงไว้ทั้งคู่ตามนโยบายเจ้าของ',
     ],
   }
 }

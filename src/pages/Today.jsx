@@ -442,9 +442,10 @@ export default function Today() {
         <div className="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-500 dark:border-slate-800">
           {timeline.assumptionsTh.map((n) => <p key={n}>· {n}</p>)}
           <p className="mt-1">
-            วิเคราะห์ซ้ำในคลัง: เลือกแหล่งเดียว {overlap.summary.chooseOneGroups} กลุ่ม
+            คลัง: URL ซ้ำ รอยืนยัน {overlap.summary.sharedUrlPendingGroups ?? overlap.summary.chooseOneGroups} กลุ่ม
             · เสริมกัน (รอยืนยัน) {overlap.summary.complementaryGroups}
             · must ที่ไม่แชร์ URL {overlap.summary.mustUnique}
+            · ไม่แนะนำข้ามบทจาก URL ซ้ำอย่างเดียว
             {' · '}<Link to="/audit" className="underline">เปิดตรวจรายการซ้ำ</Link>
           </p>
         </div>

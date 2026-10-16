@@ -93,9 +93,9 @@ export default function Audit() {
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="ประเภทปัญหา">
         {[
-          { id: 'overlap', label: `วิเคราะห์ซ้ำ (${overlap.summary.chooseOneGroups + overlap.summary.complementaryGroups})` },
+          { id: 'overlap', label: `รอยืนยัน URL ซ้ำ (${(overlap.summary.sharedUrlPendingGroups ?? overlap.summary.chooseOneGroups) + overlap.summary.complementaryGroups})` },
           { id: 'collisions', label: `ชน URL ในชุด (${collisions.length})` },
-          { id: 'shared', label: `URL ร่วม (${shared.length})` },
+          { id: 'shared', label: `URL ร่วม รอยืนยัน (${shared.length})` },
           { id: 'cross', label: `สงสัย ก/ข (${crossPart.length})` },
           { id: 'titles', label: `ชื่อคล้าย (${titleDupes.length})` },
           { id: 'needs', label: `URL ไม่ครบ (${needsFull.length})` },
@@ -116,20 +116,37 @@ export default function Audit() {
 
       {tab === 'overlap' && (
         <section className="card space-y-4">
-          <h2 className="text-lg font-bold">วิเคราะห์เนื้อหาซ้ำหลายสำนัก</h2>
+          <h2 className="text-lg font-bold">วิเคราะห์ URL ซ้ำ / เนื้อหาที่ยังไม่ยืนยัน</h2>
           <p className="text-xs text-slate-500">
             must ที่ยังไม่แชร์ URL {overlap.summary.mustUnique}
-            · เลือกแหล่งเดียว {overlap.summary.chooseOneGroups} กลุ่ม
+            · URL ซ้ำ รอยืนยัน {overlap.summary.sharedUrlPendingGroups ?? overlap.summary.chooseOneGroups} กลุ่ม
             · เสริมกัน (รอยืนยัน) {overlap.summary.complementaryGroups}
             · ทบทวนทีหลัง {overlap.summary.reviewLater}
             · ไม่แน่ใจ {overlap.summary.uncertainGroups}
+            · lady-a/b รอยืนยัน {overlap.summary.ladyAbPendingGroups ?? 0}
+            · law-nonn รอตรวจ {overlap.summary.lawNonnPendingGroups ?? 0}
           </p>
+          <StatusBanner tone="warning" title="URL ซ้ำ ≠ เนื้อหาซ้ำที่ยืนยันแล้ว">
+            ระบบแสดงสถานะรอยืนยันเท่านั้น — ไม่แนะนำให้ข้ามบทเรียนจากเหตุ URL ซ้ำโดยไม่มีคำยืนยันจากเจ้าของ
+          </StatusBanner>
           <div>
-            <h3 className="text-sm font-semibold">1) เลือกเรียนแหล่งหลักได้ (หลักฐาน: URL ร่วม)</h3>
+            <h3 className="text-sm font-semibold">1) URL ซ้ำ — รอยืนยัน (ยังไม่ถือว่าเนื้อหาซ้ำจริง · ห้ามข้ามบท)</h3>
             <ul className="mt-2 space-y-2 text-sm">
-              {overlap.chooseOne.slice(0, 12).map((g) => (
-                <li key={g.ids.join('-')} className="rounded-lg border border-slate-200 p-2 dark:border-slate-800">
-                  <p className="font-medium">{g.ids.join(' ↔ ')}</p>
+              {(overlap.sharedUrlPending || overlap.chooseOne).slice(0, 12).map((g) => (
+                <li key={g.ids.join('-')} className="rounded-lg border border-amber-200 bg-amber-50/40 p-2 dark:border-amber-900 dark:bg-amber-950/20">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                      {g.verificationLabelTh || 'รอยืนยัน'}
+                    </span>
+                    {g.ladyCrossPart ? (
+                      <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800 dark:bg-slate-700 dark:text-slate-100">lady-a ↔ lady-b</span>
+                    ) : null}
+                    {g.ownerHeldLawPair ? (
+                      <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800 dark:bg-slate-700 dark:text-slate-100">law-nonn 22/24</span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 font-medium">{g.ids.join(' ↔ ')}</p>
+                  <p className="text-xs text-amber-900 dark:text-amber-100">{g.warningTh}</p>
                   <p className="text-xs text-slate-500">{g.tutors?.join(' · ')} · {g.actionTh}</p>
                 </li>
               ))}
@@ -143,7 +160,8 @@ export default function Audit() {
               <ul className="mt-2 space-y-2 text-sm">
                 {overlap.complementary.slice(0, 8).map((g) => (
                   <li key={g.ids.join('-')} className="rounded-lg border border-amber-200 p-2 dark:border-amber-900">
-                    <p className="font-medium">{g.ids.join(' ↔ ')}</p>
+                    <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">{g.verificationLabelTh || 'รอยืนยัน'}</span>
+                    <p className="mt-1 font-medium">{g.ids.join(' ↔ ')}</p>
                     <p className="text-xs">{g.actionTh}</p>
                   </li>
                 ))}
@@ -159,12 +177,18 @@ export default function Audit() {
       {tab === 'collisions' && (
         <section className="card space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-bold"><AlertTriangle className="h-5 w-5 text-rose-600" /> URL เดียวกัน · คนละตอนในชุดเดียวกัน</h2>
-          <p className="text-xs text-slate-500">สัญญาณแรงที่สุดจาก audit — ยังไม่ลบ/รวมอัตโนมัติ ต้องยืนยันว่าตอนไหนลิงก์ผิด</p>
+          <p className="text-xs text-slate-500">สัญญาณแรงจาก audit — สถานะรอยืนยัน · ยังไม่ลบ/รวม/สลับลิงก์อัตโนมัติ · ไม่ใช่หลักฐานให้ข้ามบท</p>
           {collisions.length === 0 ? (
             <p className="text-sm text-slate-500">ไม่พบกลุ่มตามคำค้น</p>
           ) : collisions.map((g) => (
             <article key={g.ids.join('-')} className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 dark:border-rose-900 dark:bg-rose-950/20">
-              <p className="text-sm font-semibold">{g.series}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">{g.verificationLabelTh || 'รอยืนยัน'}</span>
+                {g.ownerHeldLawPair ? (
+                  <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800">law-nonn 22/24 · คง URL เดิมทั้งคู่</span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm font-semibold">{g.series}</p>
               <ul className="mt-2 space-y-1 text-sm">
                 {g.ids.map((id, i) => (
                   <li key={id}>
@@ -182,13 +206,22 @@ export default function Audit() {
 
       {tab === 'shared' && (
         <section className="card space-y-3">
-          <h2 className="flex items-center gap-2 text-lg font-bold"><Link2 className="h-5 w-5" /> URL เดียวกันหลายรายการ</h2>
-          <p className="text-xs text-slate-500">ยืนยันแล้วว่าใช้ลิงก์ร่วมได้โดยตั้งใจ (เช่น ไลฟ์คืนเดียวครอบคลุม ก+ข) — ห้ามรวมอัตโนมัติถ้ายังไม่แน่ใจเนื้อหา</p>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><Link2 className="h-5 w-5" /> URL เดียวกันหลายรายการ — รอยืนยัน</h2>
+          <p className="text-xs text-slate-500">พบ URL ซ้ำเท่านั้น — ยังไม่ยืนยันว่าเนื้อหาเดียวกัน · คงแยกรายการไว้ · ห้ามรวมอัตโนมัติและห้ามข้ามบทจากสัญญาณนี้</p>
           {shared.length === 0 ? (
             <p className="text-sm text-slate-500">ไม่พบกลุ่มตามคำค้น</p>
           ) : shared.map((g) => (
-            <article key={g.ids.join('-')} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-              <p className="text-xs font-semibold text-slate-500">คงแยกเป็นคนละรายการจนกว่าจะยืนยันว่าเป็นตอนเดียวกัน</p>
+            <article key={g.ids.join('-')} className="rounded-xl border border-amber-200 bg-amber-50/30 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">{g.verificationLabelTh || 'รอยืนยัน'}</span>
+                {g.ladyAbPending ? (
+                  <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800">lady-a ↔ lady-b</span>
+                ) : null}
+                {g.ownerHeldLawPair ? (
+                  <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-800">law-nonn 22/24</span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-xs font-semibold text-slate-500">คงแยกเป็นคนละรายการจนกว่าจะยืนยันด้วยมือ</p>
               <ul className="mt-2 space-y-1 text-sm">
                 {g.ids.map((id) => {
                   const row = byId.get(id)
@@ -211,12 +244,13 @@ export default function Audit() {
       {tab === 'cross' && (
         <section className="card space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-bold"><AlertTriangle className="h-5 w-5 text-amber-600" /> ข้อสงสัย — อังกฤษภาค ก กับวิชาเอก</h2>
-          <p className="text-xs text-slate-500">ยังไม่ยืนยันว่าเป็นแหล่งเดียวกัน — ต้องตรวจเนื้อหาก่อนรวม</p>
+          <p className="text-xs text-slate-500">ยังไม่ยืนยันว่าเป็นแหล่งเดียวกัน — ต้องตรวจเนื้อหาก่อนรวม · ไม่แนะนำข้ามบทจากข้อสงสัยนี้</p>
           {crossPart.length === 0 ? (
             <p className="text-sm text-slate-500">ไม่พบกลุ่มตามคำค้น</p>
           ) : crossPart.map((g) => (
             <article key={g.ids.join('-')} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
-              <p className="text-sm font-medium">{g.ids.join(' ↔ ')}</p>
+              <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">{g.verificationLabelTh || 'รอยืนยัน'}</span>
+              <p className="mt-1 text-sm font-medium">{g.ids.join(' ↔ ')}</p>
               <p className="mt-1 text-xs">วิชา: {g.subjects.join(', ')} · ภาค: {g.examParts.join(', ')}</p>
               <p className="mt-1 text-xs text-amber-900 dark:text-amber-100">{g.actionTh}</p>
             </article>

@@ -1,7 +1,8 @@
 /**
  * Multi-school / multi-series content overlap analysis.
- * Never auto-deletes. Never claims duplicate from title similarity alone
- * without a stronger signal (shared URL or explicit shared-url audit).
+ * Never auto-deletes. Shared URL ≠ confirmed same content.
+ * Owner policy (2026-10-16): keep lady-a/lady-b and law-nonn-22/24 pairs;
+ * mark awaiting_confirmation — do not recommend skipping lessons from URL share alone.
  */
 
 import { enrichCuratedResources } from './catalog.js'
@@ -9,9 +10,31 @@ import { auditCuratedCatalog } from './validateCatalog.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 import { HUB_SUBJECT_LABELS } from '../study/hub.js'
 
-export const CONTENT_OVERLAP_VERSION = '1.0-evidence'
+export const CONTENT_OVERLAP_VERSION = '1.1-awaiting-confirmation'
 
-/** @typedef {'must_unique' | 'choose_one' | 'complementary' | 'review_later' | 'uncertain'} OverlapBucket */
+/** @typedef {'must_unique' | 'shared_url_pending' | 'complementary' | 'review_later' | 'uncertain'} OverlapBucket */
+/** @typedef {'awaiting_confirmation' | 'owner_review' | 'none'} VerificationStatus */
+
+export const VERIFICATION_STATUS = Object.freeze({
+  AWAITING_CONFIRMATION: 'awaiting_confirmation',
+  OWNER_REVIEW: 'owner_review',
+  NONE: 'none',
+})
+
+export const VERIFICATION_STATUS_LABELS_TH = Object.freeze({
+  awaiting_confirmation: 'รอยืนยัน',
+  owner_review: 'รอเจ้าของตรวจ',
+  none: '—',
+})
+
+/** Known shared-URL pairs under owner hold — keep both rows, no merge/skip. */
+export const OWNER_HELD_SHARED_URL_PAIRS = Object.freeze([
+  {
+    ids: ['law-nonn-22', 'law-nonn-24'],
+    kind: 'same-series-url-collision',
+    policyTh: 'คง URL ทั้งสองไว้ — ยังไม่ทราบตอนใดถูกต้อง ห้ามสลับหรือเลือกลิงก์เอง',
+  },
+])
 
 function subjectLabel(id) {
   return HUB_SUBJECT_LABELS[id] || id || '—'
@@ -25,7 +48,23 @@ function normTitle(s) {
     .trim()
 }
 
+function isLadyCrossPartPair(ids, rows) {
+  const set = new Set(ids.map(String))
+  const hasA = [...set].some((id) => id.startsWith('lady-a-'))
+  const hasB = [...set].some((id) => id.startsWith('lady-b-'))
+  if (!hasA || !hasB) return false
+  const parts = new Set(rows.map((r) => r.examPart))
+  return parts.has('ก') && parts.has('ข')
+}
+
+function isOwnerHeldLawPair(ids) {
+  const set = new Set(ids.map(String))
+  return set.has('law-nonn-22') && set.has('law-nonn-24')
+}
+
 /**
+ * Shared-URL groups are pending confirmation only.
+ * Never sets maySkipLesson / contentDuplicateConfirmed true.
  * @param {object[]} [resources]
  * @param {{ doneResourceIds?: Set<string>|string[] }} [options]
  */
@@ -37,7 +76,8 @@ export function analyzeContentOverlap(resources, options = {}) {
 
   const sharedIdSet = new Set()
   /** @type {Array<object>} */
-  const chooseOne = []
+  const sharedUrlPending = []
+
   for (const g of audit.sharedUrls) {
     const rows = g.ids.map((id) => byId.get(id)).filter(Boolean)
     rows.forEach((r) => sharedIdSet.add(r.id))
@@ -45,24 +85,51 @@ export function analyzeContentOverlap(resources, options = {}) {
     const subjects = [...new Set(rows.map((r) => r.subjectId))]
     const parts = [...new Set(rows.map((r) => r.examPart))]
     const sameSeries = new Set(rows.map((r) => r.series)).size === 1
-    chooseOne.push({
-      bucket: 'choose_one',
+    const ladyCross = isLadyCrossPartPair(g.ids, rows)
+    const lawHeld = isOwnerHeldLawPair(g.ids)
+
+    let warningTh = 'พบ URL ซ้ำระหว่างรายการ — รอยืนยันว่าเป็นเนื้อหาเดียวกันหรือไม่ · ยังไม่ถือว่าเนื้อหาซ้ำจริง'
+    let actionTh = 'คงทุกรายการและลิงก์ไว้ · เรียนตามแผนปกติจนกว่าจะยืนยัน · ห้ามข้ามบทจากเหตุ URL ซ้ำอย่างเดียว'
+    let caseTag = 'shared-url-generic'
+
+    if (ladyCross) {
+      caseTag = 'lady-a-b-shared-url'
+      warningTh = 'lady-a และ lady-b ใช้ URL ร่วมกัน — รอยืนยันว่าเป็นเนื้อหาเดียวกันหรือคนละภาค · ไม่ใช่การยืนยันว่าซ้ำจริง'
+      actionTh = 'เก็บทั้งสองรายการไว้ · ห้ามลบหรือรวม · แสดงสถานะรอยืนยัน'
+    } else if (lawHeld) {
+      caseTag = 'law-nonn-22-24-url'
+      warningTh = 'law-nonn-22 และ law-nonn-24 ใช้ URL เดียวกัน — รอยืนยันว่าตอนใดถูกต้อง · ยังไม่สลับหรือเลือกลิงก์'
+      actionTh = 'คง URL และข้อมูลเดิมทั้งสองรายการ · ทำเครื่องหมายรอตรวจสอบ'
+    } else if (sameSeries) {
+      caseTag = 'same-series-shared-url'
+      warningTh = 'URL เดียวกันในชุดเดียวกัน — รอยืนยันว่าแชร์ไฟล์โดยตั้งใจหรือลิงก์ผิดตอน'
+      actionTh = 'คงทั้งสองรายการไว้จนกว่าจะยืนยัน · ห้ามลบอัตโนมัติ'
+    }
+
+    sharedUrlPending.push({
+      bucket: 'shared_url_pending',
       evidence: 'shared-url',
+      verificationStatus: VERIFICATION_STATUS.AWAITING_CONFIRMATION,
+      verificationLabelTh: VERIFICATION_STATUS_LABELS_TH.awaiting_confirmation,
+      contentDuplicateConfirmed: false,
+      maySkipLesson: false,
+      keepAllItems: true,
+      caseTag,
       ids: g.ids,
       titles: rows.map((r) => r.title),
       tutors,
       subjects: subjects.map(subjectLabel),
       examParts: parts,
       sameSeries,
+      ladyCrossPart: ladyCross,
+      ownerHeldLawPair: lawHeld,
       doneIds: g.ids.filter((id) => done.has(id)),
-      actionTh: sameSeries
-        ? 'URL เดียวกันในชุดเดียวกัน — เลือกตอนที่ถูกต้องหนึ่งตอน หรือยืนยันว่าแชร์ไฟล์โดยตั้งใจ'
-        : 'URL เดียวกันข้ามชุด/ภาค — เลือกเรียนแหล่งหลักหนึ่งแหล่งได้ หากเนื้อหาเดียวกัน; คงลิงก์ทุกแหล่งไว้',
-      confidence: sameSeries ? 'high' : 'medium',
+      warningTh,
+      actionTh,
+      confidence: 'pending',
     })
   }
 
-  // Same normalized title, different series, different URLs → complementary or uncertain
   const titleMap = new Map()
   for (const r of enriched) {
     const key = `${r.subjectId}::${normTitle(r.title)}`
@@ -78,7 +145,7 @@ export function analyzeContentOverlap(resources, options = {}) {
     const series = new Set(rows.map((r) => r.series))
     const urls = new Set(rows.map((r) => r.originalUrl || r.url))
     if (series.size < 2) continue
-    if (rows.every((r) => sharedIdSet.has(r.id))) continue // already in choose_one
+    if (rows.every((r) => sharedIdSet.has(r.id))) continue
     const payload = {
       ids: rows.map((r) => r.id),
       titles: rows.map((r) => r.title),
@@ -88,6 +155,10 @@ export function analyzeContentOverlap(resources, options = {}) {
       examParts: [...new Set(rows.map((r) => r.examPart))],
       urlsDiffer: urls.size > 1,
       doneIds: rows.filter((r) => done.has(r.id)).map((r) => r.id),
+      contentDuplicateConfirmed: false,
+      maySkipLesson: false,
+      verificationStatus: VERIFICATION_STATUS.AWAITING_CONFIRMATION,
+      verificationLabelTh: VERIFICATION_STATUS_LABELS_TH.awaiting_confirmation,
     }
     if (urls.size > 1) {
       complementary.push({
@@ -95,7 +166,8 @@ export function analyzeContentOverlap(resources, options = {}) {
         bucket: 'complementary',
         evidence: 'same-title-different-url-cross-series',
         confidence: 'low',
-        actionTh: 'ชื่อคล้ายข้ามสำนักแต่ลิงก์ต่าง — อาจเสริมกัน; อย่ารวมอัตโนมัติ จนกว่าจะยืนยันขอบเขตเนื้อหา',
+        warningTh: 'ชื่อคล้ายข้ามสำนักแต่ลิงก์ต่าง — รอยืนยันขอบเขตเนื้อหา',
+        actionTh: 'อาจเสริมกัน · อย่ารวมอัตโนมัติ · ห้ามข้ามจากชื่อคล้ายอย่างเดียว',
       })
     } else {
       uncertain.push({
@@ -103,12 +175,13 @@ export function analyzeContentOverlap(resources, options = {}) {
         bucket: 'uncertain',
         evidence: 'same-title-unclear',
         confidence: 'low',
-        actionTh: 'ข้อมูลไม่พอตัดสิน — ให้คุณเทียบเนื้อหาก่อนเลือกแหล่ง',
+        warningTh: 'ข้อมูลไม่พอตัดสิน',
+        actionTh: 'ให้เทียบเนื้อหาก่อน · คงทุกรายการไว้',
       })
     }
   }
 
-  const chooseIds = new Set(chooseOne.flatMap((g) => g.ids))
+  const pendingIds = new Set(sharedUrlPending.flatMap((g) => g.ids))
   const compIds = new Set(complementary.flatMap((g) => g.ids))
   const uncIds = new Set(uncertain.flatMap((g) => g.ids))
 
@@ -123,10 +196,11 @@ export function analyzeContentOverlap(resources, options = {}) {
       evidence: 'defer-pack-or-tier',
       actionTh: 'เก็บทบทวน/ทำข้อสอบทีหลังตามแพ็ก defer',
       done: done.has(r.id),
+      maySkipLesson: false,
     }))
 
   const mustUnique = enriched
-    .filter((r) => !chooseIds.has(r.id) && !compIds.has(r.id) && !uncIds.has(r.id))
+    .filter((r) => !pendingIds.has(r.id) && !compIds.has(r.id) && !uncIds.has(r.id))
     .filter((r) => r.priorityTier === PRIORITY_TIERS.MUST || String(r.notes || '').includes('pack:must'))
     .map((r) => ({
       bucket: 'must_unique',
@@ -137,27 +211,53 @@ export function analyzeContentOverlap(resources, options = {}) {
       evidence: 'must-tier-no-shared-url-group',
       actionTh: 'ยังไม่พบแหล่งอื่นที่ใช้ URL ร่วม — ควรเรียนตามลำดับแผน',
       done: done.has(r.id),
+      maySkipLesson: false,
     }))
+
+  const ladyPending = sharedUrlPending.filter((g) => g.ladyCrossPart)
+  const lawPending = sharedUrlPending.filter((g) => g.ownerHeldLawPair)
 
   return {
     version: CONTENT_OVERLAP_VERSION,
     summary: {
       mustUnique: mustUnique.length,
-      chooseOneGroups: chooseOne.length,
+      /** @deprecated use sharedUrlPendingGroups — kept for older UI strings */
+      chooseOneGroups: sharedUrlPending.length,
+      sharedUrlPendingGroups: sharedUrlPending.length,
       complementaryGroups: complementary.length,
       reviewLater: reviewLater.length,
       uncertainGroups: uncertain.length,
       sharedUrlGroups: audit.sharedUrls.length,
+      awaitingConfirmationGroups: sharedUrlPending.length,
+      ladyAbPendingGroups: ladyPending.length,
+      lawNonnPendingGroups: lawPending.length,
     },
     mustUnique,
-    chooseOne,
+    /** Pending shared-URL groups (not confirmed duplicates). */
+    sharedUrlPending,
+    /**
+     * @deprecated Alias of sharedUrlPending — do not treat as permission to skip.
+     * All entries have maySkipLesson: false.
+     */
+    chooseOne: sharedUrlPending,
     complementary,
     reviewLater,
     uncertain,
+    ownerHeldPairs: OWNER_HELD_SHARED_URL_PAIRS,
     policyTh: [
-      'ไม่ลบคลิปอัตโนมัติ',
-      'ไม่ตัดสินซ้ำจากชื่ออย่างเดียวโดยไม่มีหลักฐาน URL หรือการยืนยัน',
-      'คงลิงก์ต้นทางทุกแหล่งไว้แม้แนะนำให้เลือกเรียนแหล่งเดียว',
+      'ไม่ลบหรือรวมรายการอัตโนมัติ',
+      'URL ซ้ำ = รอยืนยันเท่านั้น — ไม่ใช่หลักฐานว่าเนื้อหาซ้ำจริง',
+      'ห้ามแนะนำให้ข้ามบทเรียนจากเหตุ URL ซ้ำโดยไม่มีคำยืนยันจากเจ้าของ',
+      'lady-a / lady-b และ law-nonn-22 / 24 คงไว้ทั้งคู่ตามนโยบายเจ้าของ',
+      'คงลิงก์ต้นทางทุกลิงก์ไว้',
     ],
   }
+}
+
+/**
+ * True only if a group explicitly allows skipping (never for pending shared URL).
+ * @param {object} group
+ */
+export function groupAllowsSkipLesson(group) {
+  return group?.maySkipLesson === true && group?.contentDuplicateConfirmed === true
 }
