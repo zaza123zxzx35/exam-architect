@@ -11,6 +11,7 @@
 - `/opt/cursor/artifacts/screenshots/qa-final-audit-shared.png`
 - `/opt/cursor/artifacts/screenshots/qa-final-audit-law.png`
 - `/opt/cursor/artifacts/screenshots/audit-overlap-tab-awaiting-confirmation.webp`
+- `/opt/cursor/artifacts/screenshots/audit-awaiting-confirmation-full-view.webp`
 
 ---
 
