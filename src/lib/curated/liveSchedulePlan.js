@@ -33,28 +33,78 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < be && bStart < ae
 }
 
+/** Exact markers written by pre-P0 `resolveLadyLiveConflicts` (commit before 628499a). */
+export const LEGACY_LADY_DEMOTE_TITLE_PREFIX = 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · '
+export const LEGACY_LADY_DEMOTE_REASON_SNIPPET = 'เลื่อนเป็นทบทวนกลางวันตามแผน 100'
+export const LEGACY_LADY_DEMOTE_REASON_CODE = 'victory-lady-wins'
+
 /**
- * Compatibility: undo silent 09:00–11:00 overwrite from older builds.
- * Restores source clock when the known auto-demotion pattern is present.
- * Does not invent times — only copies demotedFrom* back onto start/end.
+ * Classify a 09:00–11:00 + demotedFrom* shell without guessing from the clock alone.
+ *
+ * Pre-P0 system demotion always wrote the full bundle:
+ * conflictResolved, demotedFrom*, 09:00–11:00, title prefix, reason snippet, reasonCode.
+ *
+ * @returns {'none'|'system_legacy'|'user_protected'|'ambiguous'|'review_held'}
+ */
+export function classifySilentLadyDemotion(block) {
+  if (!block || block.liveKind !== 'content-block') return 'none'
+  if (!block.demotedFromStartTime || !block.demotedFromEndTime) return 'none'
+  if (block.startTime !== '09:00' || block.endTime !== '11:00') return 'none'
+
+  // Already held for manual review — do not thrash on re-resolve.
+  if (block.legacyDemotionReviewNeeded && !block.conflictResolved) return 'review_held'
+
+  if (!block.conflictResolved) return 'none'
+  if (block.userEdited === true) return 'user_protected'
+
+  const hasCode = (block.reasonCodes || []).includes(LEGACY_LADY_DEMOTE_REASON_CODE)
+  const hasTitle = String(block.title || '').startsWith(LEGACY_LADY_DEMOTE_TITLE_PREFIX)
+  const hasReason = String(block.reasonTh || '').includes(LEGACY_LADY_DEMOTE_REASON_SNIPPET)
+
+  // Require the full system fingerprint — clock alone is not proof.
+  if (hasCode && hasTitle && hasReason) return 'system_legacy'
+  return 'ambiguous'
+}
+
+function markLegacyDemotionForReview(block, classification) {
+  block.legacyDemotionReviewNeeded = true
+  block.conflictResolved = false
+  // Keep demotedFrom* and current clock for manual inspection — do not invent times.
+  const note = classification === 'user_protected'
+    ? 'พบ marker demote เก่าแต่มี userEdited — คงเวลาที่ผู้ใช้ตั้งไว้ · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
+    : 'พบ marker demote เก่าแบบกำกวม (ไม่มีลายนิ้วมือระบบครบ) — คงเวลาปัจจุบัน · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
+  if (!String(block.reasonTh || '').includes('ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ')) {
+    block.reasonTh = [block.reasonTh, note].filter(Boolean).join(' · ')
+  }
+  block.reasonCodes = [...new Set([...(block.reasonCodes || []), 'legacy-demotion-review'])]
+}
+
+/**
+ * Compatibility: restore only when pre-P0 system demotion fingerprint is complete.
+ * Ambiguous / userEdited cases keep the current clock and are flagged for review.
  * @param {object} block
- * @returns {boolean}
+ * @returns {boolean} true only when source clock was restored
  */
 export function restoreSilentLadyDemotion(block) {
-  if (!block || block.liveKind !== 'content-block') return false
-  if (!block.conflictResolved) return false
-  if (!block.demotedFromStartTime || !block.demotedFromEndTime) return false
-  if (block.startTime !== '09:00' || block.endTime !== '11:00') return false
-  block.startTime = block.demotedFromStartTime
-  block.endTime = block.demotedFromEndTime
-  delete block.demotedFromStartTime
-  delete block.demotedFromEndTime
-  block.conflictResolved = false
-  const th = String(block.title || '')
-  if (th.startsWith('ทบทวนกลางวัน (หลบไลฟ์เลดี้) · ')) {
-    block.title = `โฟกัสเนื้อหา · ${th.replace(/^ทบทวนกลางวัน \(หลบไลฟ์เลดี้\) · /, '')}`
+  const kind = classifySilentLadyDemotion(block)
+  if (kind === 'system_legacy') {
+    block.startTime = block.demotedFromStartTime
+    block.endTime = block.demotedFromEndTime
+    delete block.demotedFromStartTime
+    delete block.demotedFromEndTime
+    block.conflictResolved = false
+    delete block.legacyDemotionReviewNeeded
+    const th = String(block.title || '')
+    if (th.startsWith(LEGACY_LADY_DEMOTE_TITLE_PREFIX)) {
+      block.title = `โฟกัสเนื้อหา · ${th.slice(LEGACY_LADY_DEMOTE_TITLE_PREFIX.length)}`
+    }
+    return true
   }
-  return true
+  if (kind === 'user_protected' || kind === 'ambiguous') {
+    markLegacyDemotionForReview(block, kind)
+    return false
+  }
+  return false
 }
 
 /**

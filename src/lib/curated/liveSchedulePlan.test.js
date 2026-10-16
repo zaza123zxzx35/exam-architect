@@ -6,13 +6,33 @@ import {
   subjectFocusForDate,
 } from '../../data/liveTutorSchedule.js'
 import {
+  classifySilentLadyDemotion,
   generateLiveScheduleTasks,
   reorderQueueForDateFocus,
   resolveLadyLiveConflicts,
+  restoreSilentLadyDemotion,
   sortCatalogByPriority,
 } from './liveSchedulePlan.js'
 import { buildDayTimeline, DEFAULT_COACH_PREFS } from './dayTimeline.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
+
+function systemLegacyDemotionShell(overrides = {}) {
+  return {
+    id: 'live_vip',
+    plannedDate: '2026-10-07',
+    liveKind: 'content-block',
+    liveEventId: 'vip-civil-2026-10-07',
+    startTime: '09:00',
+    endTime: '11:00',
+    demotedFromStartTime: '20:00',
+    demotedFromEndTime: '22:30',
+    conflictResolved: true,
+    title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP',
+    reasonTh: 'vip · ชนไลฟ์เลดี้เก๋เก๋ (21:00–22:30) — เลื่อนเป็นทบทวนกลางวันตามแผน 100',
+    reasonCodes: ['vip', 'victory-lady-wins'],
+    ...overrides,
+  }
+}
 
 describe('liveTutorSchedule VIP + Lady Kaekae', () => {
   it('loads Lady lives and VIP October content blocks', () => {
@@ -93,5 +113,95 @@ describe('liveSchedulePlan helpers', () => {
     expect(math?.title).not.toMatch(/ทบทวนกลางวัน/)
     const { conflictIds } = resolveLadyLiveConflicts(day)
     expect(conflictIds).toContain(math.id)
+  })
+})
+
+describe('P0.3 legacy demotion restore safety', () => {
+  it('restores only when full pre-P0 system fingerprint is present', () => {
+    const block = systemLegacyDemotionShell()
+    expect(classifySilentLadyDemotion(block)).toBe('system_legacy')
+    expect(restoreSilentLadyDemotion(block)).toBe(true)
+    expect(block.startTime).toBe('20:00')
+    expect(block.endTime).toBe('22:30')
+    expect(block.demotedFromStartTime).toBeUndefined()
+    expect(block.conflictResolved).toBe(false)
+    expect(block.title).toBe('โฟกัสเนื้อหา · VIP')
+  })
+
+  it('does not overwrite userEdited 09:00–11:00 even with leftover demotedFrom markers', () => {
+    const block = systemLegacyDemotionShell({
+      userEdited: true,
+      title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP ที่ผู้ใช้ยืนยันช่วงเช้า',
+    })
+    expect(classifySilentLadyDemotion(block)).toBe('user_protected')
+    expect(restoreSilentLadyDemotion(block)).toBe(false)
+    expect(block.startTime).toBe('09:00')
+    expect(block.endTime).toBe('11:00')
+    expect(block.demotedFromStartTime).toBe('20:00')
+    expect(block.legacyDemotionReviewNeeded).toBe(true)
+    expect(block.conflictResolved).toBe(false)
+    expect(block.reasonTh).toMatch(/userEdited|ผู้ใช้ตั้งไว้|ตรวจสอบด้วยมือ/)
+  })
+
+  it('does not auto-restore ambiguous 09:00–11:00 shells lacking system fingerprint', () => {
+    const block = systemLegacyDemotionShell({
+      title: 'ช่วงเช้าที่ตั้งเอง',
+      reasonTh: 'ผู้ใช้อาจย้ายเอง',
+      reasonCodes: ['vip'], // no victory-lady-wins
+    })
+    expect(classifySilentLadyDemotion(block)).toBe('ambiguous')
+    expect(restoreSilentLadyDemotion(block)).toBe(false)
+    expect(block.startTime).toBe('09:00')
+    expect(block.endTime).toBe('11:00')
+    expect(block.demotedFromStartTime).toBe('20:00')
+    expect(block.legacyDemotionReviewNeeded).toBe(true)
+    expect(block.title).toBe('ช่วงเช้าที่ตั้งเอง')
+  })
+
+  it('clock alone (09:00–11:00) is not enough without demotedFrom + conflictResolved', () => {
+    expect(classifySilentLadyDemotion({
+      liveKind: 'content-block',
+      startTime: '09:00',
+      endTime: '11:00',
+      title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP',
+      reasonCodes: ['victory-lady-wins'],
+      reasonTh: 'เลื่อนเป็นทบทวนกลางวันตามแผน 100',
+    })).toBe('none')
+  })
+
+  it('re-resolve is idempotent for system restore and for review-held rows', () => {
+    const lady = {
+      id: 'live_lady',
+      plannedDate: '2026-10-07',
+      liveKind: 'live',
+      liveEventId: 'lady-live-a-haek-2026-10-07',
+      startTime: '21:00',
+      endTime: '22:30',
+      title: 'ไลฟ์',
+    }
+    const system = systemLegacyDemotionShell({ id: 'sys' })
+    const ambiguous = systemLegacyDemotionShell({
+      id: 'amb',
+      title: 'เช้าของฉัน',
+      reasonTh: 'ไม่รู้ที่มา',
+      reasonCodes: [],
+    })
+    const first = resolveLadyLiveConflicts([{ ...lady }, { ...system }, { ...ambiguous }])
+    const sys1 = first.tasks.find((t) => t.id === 'sys')
+    const amb1 = first.tasks.find((t) => t.id === 'amb')
+    expect(sys1.startTime).toBe('20:00')
+    expect(amb1.startTime).toBe('09:00')
+    expect(amb1.legacyDemotionReviewNeeded).toBe(true)
+    const reasonAmb1 = amb1.reasonTh
+
+    const second = resolveLadyLiveConflicts(first.tasks)
+    const sys2 = second.tasks.find((t) => t.id === 'sys')
+    const amb2 = second.tasks.find((t) => t.id === 'amb')
+    expect(sys2.startTime).toBe('20:00')
+    expect(sys2.endTime).toBe('22:30')
+    expect(amb2.startTime).toBe('09:00')
+    expect(amb2.endTime).toBe('11:00')
+    expect(amb2.reasonTh).toBe(reasonAmb1)
+    expect(classifySilentLadyDemotion(amb2)).toBe('review_held')
   })
 })

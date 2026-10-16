@@ -55,7 +55,7 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
     expect(vip?.conflictWithLiveEventIds).toEqual(['lady-live-a-haek-2026-10-07'])
   })
 
-  it('restores legacy silent 09:00–11:00 demotion back to source clock', () => {
+  it('restores legacy silent demotion only with full pre-P0 system fingerprint', () => {
     const tasks = [
       {
         id: 'live_lady',
@@ -77,7 +77,7 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
         demotedFromEndTime: '22:30',
         conflictResolved: true,
         title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP',
-        reasonTh: 'vip',
+        reasonTh: 'vip · ชนไลฟ์เลดี้เก๋เก๋ (21:00–22:30) — เลื่อนเป็นทบทวนกลางวันตามแผน 100',
         reasonCodes: ['vip', 'victory-lady-wins'],
       },
     ]
@@ -87,6 +87,7 @@ describe('victoryPlan แผนพาบรรจุ 100', () => {
     expect(vip?.endTime).toBe('22:30')
     expect(vip?.scheduleConflictPending).toBe(true)
     expect(vip?.conflictResolved).toBe(false)
+    expect(vip?.legacyDemotionReviewNeeded).toBeFalsy()
   })
 
   it('seeds a schedule that scores 100/100 with belief', () => {
