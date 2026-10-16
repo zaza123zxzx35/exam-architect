@@ -18,10 +18,93 @@ import { attachCatalogLinkToLiveTask } from './taskOpenAction.js'
 
 export const LIVE_SCHEDULE_ORIGIN = 'live-tutor-schedule'
 
+/** Reason code when planned clock is protected from flyer overwrite (Strategy D). */
+export const CLOCK_LOCKED_REASON_CODE = 'clock-locked-protect'
+
 function parseMinutes(t) {
   if (!t || !/^\d{1,2}:\d{2}$/.test(String(t))) return null
   const [h, m] = String(t).split(':').map(Number)
   return h * 60 + m
+}
+
+function normClock(t) {
+  if (t == null || t === '') return null
+  const s = String(t)
+  return /^\d{1,2}:\d{2}$/.test(s) ? s : null
+}
+
+/**
+ * Clock-specific lock — separate from userEdited (title/status edits).
+ * Future UI that changes live planned clocks should call this.
+ * @param {object} task
+ * @param {{ startTime?: string|null, endTime?: string|null, title?: string }} [patch]
+ */
+export function markLiveTaskClockLocked(task, patch = {}) {
+  if (!task || typeof task !== 'object') return task
+  if (patch.startTime !== undefined) task.startTime = patch.startTime
+  if (patch.endTime !== undefined) task.endTime = patch.endTime
+  if (patch.title !== undefined) task.title = patch.title
+  task.clockLocked = true
+  task.reasonCodes = [...new Set([...(task.reasonCodes || []), CLOCK_LOCKED_REASON_CODE])]
+  return task
+}
+
+/**
+ * Decide whether planned start/end may adopt flyer clocks.
+ * Missing userEdited alone never authorizes overwrite — use clockLocked + source snapshot drift.
+ *
+ * @param {object} existing
+ * @param {{ startTime?: string|null, endTime?: string|null }} flyer
+ * @returns {{
+ *   protectPlanned: boolean,
+ *   reason: 'clockLocked'|'userEdited'|'drift'|'legacy-no-source'|'track'|string,
+ *   shouldStampClockLocked: boolean,
+ * }}
+ */
+export function decideLivePlannedClockSync(existing, flyer) {
+  const flyerStart = normClock(flyer?.startTime)
+  const flyerEnd = normClock(flyer?.endTime)
+  const plannedStart = normClock(existing?.startTime)
+  const plannedEnd = normClock(existing?.endTime)
+  const priorSourceStart = normClock(existing?.sourceStartTime)
+  const priorSourceEnd = normClock(existing?.sourceEndTime)
+  const hasPriorSource = priorSourceStart != null || priorSourceEnd != null
+
+  if (existing?.clockLocked === true) {
+    return { protectPlanned: true, reason: 'clockLocked', shouldStampClockLocked: false }
+  }
+  // Historical rows may have used userEdited for clock moves — keep protecting planned clocks.
+  if (existing?.userEdited === true) {
+    return { protectPlanned: true, reason: 'userEdited', shouldStampClockLocked: false }
+  }
+
+  if (hasPriorSource) {
+    const drifted = (
+      (plannedStart != null && priorSourceStart != null && plannedStart !== priorSourceStart)
+      || (plannedEnd != null && priorSourceEnd != null && plannedEnd !== priorSourceEnd)
+    )
+    if (drifted) {
+      return { protectPlanned: true, reason: 'drift', shouldStampClockLocked: true }
+    }
+    return { protectPlanned: false, reason: 'track', shouldStampClockLocked: false }
+  }
+
+  // Legacy row: no source snapshot. Do not assume flyer is accepted planned time.
+  const flyerHasClock = flyerStart != null || flyerEnd != null
+  const plannedHasClock = plannedStart != null || plannedEnd != null
+  if (flyerHasClock && plannedHasClock) {
+    const mismatch = (
+      (flyerStart != null && plannedStart != null && plannedStart !== flyerStart)
+      || (flyerEnd != null && plannedEnd != null && plannedEnd !== flyerEnd)
+      || (flyerStart != null && plannedStart == null)
+      || (flyerEnd != null && plannedEnd == null)
+    )
+    if (mismatch) {
+      return { protectPlanned: true, reason: 'legacy-no-source', shouldStampClockLocked: true }
+    }
+  }
+
+  return { protectPlanned: false, reason: 'track', shouldStampClockLocked: false }
 }
 
 function rangesOverlap(aStart, aEnd, bStart, bEnd) {
@@ -55,7 +138,7 @@ export function classifySilentLadyDemotion(block) {
   if (block.legacyDemotionReviewNeeded && !block.conflictResolved) return 'review_held'
 
   if (!block.conflictResolved) return 'none'
-  if (block.userEdited === true) return 'user_protected'
+  if (block.userEdited === true || block.clockLocked === true) return 'user_protected'
 
   const hasCode = (block.reasonCodes || []).includes(LEGACY_LADY_DEMOTE_REASON_CODE)
   const hasTitle = String(block.title || '').startsWith(LEGACY_LADY_DEMOTE_TITLE_PREFIX)
@@ -71,7 +154,7 @@ function markLegacyDemotionForReview(block, classification) {
   block.conflictResolved = false
   // Keep demotedFrom* and current clock for manual inspection — do not invent times.
   const note = classification === 'user_protected'
-    ? 'พบ marker demote เก่าแต่มี userEdited — คงเวลาที่ผู้ใช้ตั้งไว้ · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
+    ? 'พบ marker demote เก่าแต่มี userEdited/clockLocked — คงเวลาที่ผู้ใช้ตั้งไว้ · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
     : 'พบ marker demote เก่าแบบกำกวม (ไม่มีลายนิ้วมือระบบครบ) — คงเวลาปัจจุบัน · ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ'
   if (!String(block.reasonTh || '').includes('ต้องตรวจสอบด้วยมือ ห้าม restore อัตโนมัติ')) {
     block.reasonTh = [block.reasonTh, note].filter(Boolean).join(' · ')
@@ -142,9 +225,14 @@ export function resolveLadyLiveConflicts(tasks) {
       ))
       if (!hitLives.length) continue
       conflictIds.add(block.id)
-      // Preserve source clock explicitly (additive fields — no schema break).
-      block.sourceStartTime = block.startTime
-      block.sourceEndTime = block.endTime
+      // Source snapshot = flyer/authoritative clock only.
+      // Never stamp source* from a planned clock that may have drifted (Strategy D).
+      const hasTrustedSource = normClock(block.sourceStartTime) != null || normClock(block.sourceEndTime) != null
+      if (!hasTrustedSource && block.clockLocked !== true) {
+        // Bootstrap only when still tracking (no lock) and no prior source snapshot.
+        block.sourceStartTime = block.startTime
+        block.sourceEndTime = block.endTime
+      }
       block.conflictWithLiveEventIds = hitLives
         .map((live) => String(live.liveEventId || live.id || ''))
         .filter(Boolean)
@@ -153,7 +241,9 @@ export function resolveLadyLiveConflicts(tasks) {
       // Clear any leftover silent-demotion markers without inventing a new slot.
       delete block.demotedFromStartTime
       delete block.demotedFromEndTime
-      const conflictNote = `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — คงเวลาต้นทาง ${block.startTime}–${block.endTime} · รอยืนยันว่าจะเข้าสดรายการใด ยังไม่เลื่อนอัตโนมัติ`
+      const sourceLabelStart = normClock(block.sourceStartTime) || block.startTime || '?'
+      const sourceLabelEnd = normClock(block.sourceEndTime) || block.endTime || '?'
+      const conflictNote = `ชนไลฟ์เลดี้เก๋เก๋ (${hitLives.map((l) => `${l.startTime || '?'}–${l.endTime || '?'}`).join(', ')}) — คงเวลาต้นทาง ${sourceLabelStart}–${sourceLabelEnd} · รอยืนยันว่าจะเข้าสดรายการใด ยังไม่เลื่อนอัตโนมัติ`
       if (!String(block.reasonTh || '').includes('รอยืนยันว่าจะเข้าสดรายการใด')) {
         block.reasonTh = [block.reasonTh, conflictNote].filter(Boolean).join(' · ')
       }
@@ -253,6 +343,9 @@ export function generateLiveScheduleTasks(options = {}) {
         durationIsEstimate: true,
         startTime: event.startTime || null,
         endTime: event.endTime || null,
+        // Authoritative flyer snapshot (may later diverge from planned start/end).
+        sourceStartTime: event.startTime || null,
+        sourceEndTime: event.endTime || null,
         priorityTier: event.priorityRank <= 30
           ? PRIORITY_TIERS.MUST
           : event.priorityRank <= 60

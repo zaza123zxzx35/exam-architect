@@ -37,7 +37,8 @@ export const EXAMS = [
     title: 'สอบภาค ข',
     part: 'ข',
     startsAt: '2026-11-15T09:00:00+07:00',
-    totalScore: 100,
+    // Align with official curriculum buckets (เอก 100 + การศึกษา 75 + กฎหมาย 25).
+    totalScore: 200,
     weight: 2,
     labelShort: '15 พ.ย. 2569 · 09:00 น.',
     labelLong: '15 พฤศจิกายน 2569 · 09:00 น.',

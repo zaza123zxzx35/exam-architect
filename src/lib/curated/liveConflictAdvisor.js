@@ -122,6 +122,16 @@ function watchLaterHintTh(task) {
 }
 
 /**
+ * Short UI label for timetable / slot copy — never claims replay from URL alone.
+ * @param {ReplayEvidenceStatus} status
+ */
+export function replayStatusLabelTh(status) {
+  if (status === 'confirmed') return 'ดูย้อนหลังได้ (ยืนยันแล้วในระบบ)'
+  if (status === 'unconfirmed_link') return 'ลิงก์ยังไม่ยืนยันว่าเป็น replay'
+  return 'ยังไม่มีหลักฐาน replay'
+}
+
+/**
  * @param {object[]} dayTasks tasks for a single plannedDate
  */
 export function adviseLiveConflicts(dayTasks) {

@@ -7,7 +7,14 @@
 import { bangkokTodayIso } from '../../data/htmlPlannerData.js'
 import { listLiveTutorEvents } from '../../data/liveTutorSchedule.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../study/hub.js'
-import { generateLiveScheduleTasks, LIVE_SCHEDULE_ORIGIN } from './liveSchedulePlan.js'
+import {
+  CLOCK_LOCKED_REASON_CODE,
+  decideLivePlannedClockSync,
+  generateLiveScheduleTasks,
+  LIVE_SCHEDULE_ORIGIN,
+  resolveLadyLiveConflicts,
+  restoreSilentLadyDemotion,
+} from './liveSchedulePlan.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 import { PART_B_29_ORIGIN } from './partB29Plan.js'
 import { VICTORY_PLAN_ORIGIN } from './victoryPlan.js'
@@ -262,30 +269,133 @@ function eventSpansDate(event, todayIso) {
 }
 
 /**
- * Add-only: pin today's poster live/content-block tasks into the schedule.
- * Never invents times — uses generateLiveScheduleTasks from flyer data.
+ * Pin today's poster live/content-block tasks into the schedule (Strategy D).
+ * - Adds missing live_* rows from flyer data (never invents clocks).
+ * - Always refreshes sourceStart/End + conflict flags from flyer.
+ * - Adopts flyer into planned start/end only while still tracking source
+ *   (not clockLocked / userEdited / drift / legacy planned≠flyer without source*).
+ * Safe to call repeatedly (idempotent when already synced).
  * @param {object} schedule
  * @param {string} [todayIso]
  */
 export function ensureTodaySourceTasks(schedule, todayIso = bangkokTodayIso()) {
-  const existingIds = (schedule?.tasks || []).map((t) => String(t.id))
+  const tasks = [...(schedule?.tasks || [])]
   const draft = generateLiveScheduleTasks({
     todayIso,
     untilIso: todayIso,
-    existingTaskIds: existingIds,
+    existingTaskIds: [],
     includeLogistics: true,
   })
-  const toAdd = (draft.proposedTasks || []).filter((t) => t.plannedDate === todayIso)
-  if (!toAdd.length) {
-    return { schedule, added: 0, addedIds: [] }
+  const proposed = (draft.proposedTasks || []).filter((t) => t.plannedDate === todayIso)
+  let added = 0
+  let updated = 0
+  const addedIds = []
+  /** @type {string[]} */
+  const protectedClockIds = []
+  /** @type {string[]} */
+  const clockProtectNotesTh = []
+
+  for (const src of proposed) {
+    const id = String(src.id)
+    const idx = tasks.findIndex((t) => String(t.id) === id)
+    if (idx < 0) {
+      tasks.push({ ...src })
+      added += 1
+      addedIds.push(id)
+      continue
+    }
+
+    const original = tasks[idx]
+    // Clone + optional demotion restore before deciding planned-clock sync.
+    const existing = { ...original }
+    restoreSilentLadyDemotion(existing)
+
+    const decision = decideLivePlannedClockSync(existing, src)
+    const next = {
+      ...existing,
+      scheduleConflictPending: src.scheduleConflictPending,
+      conflictWithLiveEventIds: src.conflictWithLiveEventIds,
+      // Authoritative flyer snapshot — always refresh.
+      sourceStartTime: src.sourceStartTime ?? src.startTime ?? existing.sourceStartTime,
+      sourceEndTime: src.sourceEndTime ?? src.endTime ?? existing.sourceEndTime,
+      conflictResolved: src.conflictResolved,
+      liveKind: src.liveKind || existing.liveKind,
+      liveEventId: src.liveEventId || existing.liveEventId,
+      origin: existing.origin || LIVE_SCHEDULE_ORIGIN,
+    }
+
+    if (decision.protectPlanned) {
+      protectedClockIds.push(id)
+      // Stamp lock + report only when newly detecting drift/legacy (idempotent thereafter).
+      if (decision.shouldStampClockLocked && existing.clockLocked !== true) {
+        next.clockLocked = true
+        const protectNote = decision.reason === 'legacy-no-source'
+          ? 'นาฬิกาในแผนไม่ตรง flyer และยังไม่มี source snapshot — คงเวลาในแผน · รอยืนยัน (ไม่ sync ทับอัตโนมัติ)'
+          : 'นาฬิกาในแผนคลาดจาก source snapshot — คงเวลาในแผน · ไม่ sync ทับจาก flyer'
+        if (!String(next.reasonTh || '').includes('ไม่ sync ทับ')) {
+          next.reasonTh = [next.reasonTh, protectNote].filter(Boolean).join(' · ')
+        }
+        next.reasonCodes = [...new Set([
+          ...(next.reasonCodes || []),
+          CLOCK_LOCKED_REASON_CODE,
+          `clock-protect:${decision.reason}`,
+        ])]
+        clockProtectNotesTh.push(`${id}: ${protectNote}`)
+      } else if (existing.clockLocked === true || existing.userEdited === true) {
+        const msg = `${id}: คงนาฬิกาในแผน (clockLocked/userEdited) — ไม่ sync ทับจาก flyer`
+        clockProtectNotesTh.push(msg)
+      }
+      // Keep planned start/end / title as-is (after demotion restore above).
+    } else {
+      next.startTime = src.startTime
+      next.endTime = src.endTime
+      next.title = String(existing.title || '').startsWith('ทบทวนกลางวัน')
+        ? src.title
+        : (existing.title || src.title)
+      // Tracking rows may refresh reason from flyer when not protected.
+      next.reasonTh = src.reasonTh || existing.reasonTh
+      next.reasonCodes = src.reasonCodes || existing.reasonCodes
+      delete next.demotedFromStartTime
+      delete next.demotedFromEndTime
+      delete next.legacyDemotionReviewNeeded
+    }
+
+    const changedFromOriginal = (
+      original.startTime !== next.startTime
+      || original.endTime !== next.endTime
+      || Boolean(original.scheduleConflictPending) !== Boolean(next.scheduleConflictPending)
+      || original.sourceStartTime !== next.sourceStartTime
+      || original.sourceEndTime !== next.sourceEndTime
+      || Boolean(original.clockLocked) !== Boolean(next.clockLocked)
+      || JSON.stringify(original.reasonCodes || []) !== JSON.stringify(next.reasonCodes || [])
+      || String(original.reasonTh || '') !== String(next.reasonTh || '')
+      || Boolean(original.demotedFromStartTime) !== Boolean(next.demotedFromStartTime)
+    )
+    tasks[idx] = next
+    if (changedFromOriginal) updated += 1
+  }
+
+  // Re-flag overlaps on the day (must not stamp source* from drifted planned).
+  const dayTasks = tasks.filter((t) => t && t.plannedDate === todayIso)
+  resolveLadyLiveConflicts(dayTasks)
+
+  if (added === 0 && updated === 0) {
+    return {
+      schedule,
+      added: 0,
+      updated: 0,
+      addedIds: [],
+      protectedClockIds: [],
+      clockProtectNotesTh: [],
+    }
   }
   return {
-    schedule: {
-      ...schedule,
-      tasks: [...(schedule?.tasks || []), ...toAdd],
-    },
-    added: toAdd.length,
-    addedIds: toAdd.map((t) => t.id),
+    schedule: { ...schedule, tasks },
+    added,
+    updated,
+    addedIds,
+    protectedClockIds,
+    clockProtectNotesTh,
   }
 }
 

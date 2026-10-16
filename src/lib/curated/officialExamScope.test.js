@@ -5,10 +5,14 @@ import { SUBJECT_IDS, subjectIdToExamPart } from '../study/taxonomy.js'
 import {
   OFFICIAL_SCOPE_CHECKED_AT,
   OFFICIAL_SCOPE_SOURCES,
+  OFFICIAL_CURRICULUM_BUCKETS,
+  OFFICIAL_EXAM_TOTAL_SCORE,
   SUBJECT_OFFICIAL_SCOPE,
   auditRowAgainstOfficialScope,
   buildOfficialScopeReport,
   getOfficialScopeForSubject,
+  resolveSubjectScoreBucket,
+  sumOfficialBucketScores,
 } from './officialExamScope.js'
 
 describe('official exam scope (Phase 8.2)', () => {
@@ -70,5 +74,26 @@ describe('official exam scope (Phase 8.2)', () => {
     const report = buildOfficialScopeReport(catalog)
     expect(report.limitationsTh.length).toBeGreaterThan(0)
     expect(report.checkedAt).toBe(OFFICIAL_SCOPE_CHECKED_AT)
+  })
+
+  it('official buckets sum to 400 with correct part totals and percents', () => {
+    expect(OFFICIAL_EXAM_TOTAL_SCORE).toBe(400)
+    expect(sumOfficialBucketScores('ก')).toBe(200)
+    expect(sumOfficialBucketScores('ข')).toBe(200)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('คิดวิเคราะห์'))?.maxScore).toBe(100)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('ทักษะภาษาอังกฤษ'))?.maxScore).toBe(50)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('ข้าราชการที่ดี'))?.maxScore).toBe(50)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('วิชาเอก') || b.titleTh.includes('เนื้อหาวิชาที่สอน'))?.maxScore).toBe(100)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('จัดการเรียนการสอน'))?.maxScore).toBe(75)
+    expect(OFFICIAL_CURRICULUM_BUCKETS.find((b) => b.titleTh.includes('กฎหมาย'))?.maxScore).toBe(25)
+    const major = resolveSubjectScoreBucket(SUBJECT_IDS.ENGLISH_MAJOR)
+    expect(major.status).toBe('mapped')
+    expect(major.percentOfTotal).toBe(25)
+    const law = resolveSubjectScoreBucket(SUBJECT_IDS.LAW)
+    expect(law.percentOfTotal).toBe(6.25)
+    const awaiting = resolveSubjectScoreBucket(SUBJECT_IDS.UNKNOWN)
+    expect(awaiting.status).toBe('awaiting_subject_mapping')
+    expect(awaiting.reasonTh).toMatch(/รอยืนยันหมวดวิชา/)
+    expect(resolveSubjectScoreBucket('not-a-real-subject').status).toBe('awaiting_subject_mapping')
   })
 })

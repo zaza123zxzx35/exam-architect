@@ -3,6 +3,7 @@ import {
   buildDailyAgenda,
   compareAgendaItems,
   classifyAgendaKind,
+  ensureTodaySourceTasks,
   mapTaskStatus,
   liveClockPhase,
   DAILY_AGENDA_VERSION,
@@ -161,5 +162,319 @@ describe('dailyAgenda', () => {
     expect(agenda.counts.total).toBeGreaterThan(0)
     expect(agenda.sourceFocus.length).toBeGreaterThan(0)
     expect(agenda.sections.lives).toHaveLength(0)
+  })
+
+  it('ensureTodaySourceTasks upserts flyer clocks even when victory rows already fill the day', () => {
+    const polluted = {
+      tasks: [{
+        id: 'victory_noise',
+        title: 'งาน victory ที่ไม่มีนาฬิกา',
+        plannedDate: '2026-10-07',
+        status: 'pending',
+        estimatedMinutes: 90,
+        origin: 'victory-plan',
+      }, {
+        id: 'live_vip-civil-2026-10-07_2026-10-07',
+        title: 'ทบทวนกลางวัน (หลบไลฟ์เลดี้) · VIP',
+        plannedDate: '2026-10-07',
+        status: 'pending',
+        startTime: '09:00',
+        endTime: '11:00',
+        demotedFromStartTime: '20:00',
+        demotedFromEndTime: '22:30',
+        conflictResolved: true,
+        liveKind: 'content-block',
+        liveEventId: 'vip-civil-2026-10-07',
+        origin: 'live-tutor-schedule',
+        reasonTh: 'เลื่อนเป็นทบทวนกลางวันตามแผน 100',
+        reasonCodes: ['victory-lady-wins'],
+      }],
+    }
+    const out = ensureTodaySourceTasks(polluted, '2026-10-07')
+    expect(out.added).toBeGreaterThan(0)
+    const vip = out.schedule.tasks.find((t) => t.liveEventId === 'vip-civil-2026-10-07')
+    const haek = out.schedule.tasks.find((t) => t.liveEventId === 'lady-live-a-haek-2026-10-07')
+    expect(vip?.startTime).toBe('20:00')
+    expect(vip?.endTime).toBe('22:30')
+    expect(vip?.scheduleConflictPending).toBe(true)
+    expect(haek?.startTime).toBe('21:00')
+    expect(haek?.endTime).toBe('22:30')
+    // Idempotent
+    const again = ensureTodaySourceTasks(out.schedule, '2026-10-07')
+    expect(again.added).toBe(0)
+    const vip2 = again.schedule.tasks.find((t) => t.liveEventId === 'vip-civil-2026-10-07')
+    expect(vip2?.startTime).toBe('20:00')
+  })
+
+  it('ensureTodaySourceTasks does not overwrite userEdited clocks', () => {
+    const schedule = {
+      tasks: [{
+        id: 'live_vip-civil-2026-10-07_2026-10-07',
+        title: 'VIP ที่ผู้ใช้ย้ายเอง',
+        plannedDate: '2026-10-07',
+        status: 'pending',
+        startTime: '14:00',
+        endTime: '16:00',
+        userEdited: true,
+        liveKind: 'content-block',
+        liveEventId: 'vip-civil-2026-10-07',
+        origin: 'live-tutor-schedule',
+      }],
+    }
+    const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+    const vip = out.schedule.tasks.find((t) => t.liveEventId === 'vip-civil-2026-10-07')
+    expect(vip?.startTime).toBe('14:00')
+    expect(vip?.endTime).toBe('16:00')
+    // source snapshot still refreshes from flyer
+    expect(vip?.sourceStartTime).toBe('20:00')
+    expect(vip?.sourceEndTime).toBe('22:30')
+  })
+
+  describe('Strategy D planned-clock protect', () => {
+    const vipId = 'live_vip-civil-2026-10-07_2026-10-07'
+
+    it('1) tracking row (no lock) adopts flyer planned clocks and sets source*', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'โฟกัสเนื้อหา · VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '20:00',
+          endTime: '22:30',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('20:00')
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(vip?.clockLocked).not.toBe(true)
+    })
+
+    it('2) userEdited planned clocks are not overwritten; source* still refreshes', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP edited',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          userEdited: true,
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.endTime).toBe('16:00')
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(out.protectedClockIds).toContain(vipId)
+    })
+
+    it('3) localStorage drift without userEdited (planned ≠ source*) → protect + clockLocked', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP drifted',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.endTime).toBe('16:00')
+      expect(vip?.clockLocked).toBe(true)
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(vip?.reasonCodes).toEqual(expect.arrayContaining(['clock-locked-protect', 'clock-protect:drift']))
+      expect(out.clockProtectNotesTh.some((n) => n.includes(vipId))).toBe(true)
+    })
+
+    it('4) flyer source changes while user has custom planned → source* updates, planned kept', () => {
+      // Simulate prior flyer 19:00 tracked in source*; user moved planned to 14:00.
+      // Current flyer for vip-civil is 20:00 — source refreshes to 20:00, planned stays 14:00.
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          sourceStartTime: '19:00',
+          sourceEndTime: '21:30',
+          clockLocked: true,
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(vip?.sourceEndTime).toBe('22:30')
+      expect(vip?.clockLocked).toBe(true)
+    })
+
+    it('5) conflict flags sync without changing protected planned clocks', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          clockLocked: true,
+          scheduleConflictPending: false,
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.scheduleConflictPending).toBe(true)
+      expect(vip?.conflictWithLiveEventIds?.length).toBeGreaterThan(0)
+    })
+
+    it('6) legacy row without source* and planned ≠ flyer → protect, report, no overwrite', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP legacy',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.clockLocked).toBe(true)
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(vip?.reasonCodes).toEqual(expect.arrayContaining(['clock-protect:legacy-no-source']))
+      expect(out.protectedClockIds).toContain(vipId)
+    })
+
+    it('7) adds missing live_* without duplicating existing id', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '20:00',
+          endTime: '22:30',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vipRows = out.schedule.tasks.filter((t) => t.liveEventId === 'vip-civil-2026-10-07')
+      expect(vipRows).toHaveLength(1)
+      expect(out.added).toBeGreaterThan(0) // lady lives etc.
+      const again = ensureTodaySourceTasks(out.schedule, '2026-10-07')
+      expect(again.added).toBe(0)
+      expect(again.schedule.tasks.filter((t) => t.liveEventId === 'vip-civil-2026-10-07')).toHaveLength(1)
+    })
+
+    it('8) repeated ensure is idempotent for protected and tracking rows', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP drift',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '14:00',
+          endTime: '16:00',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const first = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const second = ensureTodaySourceTasks(first.schedule, '2026-10-07')
+      expect(second.added).toBe(0)
+      expect(second.updated).toBe(0)
+      const vip = second.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('14:00')
+      expect(vip?.clockLocked).toBe(true)
+      expect(vip?.sourceStartTime).toBe('20:00')
+    })
+
+    it('clockLocked alone blocks planned overwrite', () => {
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '15:00',
+          endTime: '17:00',
+          sourceStartTime: '20:00',
+          sourceEndTime: '22:30',
+          clockLocked: true,
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      expect(out.schedule.tasks.find((t) => t.id === vipId)?.startTime).toBe('15:00')
+    })
+
+    it('tracking row follows flyer when planned still equals prior source*', () => {
+      // planned === source* (19:00) but current flyer is 20:00 → adopt 20:00
+      const schedule = {
+        tasks: [{
+          id: vipId,
+          title: 'VIP',
+          plannedDate: '2026-10-07',
+          status: 'pending',
+          startTime: '19:00',
+          endTime: '21:30',
+          sourceStartTime: '19:00',
+          sourceEndTime: '21:30',
+          liveKind: 'content-block',
+          liveEventId: 'vip-civil-2026-10-07',
+          origin: 'live-tutor-schedule',
+        }],
+      }
+      const out = ensureTodaySourceTasks(schedule, '2026-10-07')
+      const vip = out.schedule.tasks.find((t) => t.id === vipId)
+      expect(vip?.startTime).toBe('20:00')
+      expect(vip?.endTime).toBe('22:30')
+      expect(vip?.sourceStartTime).toBe('20:00')
+      expect(vip?.clockLocked).not.toBe(true)
+    })
   })
 })

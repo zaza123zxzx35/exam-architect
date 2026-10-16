@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   CalendarDays,
   CheckCheck,
@@ -41,9 +41,18 @@ function statusLabelTh(status) {
   return 'ยังไม่ได้เริ่ม'
 }
 
+/** Local verification only: ?date=YYYY-MM-DD overrides calendar day without inventing schedule data. */
+function parseDateQueryParam(raw) {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) return null
+  const [y, m, d] = String(raw).split('-').map(Number)
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return null
+  return String(raw)
+}
+
 export default function Today() {
   const countdown = useExamCountdown()
   const { schedule, setSchedule, runReschedule } = useScheduleStore()
+  const [searchParams] = useSearchParams()
   const [rescheduleMsg, setRescheduleMsg] = useState('')
   const [forceDialogOpen, setForceDialogOpen] = useState(false)
   const [forcePreview, setForcePreview] = useState(null)
@@ -51,14 +60,17 @@ export default function Today() {
   const [clearDialogOpen, setClearDialogOpen] = useState(false)
   const [clearPreview, setClearPreview] = useState(null)
   const [clearBusy, setClearBusy] = useState(false)
-  const todayIso = bangkokTodayIso()
+  const calendarTodayIso = bangkokTodayIso()
+  const dateOverride = parseDateQueryParam(searchParams.get('date'))
+  const todayIso = dateOverride || calendarTodayIso
+  const isDateOverride = Boolean(dateOverride && dateOverride !== calendarTodayIso)
 
   useEffect(() => {
+    // Always upsert flyer live/content clocks for the viewed day (incl. ?date=).
+    // Do not skip when victory/curated rows already exist — that left demoted clocks stuck.
     setSchedule((prev) => {
-      const hasToday = (prev.tasks || []).some((t) => t && t.plannedDate === todayIso)
-      if (hasToday) return prev
       const out = ensureTodaySourceTasks(prev, todayIso)
-      return out.added > 0 ? out.schedule : prev
+      return (out.added > 0 || out.updated > 0) ? out.schedule : prev
     })
   }, [todayIso, setSchedule])
 
@@ -246,6 +258,11 @@ export default function Today() {
             <CalendarDays className="h-6 w-6" /> วันนี้ต้องเรียนอะไร?
           </h2>
           <p className="mt-1 text-sm text-primary-100/90">{formatThaiPlanDate(todayIso)}</p>
+          {isDateOverride ? (
+            <p className="mt-2 rounded-lg bg-amber-400/20 px-2 py-1 text-[11px] text-amber-50">
+              โหมดตรวจด้วย ?date={todayIso} (ปฏิทินจริงวันนี้ {calendarTodayIso}) — ไม่เปลี่ยนข้อมูลต้นทาง
+            </p>
+          ) : null}
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <div className="rounded-xl bg-white/10 px-3 py-2">
               <div className="text-[10px] text-primary-100">เริ่ม</div>
@@ -264,6 +281,14 @@ export default function Today() {
               <div className="font-bold">{timeline.summary.endTime || '—'}</div>
             </div>
           </div>
+          {timeline.summary.budgetNoteTh ? (
+            <p className="mt-3 text-[11px] text-primary-100/90">
+              เรียนจริง ≈ {timeline.summary.studyHours ?? '—'} ชม.
+              {' · '}เป้า ~{timeline.summary.targetStudyHours ?? 8} ชม.
+              {' · '}พัก {timeline.summary.breakMinutes ?? 0} นาที (ไม่นับเป็นเรียน)
+              {timeline.summary.budgetMet ? ' · ถึงเป้า' : ' · ยังไม่ถึงเป้า (ไม่สร้างตารางเท็จ)'}
+            </p>
+          ) : null}
         </div>
 
         {total > 0 && (

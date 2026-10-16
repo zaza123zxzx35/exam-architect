@@ -52,7 +52,9 @@ describe('priority scoring', () => {
       estimatedMinutes: 120,
     }), { mode: 'score-max' })
     expect(high.dimensions.historicalFrequency.value).toBe('unknown')
-    expect(low.dimensions.scoreWeight.value).toBe('unknown')
+    // Category score guidance is available from official buckets (not per-lesson invent).
+    expect(low.dimensions.scoreWeight.value).toBeCloseTo(50 / 400)
+    expect(low.dimensions.scoreWeight.reasonCodes).toContain('score-weight-category-guidance')
     expect(high.priorityScore).toBeGreaterThan(low.priorityScore)
     const ranked = rankCuratedCatalog([
       baseRow({
@@ -83,7 +85,18 @@ describe('priority scoring', () => {
     const hype = scoreHistoricalFrequency(baseRow({ title: 'เก็งข้อสอบ ติวเข้ม ห้ามพลาด' }))
     expect(hype.value).toBe('unknown')
     expect(hype.reasonCodes).toContain('hype-title-ignored')
-    expect(scoreScoreWeight(baseRow()).value).toBe('unknown')
+    // Unknown subject → awaiting mapping (not invented).
+    expect(scoreScoreWeight(baseRow({ subjectId: SUBJECT_IDS.UNKNOWN })).value).toBe('unknown')
+    expect(scoreScoreWeight(baseRow({ subjectId: SUBJECT_IDS.UNKNOWN })).reasonCodes)
+      .toContain('score-weight-awaiting-mapping')
+    // Mapped category gets soft guidance from official bucket — not per-lesson points.
+    const majorWeight = scoreScoreWeight(baseRow({
+      subjectId: SUBJECT_IDS.ENGLISH_MAJOR,
+      examPart: 'ข',
+    }))
+    expect(majorWeight.value).toBeCloseTo(100 / 400)
+    expect(majorWeight.reasonCodes).toContain('score-weight-category-guidance')
+    expect(majorWeight.noteTh).toMatch(/ไม่ใช่คะแนนรายคอร์ส/)
     const scored = scoreCuratedResource(baseRow({
       title: 'แหกโค้งเก็งข้อสอบจริง สพฐ.ปี69',
       subjectId: SUBJECT_IDS.ENGLISH_MAJOR,
@@ -132,7 +145,9 @@ describe('priority scoring', () => {
   it('unknown dimensions are not scored as high confirmed evidence', () => {
     const scored = scoreCuratedResource(baseRow(), { mode: 'balanced' })
     expect(scored.dimensions.historicalFrequency.value).toBe('unknown')
-    expect(scored.dimensions.scoreWeight.value).toBe('unknown')
+    // Category bucket guidance is known; frequency remains unknown → still mixed confidence.
+    expect(typeof scored.dimensions.scoreWeight.value).toBe('number')
+    expect(scored.dimensions.scoreWeight.noteTh).toMatch(/ไม่ใช่คะแนนรายคอร์ส/)
     expect(scored.limitations.some(l => l.includes('unknown'))).toBe(true)
     expect(scored.dataConfidence).not.toBe('high')
     expect(scored.reasonTh).toMatch(/สถิติความถี่|unknown|จำกัด|ประมาณ/i)

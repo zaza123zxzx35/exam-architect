@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   adviseLiveConflicts,
   replayEvidenceStatus,
+  replayStatusLabelTh,
 } from './liveConflictAdvisor.js'
 import { generateLiveScheduleTasks } from './liveSchedulePlan.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
@@ -98,6 +99,9 @@ describe('liveConflictAdvisor', () => {
       replayConfirmed: true,
     })).toBe('confirmed')
     expect(replayEvidenceStatus({ title: 'no link' })).toBe('none')
+    expect(replayStatusLabelTh('unconfirmed_link')).toBe('ลิงก์ยังไม่ยืนยันว่าเป็น replay')
+    expect(replayStatusLabelTh('confirmed')).toMatch(/ยืนยันแล้ว/)
+    expect(replayStatusLabelTh('none')).toBe('ยังไม่มีหลักฐาน replay')
 
     const advice = adviseLiveConflicts([
       {
