@@ -346,12 +346,15 @@ export default function Today() {
               </button>
             )}
             <Link to="/overview" className="btn-secondary text-sm">ดูภาพรวมแผน</Link>
-            {rescheduleMsg && (
-              <p className="w-full text-xs text-slate-500">{rescheduleMsg}</p>
-            )}
           </div>
         )}
       </section>
+
+      {rescheduleMsg ? (
+        <p className="text-xs font-medium text-emerald-800 dark:text-emerald-200" role="status">
+          {rescheduleMsg}
+        </p>
+      ) : null}
     </div>
   )
 }

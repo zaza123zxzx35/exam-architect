@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useHtmlPlannerState } from '../hooks/useHtmlPlannerState'
 import {
@@ -38,8 +38,22 @@ export default function History() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <section className="card border-amber-200 bg-amber-50/80 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+        <p className="font-semibold text-amber-950 dark:text-amber-100">
+          ประวัติแผน HTML เดิม (34 วัน)
+        </p>
+        <p className="mt-1 text-xs text-amber-900/90 dark:text-amber-100/90">
+          หน้านี้ยังใช้แผน HTML เก่า — ไม่ใช่แผนพาบรรจุ 100 / งาน curated ที่หน้าวันนี้และภาพรวม
+          · ติ๊กงานที่นี่จะอัปเดตเฉพาะแถว HTML ไม่ทับตารางหลัก
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link to="/today" className="btn-secondary text-xs">ไปหน้าวันนี้</Link>
+          <Link to="/overview" className="btn-secondary text-xs">แผนภาพรวม</Link>
+        </div>
+      </section>
+
       <section className="card space-y-3">
-        <label className="label" htmlFor="hist-day">เลือกวันที่ต้องการดูหรือแก้ไข</label>
+        <label className="label" htmlFor="hist-day">เลือกวันที่ต้องการดูหรือแก้ไข (แผน HTML)</label>
         <select
           id="hist-day"
           className="input"

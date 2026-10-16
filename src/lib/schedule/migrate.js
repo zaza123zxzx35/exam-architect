@@ -29,6 +29,69 @@ function readJson(storage, key) {
   return { present: true, value: safeParse(raw) }
 }
 
+/**
+ * Meta keys that are safe/meaningful to persist through sanitize → saveSchedule.
+ * Anything else (debug leftovers, accidental React state, prototype junk) is dropped.
+ */
+const SCHEDULE_META_ALLOWLIST = new Set([
+  'engineVersion',
+  'migratedFrom',
+  'taskCountSeed',
+  'sessionCountSeed',
+  'recoveredAt',
+  'victoryPlanClearedAt',
+  'victoryPlanSeededAt',
+  'victoryPlan',
+  'curatedPartB29SeededAt',
+  'curatedPlanSeedVersion',
+  'curatedPlanSeedTodayIso',
+  'curatedPlanSeedTaskCount',
+  'curatedPlanSeedPartBOk',
+  'curatedPlanVictoryScore',
+])
+
+/**
+ * Copy only allowlisted, JSON-serializable schedule meta.
+ * @param {object} rawMeta
+ */
+function pickPersistedMeta(rawMeta) {
+  /** @type {Record<string, unknown>} */
+  const out = {}
+  for (const key of SCHEDULE_META_ALLOWLIST) {
+    if (!Object.prototype.hasOwnProperty.call(rawMeta, key)) continue
+    const value = rawMeta[key]
+    if (value === undefined) continue
+    if (typeof value === 'function' || typeof value === 'symbol') continue
+    if (key === 'migratedFrom') {
+      if (Array.isArray(value)) {
+        out[key] = value.filter((item) => typeof item === 'string')
+      }
+      continue
+    }
+    if (key === 'victoryPlan') {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const effort = value.effort
+        out[key] = {
+          ...value,
+          effort: effort && typeof effort === 'object' && !Array.isArray(effort)
+            ? { ...effort }
+            : {},
+        }
+      }
+      continue
+    }
+    if (
+      typeof value === 'string'
+      || typeof value === 'number'
+      || typeof value === 'boolean'
+      || value === null
+    ) {
+      out[key] = value
+    }
+  }
+  return out
+}
+
 function applyHtmlCompletions(tasks, daysMap) {
   if (!daysMap || typeof daysMap !== 'object') return tasks
   return tasks.map(task => {
@@ -179,6 +242,35 @@ export function sanitizeSchedule(raw) {
     .filter(Boolean)
     .filter(s => isValidIsoDate(s.date))
 
+  // Preserve allowlisted app meta (victory clear/seed flags, curated stamps, effort).
+  // saveSchedule always sanitizes — a previous whitelist-of-none wiped
+  // victoryPlanClearedAt and caused clear→refresh to soft-reseed.
+  const rawMeta = raw.meta && typeof raw.meta === 'object' && !Array.isArray(raw.meta)
+    ? raw.meta
+    : {}
+  const preservedMeta = pickPersistedMeta(rawMeta)
+
+  const recovered = !isScheduleStore(raw)
+    || tasksIn.length !== tasks.length
+    || sessionsIn.length !== sessions.length
+
+  const meta = {
+    ...preservedMeta,
+    engineVersion: SCHEDULE_ENGINE_VERSION,
+    migratedFrom: Array.isArray(preservedMeta.migratedFrom)
+      ? preservedMeta.migratedFrom
+      : ['sanitized'],
+    taskCountSeed: Number(preservedMeta.taskCountSeed) || tasks.length,
+    sessionCountSeed: Number(preservedMeta.sessionCountSeed) || sessions.length,
+  }
+  if (recovered) {
+    meta.recoveredAt = new Date().toISOString()
+  } else if (typeof preservedMeta.recoveredAt === 'string') {
+    meta.recoveredAt = preservedMeta.recoveredAt
+  } else {
+    delete meta.recoveredAt
+  }
+
   const schedule = {
     ...base,
     schemaVersion: SCHEDULE_SCHEMA_VERSION,
@@ -191,18 +283,9 @@ export function sanitizeSchedule(raw) {
       ? raw.availability
       : base.availability,
     exams: Array.isArray(raw.exams) && raw.exams.length ? raw.exams : base.exams,
-    meta: {
-      engineVersion: SCHEDULE_ENGINE_VERSION,
-      migratedFrom: Array.isArray(raw.meta?.migratedFrom) ? raw.meta.migratedFrom : ['sanitized'],
-      taskCountSeed: Number(raw.meta?.taskCountSeed) || tasks.length,
-      sessionCountSeed: Number(raw.meta?.sessionCountSeed) || sessions.length,
-      recoveredAt: new Date().toISOString(),
-    },
+    meta,
   }
 
-  const recovered = !isScheduleStore(raw)
-    || tasksIn.length !== tasks.length
-    || sessionsIn.length !== schedule.sessions.length
   return { schedule, recovered, reason: recovered ? 'sanitized' : 'ok' }
 }
 

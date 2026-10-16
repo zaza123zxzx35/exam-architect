@@ -6,6 +6,7 @@ import { bangkokTodayIso } from '../data/htmlPlannerData'
 import { formatThaiPlanDate } from '../lib/planner/formatThaiDate'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
+import { isVictoryManagedTask } from '../lib/curated/victoryPlan.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
 
@@ -14,16 +15,7 @@ export default function Overview() {
   const todayIso = bangkokTodayIso()
 
   const curatedTasks = useMemo(
-    () => (schedule.tasks || []).filter((t) => {
-      if (!t?.plannedDate) return false
-      const id = String(t.id || '')
-      const origin = String(t.origin || '')
-      return id.startsWith('curated_')
-        || id.startsWith('live_')
-        || origin === 'curated-unified-plan'
-        || origin === 'curated-part-b-29'
-        || origin === 'live-tutor-schedule'
-    }),
+    () => (schedule.tasks || []).filter((t) => t?.plannedDate && isVictoryManagedTask(t)),
     [schedule.tasks],
   )
 

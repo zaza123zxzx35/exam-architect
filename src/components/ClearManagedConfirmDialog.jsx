@@ -1,13 +1,16 @@
-import { useEffect, useId, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import { StatusBanner } from './ui'
 
 /**
  * Confirm dialog before clearing all curated/live/victory managed tasks.
- * Opening / canceling must not mutate the schedule (caller responsibility).
+ * Uses the native <dialog> modal so it is not clipped by parent layout and
+ * cannot be dismissed by the same click that opened it.
  *
- * Portaled to document.body so parent overflow/transform cannot clip it.
- * Backdrop dismiss is armed after mount to avoid the opening click closing it.
+ * The <dialog> element stays mounted while the parent is mounted so
+ * showModal()/close() always run — unmounting an open modal without close()
+ * can leave the document inert / with a stuck backdrop.
+ *
+ * Opening / canceling must not mutate the schedule (caller responsibility).
  *
  * @param {{
  *   open: boolean,
@@ -33,47 +36,84 @@ export default function ClearManagedConfirmDialog({
   onCancel,
 }) {
   const titleId = useId()
-  const [allowDismiss, setAllowDismiss] = useState(false)
+  const dialogRef = useRef(null)
+  const allowDismissRef = useRef(false)
+  const onCancelRef = useRef(onCancel)
+  const busyRef = useRef(busy)
+
+  useLayoutEffect(() => {
+    onCancelRef.current = onCancel
+    busyRef.current = busy
+  }, [onCancel, busy])
+
+  const shouldShow = Boolean(open && preview)
 
   useEffect(() => {
-    if (!open || !preview) {
-      setAllowDismiss(false)
-      return undefined
+    const el = dialogRef.current
+    if (!el) return undefined
+
+    if (shouldShow) {
+      allowDismissRef.current = false
+      if (!el.open) {
+        try {
+          el.showModal()
+        } catch {
+          el.setAttribute('open', '')
+        }
+      }
+      const arm = window.setTimeout(() => {
+        allowDismissRef.current = true
+      }, 300)
+      return () => window.clearTimeout(arm)
     }
-    setAllowDismiss(false)
-    const timer = window.setTimeout(() => setAllowDismiss(true), 250)
-    return () => window.clearTimeout(timer)
-  }, [open, preview])
+
+    allowDismissRef.current = false
+    if (el.open) {
+      try {
+        el.close()
+      } catch {
+        el.removeAttribute('open')
+      }
+    } else {
+      el.removeAttribute('open')
+    }
+    return undefined
+  }, [shouldShow])
 
   useEffect(() => {
-    if (!open || !preview) return undefined
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const el = dialogRef.current
+    if (!el) return undefined
+    const onNativeCancel = (event) => {
+      event.preventDefault()
+      if (!allowDismissRef.current || busyRef.current) return
+      onCancelRef.current()
+    }
+    el.addEventListener('cancel', onNativeCancel)
     return () => {
-      document.body.style.overflow = prev
+      el.removeEventListener('cancel', onNativeCancel)
+      if (el.open) {
+        try {
+          el.close()
+        } catch {
+          el.removeAttribute('open')
+        }
+      }
     }
-  }, [open, preview])
+  }, [])
 
-  if (!open || !preview || typeof document === 'undefined') return null
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[1px]"
-      role="presentation"
-      onClick={() => {
-        if (allowDismiss && !busy) onCancel()
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && allowDismiss && !busy) onCancel()
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      aria-hidden={shouldShow ? undefined : true}
+      className="z-[200] w-[min(100%-2rem,32rem)] max-h-[85vh] overflow-y-auto rounded-2xl border-2 border-rose-300 bg-white p-0 shadow-2xl dark:border-rose-700 dark:bg-slate-900"
+      onClick={(event) => {
+        if (event.target !== dialogRef.current) return
+        if (!allowDismissRef.current || busy) return
+        onCancel()
       }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="card max-h-[85vh] w-full max-w-lg overflow-y-auto border-2 border-rose-300 shadow-2xl dark:border-rose-700"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="card border-0 shadow-none">
         <h2 id={titleId} className="text-base font-bold text-slate-900 dark:text-white">
           ยืนยันก่อนล้างงาน curated / ไลฟ์
         </h2>
@@ -82,17 +122,19 @@ export default function ClearManagedConfirmDialog({
           และงานที่คุณแก้เอง (userEdited) · งานอื่นที่ไม่ใช่ curated/live/victory จะคงอยู่
         </p>
 
-        <StatusBanner tone="error" className="mt-3" title={preview.summaryTh}>
-          <ul className="mt-1 list-inside list-disc text-xs">
-            <li>จะลบทั้งหมด: {preview.removeCount}</li>
-            <li className="font-semibold">รวม done ที่จะหาย: {preview.removeDoneCount}</li>
-            <li className="font-semibold">รวม userEdited ที่จะหาย: {preview.removeUserEditedCount}</li>
-            <li>pending ที่จะหาย: {preview.removePendingCount}</li>
-            <li>งานอื่นที่จะคงอยู่: {preview.keepCount}</li>
-          </ul>
-        </StatusBanner>
+        {preview ? (
+          <StatusBanner tone="error" className="mt-3" title={preview.summaryTh}>
+            <ul className="mt-1 list-inside list-disc text-xs">
+              <li>จะลบทั้งหมด: {preview.removeCount}</li>
+              <li className="font-semibold">รวม done ที่จะหาย: {preview.removeDoneCount}</li>
+              <li className="font-semibold">รวม userEdited ที่จะหาย: {preview.removeUserEditedCount}</li>
+              <li>pending ที่จะหาย: {preview.removePendingCount}</li>
+              <li>งานอื่นที่จะคงอยู่: {preview.keepCount}</li>
+            </ul>
+          </StatusBanner>
+        ) : null}
 
-        {preview.sampleRemove?.length > 0 && (
+        {preview?.sampleRemove?.length > 0 && (
           <div className="mt-3">
             <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
               ตัวอย่างงานที่จะถูกลบ
@@ -118,7 +160,7 @@ export default function ClearManagedConfirmDialog({
           <button
             type="button"
             className="btn-secondary text-xs"
-            disabled={busy}
+            disabled={busy || !shouldShow}
             onClick={onCancel}
           >
             ยกเลิก — ไม่ลบอะไร
@@ -126,15 +168,13 @@ export default function ClearManagedConfirmDialog({
           <button
             type="button"
             className="btn-primary text-xs"
-            disabled={busy || preview.removeCount === 0}
-            autoFocus
+            disabled={busy || !shouldShow || !preview || preview.removeCount === 0}
             onClick={onConfirm}
           >
             {busy ? 'กำลังล้าง…' : 'ยืนยันล้าง curated/ไลฟ์'}
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </dialog>
   )
 }

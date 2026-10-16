@@ -9,21 +9,25 @@ import {
   buildForceRegenPreview,
   ensureVictoryPlanSeed,
   isVictoryManagedTask,
+  VICTORY_CLEARED_META_KEY,
   VICTORY_PLAN_VERSION,
   VICTORY_SEED_META_KEY,
 } from './victoryPlan.js'
 
 export const CURATED_PLAN_SEED_META_KEY = 'curatedPartB29SeededAt'
 export const CURATED_PLAN_SEED_VERSION = VICTORY_PLAN_VERSION
+export { VICTORY_CLEARED_META_KEY }
 
 /**
  * Clear seed meta flags so force reseed is allowed. Does not touch tasks.
+ * Also drops a prior user-cleared marker so force regen can rebuild.
  * @param {object} meta
  */
 export function clearCuratedSeedMetaFlags(meta = {}) {
   const next = { ...meta }
   delete next[CURATED_PLAN_SEED_META_KEY]
   delete next[VICTORY_SEED_META_KEY]
+  delete next[VICTORY_CLEARED_META_KEY]
   delete next.curatedPlanSeedVersion
   delete next.curatedPlanSeedTodayIso
   delete next.curatedPlanSeedTaskCount
@@ -78,11 +82,17 @@ export function commitClearManagedTasks(schedule) {
   const preview = buildClearManagedPreview(schedule)
   const tasks = Array.isArray(schedule?.tasks) ? schedule.tasks : []
   const kept = tasks.filter((t) => !isVictoryManagedTask(t)).map((t) => ({ ...t }))
+  const meta = clearCuratedSeedMetaFlags(schedule?.meta || {})
+  // Stamp cleared so StorageBootstrap soft-seed will not restore managed tasks on refresh.
+  // Only when something was actually removed (confirm UI disables empty clears).
+  if (preview.removeCount > 0) {
+    meta[VICTORY_CLEARED_META_KEY] = new Date().toISOString()
+  }
   return {
     schedule: {
       ...schedule,
       tasks: kept,
-      meta: clearCuratedSeedMetaFlags(schedule?.meta || {}),
+      meta,
       updatedAt: new Date().toISOString(),
     },
     preview,
