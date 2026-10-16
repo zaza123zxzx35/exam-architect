@@ -147,8 +147,19 @@ describe('dailyAgenda', () => {
       },
     })
     expect(agenda.sections.lives).toHaveLength(0)
-    expect(agenda.sections.selfStudy).toHaveLength(1)
-    expect(agenda.items[0].startTime).toBeNull()
-    expect(agenda.items[0].orderReasonTh).toMatch(/อ่านเอง|บล็อกเนื้อหา/)
+    expect(agenda.sections.selfStudy.length).toBeGreaterThanOrEqual(1)
+    expect(agenda.items.find((i) => i.id.includes('vip-thai'))?.startTime).toBeNull()
+    expect(agenda.sourceFocus.some((e) => e.id === 'vip-thai-2026-10-16')).toBe(true)
+  })
+
+  it('fills agenda from poster source when schedule has no today tasks', () => {
+    const agenda = buildDailyAgenda({
+      todayIso: '2026-10-16',
+      schedule: { tasks: [] },
+    })
+    expect(agenda.filledFromSource).toBe(true)
+    expect(agenda.counts.total).toBeGreaterThan(0)
+    expect(agenda.sourceFocus.length).toBeGreaterThan(0)
+    expect(agenda.sections.lives).toHaveLength(0)
   })
 })

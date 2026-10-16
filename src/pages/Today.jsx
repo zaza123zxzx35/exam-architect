@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock, ListOrdered, Radio } from 'lucide-react'
+import { CalendarDays, CheckCheck, Clock3, RotateCcw, CalendarClock, ListOrdered, Radio, BookOpen } from 'lucide-react'
 import { useExamCountdown } from '../hooks/useExamCountdown'
 import { useScheduleStore } from '../hooks/useScheduleStore'
 import { bangkokTodayIso } from '../data/htmlPlannerData'
@@ -12,7 +12,7 @@ import {
   commitClearManagedTasks,
   commitForceVictoryPlan,
 } from '../lib/curated/seedPartB29Plan.js'
-import { buildDailyAgenda } from '../lib/curated/dailyAgenda.js'
+import { buildDailyAgenda, ensureTodaySourceTasks } from '../lib/curated/dailyAgenda.js'
 import TaskOpenButtons from '../components/TaskOpenButtons.jsx'
 import VictoryPlanCard from '../components/VictoryPlanCard.jsx'
 import ForceRegenConfirmDialog from '../components/ForceRegenConfirmDialog.jsx'
@@ -39,49 +39,75 @@ export default function Today() {
   const [clearBusy, setClearBusy] = useState(false)
   const todayIso = bangkokTodayIso()
 
+  // Pin today's poster live/content tasks add-only so status toggles persist.
+  useEffect(() => {
+    setSchedule((prev) => {
+      const hasToday = (prev.tasks || []).some((t) => t && t.plannedDate === todayIso)
+      if (hasToday) return prev
+      const out = ensureTodaySourceTasks(prev, todayIso)
+      return out.added > 0 ? out.schedule : prev
+    })
+  }, [todayIso, setSchedule])
+
   const agenda = useMemo(
     () => buildDailyAgenda({ schedule, todayIso }),
     [schedule, todayIso],
   )
   const todayTasks = agenda.items
   const doneCount = agenda.counts.done
+  const remainingCount = agenda.counts.remaining ?? Math.max(0, agenda.counts.total - doneCount)
   const total = agenda.counts.total
   const pct = total ? Math.round((doneCount / total) * 100) : 0
   const overdueCount = (schedule.tasks || []).filter(
     t => (t.status === 'pending' || t.status === 'deferred') && t.plannedDate && t.plannedDate < todayIso,
   ).length
 
+  const withTodayPinned = (prev) => {
+    const hasToday = (prev.tasks || []).some((t) => t && t.plannedDate === todayIso)
+    if (hasToday) return prev
+    return ensureTodaySourceTasks(prev, todayIso).schedule
+  }
+
   const toggleCurated = (taskId) => {
-    setSchedule((prev) => ({
-      ...prev,
-      tasks: (prev.tasks || []).map((t) => {
-        if (String(t.id) !== String(taskId)) return t
-        return { ...t, status: t.status === 'done' ? 'pending' : 'done' }
-      }),
-    }))
+    setSchedule((prev) => {
+      const base = withTodayPinned(prev)
+      return {
+        ...base,
+        tasks: (base.tasks || []).map((t) => {
+          if (String(t.id) !== String(taskId)) return t
+          return { ...t, status: t.status === 'done' ? 'pending' : 'done' }
+        }),
+      }
+    })
   }
 
   const markAll = (done) => {
     const ids = new Set(todayTasks.map(t => String(t.id)))
-    setSchedule((prev) => ({
-      ...prev,
-      tasks: (prev.tasks || []).map((t) => (
-        ids.has(String(t.id)) ? { ...t, status: done ? 'done' : 'pending' } : t
-      )),
-    }))
+    setSchedule((prev) => {
+      const base = withTodayPinned(prev)
+      return {
+        ...base,
+        tasks: (base.tasks || []).map((t) => (
+          ids.has(String(t.id)) ? { ...t, status: done ? 'done' : 'pending' } : t
+        )),
+      }
+    })
   }
 
   const cycleStatus = (taskId) => {
-    setSchedule((prev) => ({
-      ...prev,
-      tasks: (prev.tasks || []).map((t) => {
-        if (String(t.id) !== String(taskId)) return t
-        const s = String(t.status || 'pending')
-        if (s === 'pending' || s === 'deferred') return { ...t, status: 'in_progress' }
-        if (s === 'in_progress' || s === 'doing') return { ...t, status: 'done' }
-        return { ...t, status: 'pending' }
-      }),
-    }))
+    setSchedule((prev) => {
+      const base = withTodayPinned(prev)
+      return {
+        ...base,
+        tasks: (base.tasks || []).map((t) => {
+          if (String(t.id) !== String(taskId)) return t
+          const s = String(t.status || 'pending')
+          if (s === 'pending' || s === 'deferred') return { ...t, status: 'in_progress' }
+          if (s === 'in_progress' || s === 'doing') return { ...t, status: 'done' }
+          return { ...t, status: 'pending' }
+        }),
+      }
+    })
   }
 
   const handleReschedule = () => {
@@ -260,7 +286,7 @@ export default function Today() {
           </div>
           {total > 0 && (
             <div className="text-right text-xs text-slate-500">
-              {doneCount}/{total} งาน · {pct}%
+              เสร็จ {doneCount} · เหลือ {remainingCount} · ทั้งวัน {total} · {pct}%
               <div className="mt-0.5 text-[10px] text-slate-400">
                 ไลฟ์ {agenda.counts.lives} · อ่านเอง {agenda.counts.selfStudy}
               </div>
@@ -274,26 +300,42 @@ export default function Today() {
           </div>
         )}
 
-        {agenda.sourceLives.length > 0 && (
+        {(agenda.sourceLives.length > 0 || (agenda.sourceFocus || []).length > 0) && (
           <div className="border-b border-rose-100 bg-rose-50/70 px-5 py-3 dark:border-rose-950 dark:bg-rose-950/20">
             <h3 className="flex items-center gap-2 text-sm font-bold text-rose-950 dark:text-rose-100">
-              <Radio className="h-4 w-4" /> ไลฟ์สดต้นทางวันนี้ ({agenda.sourceLives.length})
+              <Radio className="h-4 w-4" /> จากตารางต้นทางวันนี้
             </h3>
-            <ul className="mt-2 space-y-1.5 text-xs text-rose-900/90 dark:text-rose-100/90">
-              {agenda.sourceLives.map((ev) => (
-                <li key={ev.id}>
-                  <span className="font-semibold">
-                    {ev.startTime ? `${ev.startTime}${ev.endTime ? `–${ev.endTime}` : ''} น.` : 'เวลาตามโปสเตอร์'}
-                  </span>
-                  {' · '}{ev.titleTh}
-                  <span className="text-rose-800/70 dark:text-rose-200/70"> · {ev.sourceTh}</span>
-                </li>
-              ))}
-            </ul>
-            {agenda.counts.lives === 0 ? (
-              <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-200">
-                มีไลฟ์ต้นทางแต่ยังไม่ผสานเข้าแผน — กด「สร้าง / รีเฟรชแผน 100」
-              </p>
+            {agenda.sourceLives.length > 0 ? (
+              <ul className="mt-2 space-y-1.5 text-xs text-rose-900/90 dark:text-rose-100/90">
+                {agenda.sourceLives.map((ev) => (
+                  <li key={ev.id}>
+                    <span className="font-semibold">ไลฟ์</span>
+                    {' · '}
+                    <span className="font-semibold">
+                      {ev.startTime ? `${ev.startTime}${ev.endTime ? `–${ev.endTime}` : ''} น.` : 'เวลาต้องตรวจเพิ่ม (ไม่มีในโปสเตอร์)'}
+                    </span>
+                    {' · '}{ev.titleTh}
+                    <span className="text-rose-800/70 dark:text-rose-200/70"> · {ev.sourceTh}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs text-rose-900/80 dark:text-rose-100/80">วันนี้ไม่มีไลฟ์สดในโปสเตอร์ต้นทาง</p>
+            )}
+            {(agenda.sourceFocus || []).length > 0 ? (
+              <ul className="mt-2 space-y-1.5 border-t border-rose-100/80 pt-2 text-xs text-rose-900/90 dark:border-rose-900 dark:text-rose-100/90">
+                {agenda.sourceFocus.map((ev) => (
+                  <li key={ev.id} className="flex gap-2">
+                    <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      <span className="font-semibold">{ev.kind === 'logistics' ? 'ธุรการ' : 'โฟกัสอ่าน'}</span>
+                      {ev.startTime ? ` · ${ev.startTime}${ev.endTime ? `–${ev.endTime}` : ''} น.` : ' · ไม่มีเวลาไลฟ์ในโปสเตอร์'}
+                      {' · '}{ev.titleTh}
+                      <span className="text-rose-800/70 dark:text-rose-200/70"> · {ev.sourceTh}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </div>
         )}

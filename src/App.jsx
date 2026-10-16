@@ -45,8 +45,9 @@ export default function App() {
             <ErrorBoundary>
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<Today />} />
                   <Route path="/today" element={<Today />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/overview" element={<Overview />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/resources" element={<Resources />} />

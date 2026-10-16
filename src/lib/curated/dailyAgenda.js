@@ -7,7 +7,7 @@
 import { bangkokTodayIso } from '../../data/htmlPlannerData.js'
 import { listLiveTutorEvents } from '../../data/liveTutorSchedule.js'
 import { HUB_EXAM_PART_LABELS, HUB_SUBJECT_LABELS } from '../study/hub.js'
-import { LIVE_SCHEDULE_ORIGIN } from './liveSchedulePlan.js'
+import { generateLiveScheduleTasks, LIVE_SCHEDULE_ORIGIN } from './liveSchedulePlan.js'
 import { PRIORITY_TIERS } from './priorityScoring.js'
 import { PART_B_29_ORIGIN } from './partB29Plan.js'
 import { VICTORY_PLAN_ORIGIN } from './victoryPlan.js'
@@ -256,29 +256,74 @@ export function taskToAgendaItem(task) {
   }
 }
 
+function eventSpansDate(event, todayIso) {
+  const end = event.dateEnd || event.date
+  return event.date <= todayIso && end >= todayIso
+}
+
+/**
+ * Add-only: pin today's poster live/content-block tasks into the schedule.
+ * Never invents times — uses generateLiveScheduleTasks from flyer data.
+ * @param {object} schedule
+ * @param {string} [todayIso]
+ */
+export function ensureTodaySourceTasks(schedule, todayIso = bangkokTodayIso()) {
+  const existingIds = (schedule?.tasks || []).map((t) => String(t.id))
+  const draft = generateLiveScheduleTasks({
+    todayIso,
+    untilIso: todayIso,
+    existingTaskIds: existingIds,
+    includeLogistics: true,
+  })
+  const toAdd = (draft.proposedTasks || []).filter((t) => t.plannedDate === todayIso)
+  if (!toAdd.length) {
+    return { schedule, added: 0, addedIds: [] }
+  }
+  return {
+    schedule: {
+      ...schedule,
+      tasks: [...(schedule?.tasks || []), ...toAdd],
+    },
+    added: toAdd.length,
+    addedIds: toAdd.map((t) => t.id),
+  }
+}
+
 /**
  * Build full daily agenda for one Bangkok calendar day.
  * @param {{
  *   schedule?: { tasks?: object[] },
  *   todayIso?: string,
- *   includeSourceLives?: boolean,
+ *   now?: Date,
  * }} [options]
  */
 export function buildDailyAgenda(options = {}) {
   const todayIso = options.todayIso || bangkokTodayIso()
-  const tasks = (options.schedule?.tasks || []).filter(
+  let tasks = (options.schedule?.tasks || []).filter(
     (t) => t && t.plannedDate === todayIso,
   )
+  let filledFromSource = false
+
+  // If nothing planned for today, preview poster-derived tasks (same generator as seed).
+  if (!tasks.length) {
+    const draft = generateLiveScheduleTasks({
+      todayIso,
+      untilIso: todayIso,
+      existingTaskIds: [],
+      includeLogistics: true,
+    })
+    tasks = (draft.proposedTasks || []).filter((t) => t.plannedDate === todayIso)
+    filledFromSource = tasks.length > 0
+  }
+
   const items = tasks.map(taskToAgendaItem).sort(compareAgendaItems)
 
-  // Source poster lives for today (evidence) — may include past-seeded days via includePast.
-  const sourceLives = listLiveTutorEvents(todayIso, {
+  const sourceDayEvents = listLiveTutorEvents(todayIso, {
     includePast: true,
-    kinds: ['live'],
-  }).filter((e) => {
-    const end = e.dateEnd || e.date
-    return e.date <= todayIso && end >= todayIso
-  })
+  }).filter((e) => eventSpansDate(e, todayIso))
+
+  const sourceLives = sourceDayEvents.filter((e) => e.kind === 'live')
+  const sourceFocus = sourceDayEvents.filter((e) => e.kind === 'content-block' || e.kind === 'logistics')
 
   const now = options.now || new Date()
   const ordered = items.map((item, index) => {
@@ -291,6 +336,7 @@ export function buildDailyAgenda(options = {}) {
       orderReasonTh: buildOrderReasonTh(item, index),
       clockPhase,
       clockLabelTh: liveClockLabelTh(clockPhase),
+      fromSourcePreview: filledFromSource,
     }
   })
 
@@ -302,6 +348,21 @@ export function buildDailyAgenda(options = {}) {
   const doneCount = ordered.filter((i) => i.status === 'done').length
   const inProgressCount = ordered.filter((i) => i.status === 'in_progress').length
   const notStartedCount = ordered.filter((i) => i.status === 'not_started').length
+  const remainingCount = ordered.length - doneCount
+
+  const mapSource = (e) => ({
+    id: e.id,
+    kind: e.kind,
+    titleTh: e.titleTh,
+    startTime: e.startTime || null,
+    endTime: e.endTime || null,
+    examPart: e.examPart,
+    subjectId: e.subjectId,
+    seriesTh: e.seriesTh,
+    sourceTh: e.sourceTh,
+    reasonTh: e.reasonTh,
+    hasClock: Boolean(e.startTime),
+  })
 
   return {
     version: DAILY_AGENDA_VERSION,
@@ -313,17 +374,10 @@ export function buildDailyAgenda(options = {}) {
       prep,
       postReview,
     },
-    sourceLives: sourceLives.map((e) => ({
-      id: e.id,
-      titleTh: e.titleTh,
-      startTime: e.startTime || null,
-      endTime: e.endTime || null,
-      examPart: e.examPart,
-      subjectId: e.subjectId,
-      seriesTh: e.seriesTh,
-      sourceTh: e.sourceTh,
-      reasonTh: e.reasonTh,
-    })),
+    sourceLives: sourceLives.map(mapSource),
+    sourceFocus: sourceFocus.map(mapSource),
+    sourceDayEvents: sourceDayEvents.map(mapSource),
+    filledFromSource,
     counts: {
       total: ordered.length,
       lives: lives.length,
@@ -331,13 +385,18 @@ export function buildDailyAgenda(options = {}) {
       done: doneCount,
       inProgress: inProgressCount,
       notStarted: notStartedCount,
+      remaining: remainingCount,
       sourceLiveEvents: sourceLives.length,
+      sourceFocusEvents: sourceFocus.length,
     },
     empty: ordered.length === 0,
     notesTh: [
       'เวลาไลฟ์มาจากโปสเตอร์ต้นทางเท่านั้น — ไม่สร้างเวลานัดใหม่',
       'บล็อกเนื้อหา / curated = แนะนำให้อ่านเอง แยกจากไลฟ์จริง',
-      sourceLives.length && !lives.length
+      filledFromSource
+        ? 'แสดงจากตารางต้นทางวันนี้ — กดบันทึกลงแผน หรือสร้างแผน 100 เพื่อผสานทั้งชุด'
+        : null,
+      sourceLives.length && !lives.length && !filledFromSource
         ? 'มีไลฟ์ต้นทางวันนี้ แต่ยังไม่ถูกผสานเข้าแผน — กดสร้าง/รีเฟรชแผน 100'
         : null,
     ].filter(Boolean),

@@ -111,7 +111,7 @@ export default function Overview() {
                 return (
                   <a
                     key={day.dateIso}
-                    href={day.dateIso === todayIso ? '/today' : `#day-${day.dateIso}`}
+                    href={day.dateIso === todayIso ? '/' : `#day-${day.dateIso}`}
                     title={`${day.dateIso}: ${day.done}/${day.total}`}
                     className={`h-3 w-3 rounded-sm transition hover:scale-125 ${color}`}
                     aria-label={`${day.dateIso} ${day.done} จาก ${day.total}`}
