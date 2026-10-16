@@ -5,6 +5,7 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import StatusBanner from '../components/ui/StatusBanner.jsx'
 import { buildCatalogReviewReport } from '../lib/curated/catalogReview.js'
 import { auditCuratedCatalog } from '../lib/curated/validateCatalog.js'
+import { analyzeContentOverlap } from '../lib/curated/contentOverlap.js'
 import { CURATED_CATALOG_VERSION } from '../data/curatedCatalog.js'
 import { enrichCuratedResources } from '../lib/curated/catalog.js'
 import { HUB_SUBJECT_LABELS } from '../lib/study/hub.js'
@@ -19,6 +20,7 @@ export default function Audit() {
 
   const review = useMemo(() => buildCatalogReviewReport(), [])
   const audit = useMemo(() => auditCuratedCatalog(), [])
+  const overlap = useMemo(() => analyzeContentOverlap(), [])
   const byId = useMemo(() => {
     const map = new Map()
     for (const row of enrichCuratedResources()) map.set(row.id, row)
@@ -91,6 +93,7 @@ export default function Audit() {
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="ประเภทปัญหา">
         {[
+          { id: 'overlap', label: `วิเคราะห์ซ้ำ (${overlap.summary.chooseOneGroups + overlap.summary.complementaryGroups})` },
           { id: 'collisions', label: `ชน URL ในชุด (${collisions.length})` },
           { id: 'shared', label: `URL ร่วม (${shared.length})` },
           { id: 'cross', label: `สงสัย ก/ข (${crossPart.length})` },
@@ -110,6 +113,48 @@ export default function Audit() {
           </button>
         ))}
       </div>
+
+      {tab === 'overlap' && (
+        <section className="card space-y-4">
+          <h2 className="text-lg font-bold">วิเคราะห์เนื้อหาซ้ำหลายสำนัก</h2>
+          <p className="text-xs text-slate-500">
+            must ที่ยังไม่แชร์ URL {overlap.summary.mustUnique}
+            · เลือกแหล่งเดียว {overlap.summary.chooseOneGroups} กลุ่ม
+            · เสริมกัน (รอยืนยัน) {overlap.summary.complementaryGroups}
+            · ทบทวนทีหลัง {overlap.summary.reviewLater}
+            · ไม่แน่ใจ {overlap.summary.uncertainGroups}
+          </p>
+          <div>
+            <h3 className="text-sm font-semibold">1) เลือกเรียนแหล่งหลักได้ (หลักฐาน: URL ร่วม)</h3>
+            <ul className="mt-2 space-y-2 text-sm">
+              {overlap.chooseOne.slice(0, 12).map((g) => (
+                <li key={g.ids.join('-')} className="rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                  <p className="font-medium">{g.ids.join(' ↔ ')}</p>
+                  <p className="text-xs text-slate-500">{g.tutors?.join(' · ')} · {g.actionTh}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">2) อาจเสริมกัน — รอยืนยัน (ชื่อคล้าย ลิงก์ต่าง)</h3>
+            {overlap.complementary.length === 0 ? (
+              <p className="mt-1 text-xs text-slate-500">ไม่พบกลุ่มนี้จากข้อมูลปัจจุบัน</p>
+            ) : (
+              <ul className="mt-2 space-y-2 text-sm">
+                {overlap.complementary.slice(0, 8).map((g) => (
+                  <li key={g.ids.join('-')} className="rounded-lg border border-amber-200 p-2 dark:border-amber-900">
+                    <p className="font-medium">{g.ids.join(' ↔ ')}</p>
+                    <p className="text-xs">{g.actionTh}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <ul className="list-disc pl-4 text-xs text-slate-500">
+            {overlap.policyTh.map((p) => <li key={p}>{p}</li>)}
+          </ul>
+        </section>
+      )}
 
       {tab === 'collisions' && (
         <section className="card space-y-3">
